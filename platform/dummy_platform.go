@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/coreos/go-iptables/iptables"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -498,7 +500,7 @@ func (p dummyPlatform) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p dummyPlatform) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error) {
+func (p dummyPlatform) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
 	var network boshsettings.Network
 
 	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")

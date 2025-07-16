@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/coreos/go-iptables/iptables"
 
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -92,7 +93,7 @@ type Platform interface {
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)
 
 	// Network misc
-	GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error)
+	GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error)
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
 	DeleteARPEntryWithIP(ip string) error

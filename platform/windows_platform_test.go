@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/coreos/go-iptables/iptables"
 	"github.com/google/uuid"
 
 	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
@@ -289,15 +290,15 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		for _, value := range []bool{true, false} {
-			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %t", value)
+		for _, ipProtocol := range []iptables.Protocol{iptables.ProtocolIPv4, iptables.ProtocolIPv6} {
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %t", ipProtocol)
 			It(title, func() {
 				defaultNetwork := boshsettings.Network{}
 				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
-				network, err := platform.GetDefaultNetwork(value)
+				network, err := platform.GetDefaultNetwork(ipProtocol)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(network).To(Equal(defaultNetwork))
-				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(value))
+				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(ipProtocol))
 			})
 		}
 	})

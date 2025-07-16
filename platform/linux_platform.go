@@ -17,6 +17,7 @@ import (
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/coreos/go-iptables/iptables"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
@@ -1530,8 +1531,8 @@ func (p linux) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p linux) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error) {
-	return p.defaultNetworkResolver.GetDefaultNetwork(is_ipv6)
+func (p linux) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
+	return p.defaultNetworkResolver.GetDefaultNetwork(ipProtocol)
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64, desiredSwapSizeInBytes *uint64) (uint64, uint64, error) {

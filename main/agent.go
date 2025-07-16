@@ -31,6 +31,7 @@ func runAgent(opts boshapp.Options, logger logger.Logger) chan error {
 		}
 
 		app := boshapp.New(logger, fs)
+
 		err := app.Setup(opts)
 		if err != nil {
 			logger.Error(mainLogTag, "App setup %s", err.Error())

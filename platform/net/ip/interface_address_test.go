@@ -2,9 +2,9 @@ package ip_test
 
 import (
 	"errors"
-	"fmt"
 	gonet "net"
 
+	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -15,23 +15,23 @@ import (
 var _ = Describe("simpleInterfaceAddress", func() {
 	Describe("GetIP", func() {
 		It("returns fully formatted IPv4", func() {
-			ipStr, err := NewSimpleInterfaceAddress("iface", "127.0.0.1").GetIP(false)
+			ipStr, err := NewSimpleInterfaceAddress("iface", "127.0.0.1").GetIP(iptables.ProtocolIPv4)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipStr).To(Equal("127.0.0.1"))
 		})
 
 		It("returns fully formatted IPv6", func() {
-			ipStr, err := NewSimpleInterfaceAddress("iface", "ff00:f8::").GetIP(true)
+			ipStr, err := NewSimpleInterfaceAddress("iface", "ff00:f8::").GetIP(iptables.ProtocolIPv6)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipStr).To(Equal("ff00:00f8:0000:0000:0000:0000:0000:0000"))
 
-			ipStr, err = NewSimpleInterfaceAddress("iface", "1101:2202:3303:4404:5505:6606:7707:8808").GetIP(true)
+			ipStr, err = NewSimpleInterfaceAddress("iface", "1101:2202:3303:4404:5505:6606:7707:8808").GetIP(iptables.ProtocolIPv6)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(ipStr).To(Equal("1101:2202:3303:4404:5505:6606:7707:8808"))
 		})
 
 		It("returns error if IP cannot be parsed", func() {
-			_, err := NewSimpleInterfaceAddress("iface", "").GetIP(false)
+			_, err := NewSimpleInterfaceAddress("iface", "").GetIP(iptables.ProtocolIPv4)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("Cannot parse IP ''"))
 		})
@@ -59,7 +59,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 			})
 
 			It("resolves the IP and returns fully formatted IPv4", func() {
-				ip, err := interfaceAddress.GetIP(false)
+				ip, err := interfaceAddress.GetIP(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("127.0.0.1"))
 
@@ -72,7 +72,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 					Mask: gonet.CIDRMask(64, 128),
 				}
 
-				ip, err := interfaceAddress.GetIP(false)
+				ip, err := interfaceAddress.GetIP(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("ff00:00f8:0000:0000:0000:0000:0000:0000"))
 
@@ -82,7 +82,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 			It("returns error if resolving IP fails", func() {
 				ipResolver.GetPrimaryIPErr = errors.New("fake-get-primary-ipv4-err")
 
-				ip, err := interfaceAddress.GetIP(false)
+				ip, err := interfaceAddress.GetIP(iptables.ProtocolIPv4)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-get-primary-ipv4-err"))
 				Expect(ip).To(Equal(""))
@@ -96,14 +96,14 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 					Mask: gonet.CIDRMask(16, 32),
 				}
 
-				_, err := interfaceAddress.GetIP(false)
+				_, err := interfaceAddress.GetIP(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("does not attempt to resolve IP again", func() {
 				ipResolver.GetPrimaryIPInterfaceName = ""
 
-				ip, err := interfaceAddress.GetIP(false)
+				ip, err := interfaceAddress.GetIP(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ip).To(Equal("127.0.0.1"))
 
@@ -111,7 +111,7 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 			})
 		})
 
-		Context("when GetIP was called with true or false", func() {
+		Context("when GetIP was called with the right ipProtocol", func() {
 
 			BeforeEach(func() {
 				ipResolver.GetPrimaryIPNet = &gonet.IPNet{
@@ -120,12 +120,19 @@ var _ = Describe("resolvingInterfaceAddress", func() {
 				}
 			})
 
-			for _, value := range []bool{true, false} {
-				valueStr := fmt.Sprintf("%t", value)
-				It("it should have been called ipResolver with same value: "+valueStr, func() {
-					_, err := interfaceAddress.GetIP(value)
+			for _, ipProtocol := range []iptables.Protocol{iptables.ProtocolIPv4, iptables.ProtocolIPv4} {
+				var ipProtocolStr string
+				switch ipProtocol {
+				case iptables.ProtocolIPv4:
+					ipProtocolStr = "IPv4"
+				case iptables.ProtocolIPv6:
+					ipProtocolStr = "IPv6"
+				}
+				It("it should have been called ipResolver with same value: "+ipProtocolStr, func() {
+					_, err := interfaceAddress.GetIP(ipProtocol)
 					Expect(err).ToNot(HaveOccurred())
-					Expect(ipResolver.GetPrimaryIPCalledWith).To(Equal([]string{"fake-iface-name", valueStr}))
+					Expect(ipResolver.GetPrimaryIPCalledWith.IFaceName).To(Equal("fake-iface-name"))
+					Expect(ipResolver.GetPrimaryIPCalledWith.IpProtocol).To(Equal(ipProtocol))
 				})
 			}
 

@@ -7,6 +7,7 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type Service interface {
@@ -45,7 +46,7 @@ type settingsService struct {
 type DefaultNetworkResolver interface {
 	// Ideally we would find a network based on a MAC address
 	// but current CPI implementations do not include it
-	GetDefaultNetwork(ipv6 bool) (Network, error)
+	GetDefaultNetwork(ipProtocol iptables.Protocol) (Network, error)
 }
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . PlatformSettingsGetter
@@ -281,8 +282,14 @@ func (s *settingsService) resolveNetwork(network Network) (Network, error) {
 	// Ideally this would be GetNetworkByMACAddress(mac string)
 	// Currently, we are relying that if the default network does not contain
 	// the MAC adddress the InterfaceConfigurationCreator will fail.
-	ipv6 := network.Prefix == "128"
-	resolvedNetwork, err := s.platform.GetDefaultNetwork(ipv6)
+	var ipProtocol iptables.Protocol
+
+	if network.Prefix == "128" {
+		ipProtocol = iptables.ProtocolIPv6
+	} else {
+		ipProtocol = iptables.ProtocolIPv4
+	}
+	resolvedNetwork, err := s.platform.GetDefaultNetwork(ipProtocol)
 	if err != nil {
 		s.logger.Error(settingsServiceLogTag, "Failed retrieving default network %s", err.Error())
 		return Network{}, bosherr.WrapError(err, "Failed retrieving default network")

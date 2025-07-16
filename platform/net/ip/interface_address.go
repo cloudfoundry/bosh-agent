@@ -5,12 +5,13 @@ import (
 	"net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type InterfaceAddress interface {
 	GetInterfaceName() string
 	// GetIP gets the exposed internet protocol address of the above interface
-	GetIP(is_ipv6 bool) (string, error)
+	GetIP(ipProtocol iptables.Protocol) (string, error)
 }
 
 type simpleInterfaceAddress struct {
@@ -24,7 +25,7 @@ func NewSimpleInterfaceAddress(interfaceName string, ip string) InterfaceAddress
 
 func (s simpleInterfaceAddress) GetInterfaceName() string { return s.interfaceName }
 
-func (s simpleInterfaceAddress) GetIP(is_ipv6 bool) (string, error) {
+func (s simpleInterfaceAddress) GetIP(ipProtocol iptables.Protocol) (string, error) {
 	ip2 := net.ParseIP(s.ip)
 	if ip2 == nil {
 		return "", fmt.Errorf("Cannot parse IP '%s'", s.ip) //nolint:staticcheck
@@ -51,17 +52,18 @@ func NewResolvingInterfaceAddress(
 
 func (s resolvingInterfaceAddress) GetInterfaceName() string { return s.interfaceName }
 
-func (s *resolvingInterfaceAddress) GetIP(is_ipv6 bool) (string, error) {
+func (s *resolvingInterfaceAddress) GetIP(ipProtocol iptables.Protocol) (string, error) {
 	if s.ip != "" {
 		return s.ip, nil
 	}
 
-	ip, err := s.ipResolver.GetPrimaryIP(s.interfaceName, is_ipv6)
+	ip, err := s.ipResolver.GetPrimaryIP(s.interfaceName, ipProtocol)
 	if err != nil {
 		var ipVersion int
-		if is_ipv6 {
+		switch ipProtocol {
+		case iptables.ProtocolIPv6:
 			ipVersion = 6
-		} else {
+		case iptables.ProtocolIPv4:
 			ipVersion = 4
 		}
 		return "", bosherr.WrapErrorf(err, "Getting primary IPv%d ", ipVersion)

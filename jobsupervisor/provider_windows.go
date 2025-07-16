@@ -6,6 +6,8 @@ package jobsupervisor
 import (
 	"os"
 
+	"github.com/coreos/go-iptables/iptables"
+
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
@@ -31,7 +33,7 @@ func NewProvider(
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
 
-	network, err := platform.GetDefaultNetwork(false)
+	network, err := platform.GetDefaultNetwork(iptables.ProtocolIPv4)
 	var machineIP string
 	if err != nil {
 		machineIP, _ = os.Hostname() //nolint:errcheck

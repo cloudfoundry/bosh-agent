@@ -3,6 +3,7 @@ package net_test
 import (
 	fakelogger "github.com/cloudfoundry/bosh-utils/logger/loggerfakes"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
+	"github.com/coreos/go-iptables/iptables"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
@@ -35,17 +36,17 @@ var _ = Describe("Windows Route Searcher", func() {
 				Stdout: `10.0.16.1`,
 			})
 
-			routes, err := searcher.SearchRoutes(false)
+			routes, err := searcher.SearchRoutes(iptables.ProtocolIPv4)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(routes).To(HaveLen(2))
 
 			Expect(routes[0].InterfaceName).To(Equal("some-created-interface"))
 			Expect(routes[0].Gateway).To(Equal("172.30.0.1"))
-			Expect(routes[0].IsDefault(false)).To(BeFalse())
+			Expect(routes[0].IsDefault(iptables.ProtocolIPv4)).To(BeFalse())
 
 			Expect(routes[1].InterfaceName).To(Equal("some-default-interface"))
 			Expect(routes[1].Gateway).To(Equal("10.0.16.1"))
-			Expect(routes[1].IsDefault(false)).To(BeTrue())
+			Expect(routes[1].IsDefault(iptables.ProtocolIPv4)).To(BeTrue())
 		})
 
 		It("returns default and non-default routes for existing interfaces", func() {
@@ -57,17 +58,17 @@ var _ = Describe("Windows Route Searcher", func() {
 				Stdout: `2600:1000::1`,
 			})
 
-			routes, err := searcher.SearchRoutes(true)
+			routes, err := searcher.SearchRoutes(iptables.ProtocolIPv6)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(routes).To(HaveLen(2))
 
 			Expect(routes[0].InterfaceName).To(Equal("some-created-interface"))
 			Expect(routes[0].Gateway).To(Equal("2600:1000::1"))
-			Expect(routes[0].IsDefault(true)).To(BeTrue())
+			Expect(routes[0].IsDefault(iptables.ProtocolIPv6)).To(BeTrue())
 
 			Expect(routes[1].InterfaceName).To(Equal("some-default-interface"))
 			Expect(routes[1].Gateway).To(Equal("10.0.16.1"))
-			Expect(routes[1].IsDefault(false)).To(BeFalse())
+			Expect(routes[1].IsDefault(iptables.ProtocolIPv6)).To(BeFalse())
 		})
 	})
 })

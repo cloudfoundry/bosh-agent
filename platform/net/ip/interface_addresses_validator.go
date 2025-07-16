@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type InterfaceAddressesValidator struct {
@@ -33,9 +34,9 @@ func (i InterfaceAddressesValidator) Attempt() (bool, error) {
 		}
 
 		var actualIPs []string
-		desiredIP, _ := desiredInterfaceAddress.GetIP(false) //nolint:errcheck
+		desiredIP, _ := desiredInterfaceAddress.GetIP(iptables.ProtocolIPv4) //nolint:errcheck
 		for _, iface := range ifaces {
-			actualIP, _ := iface.GetIP(false) //nolint:errcheck
+			actualIP, _ := iface.GetIP(iptables.ProtocolIPv4) //nolint:errcheck
 
 			if desiredIP == actualIP {
 				return false, nil

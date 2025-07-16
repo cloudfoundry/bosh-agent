@@ -4,6 +4,8 @@ import (
 	gonet "net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type InterfaceToAddrsFunc func(string) ([]gonet.Addr, error)
@@ -19,7 +21,7 @@ func NetworkInterfaceToAddrsFunc(interfaceName string) ([]gonet.Addr, error) {
 
 type Resolver interface {
 	// GetPrimaryIP always returns error unless IPNet is found for given interface
-	GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPNet, error)
+	GetPrimaryIP(interfaceName string, ipProtocol iptables.Protocol) (*gonet.IPNet, error)
 }
 
 type ipResolver struct {
@@ -30,7 +32,7 @@ func NewResolver(ifaceToAddrsFunc InterfaceToAddrsFunc) Resolver {
 	return ipResolver{ifaceToAddrsFunc: ifaceToAddrsFunc}
 }
 
-func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPNet, error) {
+func (r ipResolver) GetPrimaryIP(interfaceName string, ipProtocol iptables.Protocol) (*gonet.IPNet, error) {
 	addrs, err := r.ifaceToAddrsFunc(interfaceName)
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Looking up addresses for interface '%s'", interfaceName)
@@ -49,11 +51,11 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPN
 			continue
 		}
 
-		if ip.IP.To16() != nil && ip.IP.IsGlobalUnicast() && is_ipv6 {
+		if ip.IP.To16() != nil && ip.IP.IsGlobalUnicast() && ipProtocol == iptables.ProtocolIPv6 {
 			return ip, nil
 		}
 
-		if ip.IP.To4() != nil && !is_ipv6 {
+		if ip.IP.To4() != nil && ipProtocol == iptables.ProtocolIPv4 {
 			if ip.IP.IsGlobalUnicast() {
 				return ip, nil
 			} else {
@@ -65,7 +67,7 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPN
 	}
 
 	ipVersion := 4
-	if is_ipv6 {
+	if ipProtocol == iptables.ProtocolIPv6 {
 		ipVersion = 6
 	}
 

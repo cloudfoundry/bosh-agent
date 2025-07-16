@@ -6,6 +6,7 @@ package net_test
 import (
 	"errors"
 
+	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -36,7 +37,7 @@ default via 172.16.79.1 dev eth0 proto dhcp metric 100
 `,
 				})
 
-				routes, err := searcher.SearchRoutes(false)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(runner.RunCommandsQuietly[0]).To(Equal([]string{"ip", "r"}))
 				Expect(routes).To(Equal([]Route{
@@ -55,7 +56,7 @@ blackhole 10.200.115.192/26  proto bird
 `,
 				})
 
-				routes, err := searcher.SearchRoutes(false)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(runner.RunCommandsQuietly[0]).To(Equal([]string{"ip", "r"}))
 				Expect(routes).To(Equal([]Route{
@@ -72,7 +73,7 @@ blackhole 10.200.115.192/26  proto bird
 `,
 				})
 
-				routes, err := searcher.SearchRoutes(false)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv4)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(routes).To(BeEmpty())
 			})
@@ -84,7 +85,7 @@ blackhole 10.200.115.192/26  proto bird
 `,
 				})
 
-				routes, err := searcher.SearchRoutes(true)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv6)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(routes).To(BeEmpty())
 			})
@@ -99,7 +100,7 @@ default via fe80::ceb:d3ff:fef9:fa93 dev eth0 proto ra metric 1024 expires 1796s
 `,
 				})
 
-				routes, err := searcher.SearchRoutes(true)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv6)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(routes).To(Equal([]Route{
 					Route{Destination: "::1", Gateway: "::", InterfaceName: "lo"},
@@ -117,7 +118,7 @@ default via fe80::ceb:d3ff:fef9:fa93 dev eth0 proto ra metric 1024 expires 1796s
 					Error: errors.New("fake-run-err"),
 				})
 
-				routes, err := searcher.SearchRoutes(false)
+				routes, err := searcher.SearchRoutes(iptables.ProtocolIPv4)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-run-err"))
 				Expect(routes).To(BeEmpty())

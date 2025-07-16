@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -4136,15 +4137,22 @@ unit: sectors
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		for _, value := range []bool{true, false} {
-			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %t", value)
+		for _, ipProtocol := range []iptables.Protocol{iptables.ProtocolIPv4, iptables.ProtocolIPv6} {
+			var ipProtocolStr string
+			switch ipProtocol {
+			case iptables.ProtocolIPv4:
+				ipProtocolStr = "IPv4"
+			case iptables.ProtocolIPv6:
+				ipProtocolStr = "IPv6"
+			}
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %s", ipProtocolStr)
 			It(title, func() {
 				defaultNetwork := boshsettings.Network{}
 				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
-				network, err := platform.GetDefaultNetwork(value)
+				network, err := platform.GetDefaultNetwork(ipProtocol)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(network).To(Equal(defaultNetwork))
-				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(value))
+				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(ipProtocol))
 			})
 		}
 	})

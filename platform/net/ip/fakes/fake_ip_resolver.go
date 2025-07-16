@@ -1,20 +1,26 @@
 package fakes
 
 import (
-	"fmt"
 	gonet "net"
+
+	"github.com/coreos/go-iptables/iptables"
 )
+
+type FakeReturn struct {
+	IFaceName  string
+	IpProtocol iptables.Protocol
+}
 
 type FakeResolver struct {
 	GetPrimaryIPInterfaceName string
 	GetPrimaryIPNet           *gonet.IPNet
 	GetPrimaryIPErr           error
-	GetPrimaryIPCalledWith    []string
+	GetPrimaryIPCalledWith    FakeReturn
 }
 
-func (r *FakeResolver) GetPrimaryIP(interfaceName string, is_ipv6 bool) (*gonet.IPNet, error) {
+func (r *FakeResolver) GetPrimaryIP(interfaceName string, ipProtocol iptables.Protocol) (*gonet.IPNet, error) {
 	r.GetPrimaryIPInterfaceName = interfaceName
-	r.GetPrimaryIPCalledWith = append(r.GetPrimaryIPCalledWith, interfaceName)
-	r.GetPrimaryIPCalledWith = append(r.GetPrimaryIPCalledWith, fmt.Sprintf("%t", is_ipv6))
+	r.GetPrimaryIPCalledWith.IFaceName = interfaceName
+	r.GetPrimaryIPCalledWith.IpProtocol = ipProtocol
 	return r.GetPrimaryIPNet, r.GetPrimaryIPErr
 }

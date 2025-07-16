@@ -10,6 +10,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 const arpingLogTag = "arping"
@@ -49,7 +50,7 @@ func (a arping) BroadcastMACAddresses(addresses []boship.InterfaceAddress) {
 	var wg sync.WaitGroup
 
 	for _, addr := range addresses {
-		ip, err := addr.GetIP(false)
+		ip, err := addr.GetIP(iptables.ProtocolIPv4)
 		if err != nil {
 			continue
 		}
@@ -90,7 +91,7 @@ func (a arping) blockUntilInterfaceExists(interfaceName string) {
 
 // broadcastMACAddress broadcasts an IP/MAC pair to the specified network and logs any failure
 func (a arping) broadcastMACAddress(address boship.InterfaceAddress) {
-	ip, err := address.GetIP(false)
+	ip, err := address.GetIP(iptables.ProtocolIPv4)
 	if err != nil {
 		a.logger.Info(arpingLogTag, "Ignoring GetIP failure: %s", err.Error())
 		return

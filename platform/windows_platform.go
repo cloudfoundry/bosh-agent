@@ -16,6 +16,7 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
+	"github.com/coreos/go-iptables/iptables"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
@@ -723,8 +724,8 @@ func (p WindowsPlatform) RemoveStaticLibraries(packageFileListPath string) error
 	return nil
 }
 
-func (p WindowsPlatform) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error) {
-	return p.defaultNetworkResolver.GetDefaultNetwork(is_ipv6)
+func (p WindowsPlatform) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
+	return p.defaultNetworkResolver.GetDefaultNetwork(ipProtocol)
 }
 
 func (p WindowsPlatform) GetHostPublicKey() (string, error) {

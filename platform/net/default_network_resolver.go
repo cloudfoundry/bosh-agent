@@ -7,6 +7,8 @@ import (
 
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type defaultNetworkResolver struct {
@@ -24,10 +26,10 @@ func NewDefaultNetworkResolver(
 	}
 }
 
-func (r defaultNetworkResolver) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Network, error) {
+func (r defaultNetworkResolver) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
 	network := boshsettings.Network{}
 
-	routes, err := r.routesSearcher.SearchRoutes(is_ipv6)
+	routes, err := r.routesSearcher.SearchRoutes(ipProtocol)
 
 	if err != nil {
 		return network, bosherr.WrapError(err, "Searching routes")
@@ -38,15 +40,19 @@ func (r defaultNetworkResolver) GetDefaultNetwork(is_ipv6 bool) (boshsettings.Ne
 	}
 
 	for _, route := range routes {
-		if !route.IsDefault(is_ipv6) {
+		if !route.IsDefault(ipProtocol) {
 			continue
 		}
 
-		ip, err := r.ipResolver.GetPrimaryIP(route.InterfaceName, is_ipv6)
+		ip, err := r.ipResolver.GetPrimaryIP(route.InterfaceName, ipProtocol)
 
 		if err != nil {
-			ipVersion := 4
-			if is_ipv6 {
+			var ipVersion int
+
+			switch ipProtocol {
+			case iptables.ProtocolIPv4:
+				ipVersion = 4
+			case iptables.ProtocolIPv6:
 				ipVersion = 6
 			}
 			return network, bosherr.WrapErrorf(err, "Getting primary IPv%d for interface '%s'", ipVersion, route.InterfaceName)

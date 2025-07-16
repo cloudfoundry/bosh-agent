@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
+	"github.com/coreos/go-iptables/iptables"
 )
 
 type FakePlatformSettingsGetter struct {
@@ -128,7 +129,7 @@ func (fake *FakePlatformSettingsGetter) GetAgentSettingsPathReturnsOnCall(i int,
 	}{result1}
 }
 
-func (fake *FakePlatformSettingsGetter) GetDefaultNetwork(isIpV6 bool) (settings.Network, error) {
+func (fake *FakePlatformSettingsGetter) GetDefaultNetwork(ipProtocol iptables.Protocol) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
