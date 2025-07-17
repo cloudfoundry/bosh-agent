@@ -7,8 +7,6 @@ import (
 
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
-
-	"github.com/coreos/go-iptables/iptables"
 )
 
 type defaultNetworkResolver struct {
@@ -26,7 +24,7 @@ func NewDefaultNetworkResolver(
 	}
 }
 
-func (r defaultNetworkResolver) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
+func (r defaultNetworkResolver) GetDefaultNetwork(ipProtocol boship.IPProtocol) (boshsettings.Network, error) {
 	network := boshsettings.Network{}
 
 	routes, err := r.routesSearcher.SearchRoutes(ipProtocol)
@@ -50,9 +48,9 @@ func (r defaultNetworkResolver) GetDefaultNetwork(ipProtocol iptables.Protocol) 
 			var ipVersion int
 
 			switch ipProtocol {
-			case iptables.ProtocolIPv4:
+			case boship.IPv4:
 				ipVersion = 4
-			case iptables.ProtocolIPv6:
+			case boship.IPv6:
 				ipVersion = 6
 			}
 			return network, bosherr.WrapErrorf(err, "Getting primary IPv%d for interface '%s'", ipVersion, route.InterfaceName)

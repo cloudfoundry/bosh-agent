@@ -17,7 +17,6 @@ import (
 	boshretry "github.com/cloudfoundry/bosh-utils/retrystrategy"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
-	"github.com/coreos/go-iptables/iptables"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
@@ -25,6 +24,7 @@ import (
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
@@ -1531,7 +1531,7 @@ func (p linux) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p linux) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
+func (p linux) GetDefaultNetwork(ipProtocol boship.IPProtocol) (boshsettings.Network, error) {
 	return p.defaultNetworkResolver.GetDefaultNetwork(ipProtocol)
 }
 

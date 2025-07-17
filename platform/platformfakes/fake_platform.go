@@ -14,7 +14,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/cloudfoundry/bosh-utils/system"
-	"github.com/coreos/go-iptables/iptables"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakePlatform struct {
@@ -1421,7 +1421,7 @@ func (fake *FakePlatform) GetCopierReturnsOnCall(i int, result1 fileutil.Copier)
 	}{result1}
 }
 
-func (fake *FakePlatform) GetDefaultNetwork(ipProtocol iptables.Protocol) (settings.Network, error) {
+func (fake *FakePlatform) GetDefaultNetwork(ipProtocol boship.IPProtocol) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {

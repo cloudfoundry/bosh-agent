@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/coreos/go-iptables/iptables"
-
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -17,6 +15,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
@@ -500,7 +499,7 @@ func (p dummyPlatform) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p dummyPlatform) GetDefaultNetwork(ipProtocol iptables.Protocol) (boshsettings.Network, error) {
+func (p dummyPlatform) GetDefaultNetwork(ipProtocol boship.IPProtocol) (boshsettings.Network, error) {
 	var network boshsettings.Network
 
 	networkPath := filepath.Join(p.dirProvider.BoshDir(), "dummy-default-network-settings.json")

@@ -2,7 +2,6 @@ package ip_test
 
 import (
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
-	"github.com/coreos/go-iptables/iptables"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -23,7 +22,7 @@ var _ = Describe("InterfaceAddressesProvider", func() {
 
 		var loopBackInterface InterfaceAddress
 		for _, iface := range ifaces {
-			ip, err := iface.GetIP(iptables.ProtocolIPv4)
+			ip, err := iface.GetIP(IPv4)
 			Expect(err).ToNot(HaveOccurred())
 
 			if ip == "127.0.0.1" {

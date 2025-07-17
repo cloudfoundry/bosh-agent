@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
-	"github.com/coreos/go-iptables/iptables"
 )
 
 // cmdRoutesSearcher uses `route -n` command to list routes
@@ -63,16 +63,16 @@ func parseRoute(ipString string) (Route, error) {
 	}, nil
 }
 
-func (s cmdRoutesSearcher) SearchRoutes(ipProtocol iptables.Protocol) ([]Route, error) {
+func (s cmdRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, error) {
 	var stdout string
 	var err error
 	switch ipProtocol {
-	case iptables.ProtocolIPv4:
+	case boship.IPv4:
 		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "r")
 		if err != nil {
 			return []Route{}, bosherr.WrapError(err, "Running IPv4 route")
 		}
-	case iptables.ProtocolIPv6:
+	case boship.IPv6:
 		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "-6", "r")
 		if err != nil {
 			return []Route{}, bosherr.WrapError(err, "Running IPv6 route")

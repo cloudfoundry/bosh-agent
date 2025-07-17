@@ -4,12 +4,12 @@ import (
 	"errors"
 	gonet "net"
 
-	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakeip "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
@@ -53,7 +53,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 				})
 
 				It("returns network with primary IPv4 address from associated interface", func() {
-					network, err := resolver.GetDefaultNetwork(iptables.ProtocolIPv4)
+					network, err := resolver.GetDefaultNetwork(boship.IPv4)
 					Expect(err).ToNot(HaveOccurred())
 					Expect(network).To(Equal(boshsettings.Network{
 						IP:      "127.0.0.1",
@@ -69,7 +69,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 				})
 
 				It("returns error", func() {
-					network, err := resolver.GetDefaultNetwork(iptables.ProtocolIPv4)
+					network, err := resolver.GetDefaultNetwork(boship.IPv4)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-get-primary-ipv4-err"))
 					Expect(network).To(Equal(boshsettings.Network{}))
@@ -87,7 +87,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error", func() {
-				network, err := resolver.GetDefaultNetwork(iptables.ProtocolIPv4)
+				network, err := resolver.GetDefaultNetwork(boship.IPv4)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Failed to find default route"))
 				Expect(network).To(Equal(boshsettings.Network{}))
@@ -100,7 +100,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error if there are no routes", func() {
-				network, err := resolver.GetDefaultNetwork(iptables.ProtocolIPv4)
+				network, err := resolver.GetDefaultNetwork(boship.IPv4)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("No routes"))
 				Expect(network).To(Equal(boshsettings.Network{}))
@@ -113,7 +113,7 @@ var _ = Describe("defaultNetworkResolver", func() {
 			})
 
 			It("returns error if searching routes fails", func() {
-				network, err := resolver.GetDefaultNetwork(iptables.ProtocolIPv4)
+				network, err := resolver.GetDefaultNetwork(boship.IPv4)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-search-routes-err"))
 				Expect(network).To(Equal(boshsettings.Network{}))

@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
-	"github.com/coreos/go-iptables/iptables"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -20,6 +19,7 @@ import (
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -74,7 +74,7 @@ var _ = Describe("DummyPlatform", func() {
 			err := fs.WriteFileString(settingsFilePath, `{"IP": "1.2.3.4"}`)
 			Expect(err).NotTo(HaveOccurred())
 
-			network, err := platform.GetDefaultNetwork(iptables.ProtocolIPv4)
+			network, err := platform.GetDefaultNetwork(boship.IPv4)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(network.IP).To(Equal("1.2.3.4"))

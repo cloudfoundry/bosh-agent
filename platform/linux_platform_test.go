@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -33,6 +32,7 @@ import (
 	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk/fakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
@@ -4137,15 +4137,8 @@ unit: sectors
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		for _, ipProtocol := range []iptables.Protocol{iptables.ProtocolIPv4, iptables.ProtocolIPv6} {
-			var ipProtocolStr string
-			switch ipProtocol {
-			case iptables.ProtocolIPv4:
-				ipProtocolStr = "IPv4"
-			case iptables.ProtocolIPv6:
-				ipProtocolStr = "IPv6"
-			}
-			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %s", ipProtocolStr)
+		for _, ipProtocol := range []boship.IPProtocol{boship.IPv4, boship.IPv6} {
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %s", ipProtocol)
 			It(title, func() {
 				defaultNetwork := boshsettings.Network{}
 				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork

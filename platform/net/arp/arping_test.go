@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/coreos/go-iptables/iptables"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -20,7 +19,7 @@ type failingInterfaceAddress struct{}
 
 func (ia failingInterfaceAddress) GetInterfaceName() string { return "eth0" }
 
-func (ia failingInterfaceAddress) GetIP(ipProtocol iptables.Protocol) (string, error) {
+func (ia failingInterfaceAddress) GetIP(ipProtocol boship.IPProtocol) (string, error) {
 	return "", errors.New("fake-get-ip-err")
 }
 

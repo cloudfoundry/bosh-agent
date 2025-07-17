@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/coreos/go-iptables/iptables"
 	"github.com/google/uuid"
 
 	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
@@ -38,6 +37,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert/certfakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk/fakes"
@@ -290,8 +290,8 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		for _, ipProtocol := range []iptables.Protocol{iptables.ProtocolIPv4, iptables.ProtocolIPv6} {
-			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %t", ipProtocol)
+		for _, ipProtocol := range []boship.IPProtocol{boship.IPv4, boship.IPv6} {
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %s", ipProtocol)
 			It(title, func() {
 				defaultNetwork := boshsettings.Network{}
 				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork

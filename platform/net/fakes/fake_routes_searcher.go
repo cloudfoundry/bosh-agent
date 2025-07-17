@@ -2,7 +2,7 @@ package fakes
 
 import (
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
-	"github.com/coreos/go-iptables/iptables"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakeRoutesSearcher struct {
@@ -10,6 +10,6 @@ type FakeRoutesSearcher struct {
 	SearchRoutesErr    error
 }
 
-func (s *FakeRoutesSearcher) SearchRoutes(ipProtocol iptables.Protocol) ([]boshnet.Route, error) {
+func (s *FakeRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]boshnet.Route, error) {
 	return s.SearchRoutesRoutes, s.SearchRoutesErr
 }

@@ -3,12 +3,12 @@ package fakes
 import (
 	gonet "net"
 
-	"github.com/coreos/go-iptables/iptables"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakeReturn struct {
 	IFaceName  string
-	IpProtocol iptables.Protocol
+	IpProtocol boship.IPProtocol
 }
 
 type FakeResolver struct {
@@ -18,7 +18,7 @@ type FakeResolver struct {
 	GetPrimaryIPCalledWith    FakeReturn
 }
 
-func (r *FakeResolver) GetPrimaryIP(interfaceName string, ipProtocol iptables.Protocol) (*gonet.IPNet, error) {
+func (r *FakeResolver) GetPrimaryIP(interfaceName string, ipProtocol boship.IPProtocol) (*gonet.IPNet, error) {
 	r.GetPrimaryIPInterfaceName = interfaceName
 	r.GetPrimaryIPCalledWith.IFaceName = interfaceName
 	r.GetPrimaryIPCalledWith.IpProtocol = ipProtocol

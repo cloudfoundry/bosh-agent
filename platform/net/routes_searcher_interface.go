@@ -1,7 +1,7 @@
 package net
 
 import (
-	"github.com/coreos/go-iptables/iptables"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type Route struct {
@@ -12,19 +12,19 @@ type Route struct {
 }
 
 type RoutesSearcher interface {
-	SearchRoutes(ipProtocol iptables.Protocol) ([]Route, error)
+	SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, error)
 }
 
 const DefaultAddress = `0.0.0.0`
 const DefaultAddressIpv6 = `::`
 
-func (r Route) IsDefault(ipProtocol iptables.Protocol) bool {
+func (r Route) IsDefault(ipProtocol boship.IPProtocol) bool {
 	var isDefault bool
 
 	switch ipProtocol {
-	case iptables.ProtocolIPv4:
+	case boship.IPv4:
 		isDefault = r.Destination == DefaultAddress
-	case iptables.ProtocolIPv6:
+	case boship.IPv6:
 		isDefault = r.Destination == DefaultAddressIpv6
 	}
 	return isDefault
