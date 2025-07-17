@@ -84,7 +84,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			}
 		})
 
-		It("enables IPv6 if there are any IPv6 addresses", func() {
+		It("enables IPv6 if there are any static IPv6 addresses", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
 				IP:      "2601:646:100:e8e8::103",
@@ -100,6 +100,28 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			})
 
 			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeTrue())
+		})
+
+		It("enables IPv6 if there are any dhcp IPv6 addresses", func() {
+			dhcp1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "2601:646:100:e8e8::103",
+				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				Gateway: "2601:646:100:e8e8::",
+				Default: []string{"gateway", "dns"},
+				DNS:     []string{"8.8.8.8", "9.9.9.9"},
+				Mac:     "mac1",
+				UseDHCP: true,
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp1": dhcp1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": dhcp1Net}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(kernelIPv6.Enabled).To(BeTrue())
@@ -127,7 +149,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-err"))
 		})
 
-		It("does not enable IPv6 if there aren't any IPv6 addresses", func() {
+		It("does not enable IPv6 if there aren't any static IPv6 addresses", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
 				IP:      "1.2.3.4",
@@ -142,6 +164,27 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			})
 
 			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeFalse())
+		})
+
+		It("does not enable IPv6 if there aren't any dhcp IPv6 addresses", func() {
+			dhcp1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Default: nil,
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "mac2",
+				UseDHCP: true,
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethstatic2": dhcp1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": dhcp1Net}, "", nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(kernelIPv6.Enabled).To(BeFalse())
