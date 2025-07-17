@@ -12,6 +12,7 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshplatform "github.com/cloudfoundry/bosh-agent/v2/platform"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
@@ -31,7 +32,7 @@ func NewProvider(
 	fs := platform.GetFs()
 	runner := platform.GetRunner()
 
-	network, err := platform.GetDefaultNetwork()
+	network, err := platform.GetDefaultNetwork(boship.IPv4)
 	var machineIP string
 	if err != nil {
 		machineIP, _ = os.Hostname() //nolint:errcheck

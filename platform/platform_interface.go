@@ -10,6 +10,7 @@ import (
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -92,7 +93,7 @@ type Platform interface {
 	GetFilesContentsFromDisk(diskPath string, fileNames []string) (contents [][]byte, err error)
 
 	// Network misc
-	GetDefaultNetwork() (boshsettings.Network, error)
+	GetDefaultNetwork(ipProtocol boship.IPProtocol) (boshsettings.Network, error)
 	GetConfiguredNetworkInterfaces() ([]string, error)
 	PrepareForNetworkingChange() error
 	DeleteARPEntryWithIP(ip string) error

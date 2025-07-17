@@ -2,15 +2,25 @@ package fakes
 
 import (
 	gonet "net"
+
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
-type FakeResolver struct {
-	GetPrimaryIPv4InterfaceName string
-	GetPrimaryIPv4IPNet         *gonet.IPNet
-	GetPrimaryIPv4Err           error
+type FakeReturn struct {
+	IFaceName  string
+	IpProtocol boship.IPProtocol
 }
 
-func (r *FakeResolver) GetPrimaryIPv4(interfaceName string) (*gonet.IPNet, error) {
-	r.GetPrimaryIPv4InterfaceName = interfaceName
-	return r.GetPrimaryIPv4IPNet, r.GetPrimaryIPv4Err
+type FakeResolver struct {
+	GetPrimaryIPInterfaceName string
+	GetPrimaryIPNet           *gonet.IPNet
+	GetPrimaryIPErr           error
+	GetPrimaryIPCalledWith    FakeReturn
+}
+
+func (r *FakeResolver) GetPrimaryIP(interfaceName string, ipProtocol boship.IPProtocol) (*gonet.IPNet, error) {
+	r.GetPrimaryIPInterfaceName = interfaceName
+	r.GetPrimaryIPCalledWith.IFaceName = interfaceName
+	r.GetPrimaryIPCalledWith.IpProtocol = ipProtocol
+	return r.GetPrimaryIPNet, r.GetPrimaryIPErr
 }

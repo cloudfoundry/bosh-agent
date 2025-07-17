@@ -33,9 +33,9 @@ func (i InterfaceAddressesValidator) Attempt() (bool, error) {
 		}
 
 		var actualIPs []string
-		desiredIP, _ := desiredInterfaceAddress.GetIP() //nolint:errcheck
+		desiredIP, _ := desiredInterfaceAddress.GetIP(IPv4) //nolint:errcheck
 		for _, iface := range ifaces {
-			actualIP, _ := iface.GetIP() //nolint:errcheck
+			actualIP, _ := iface.GetIP(IPv4) //nolint:errcheck
 
 			if desiredIP == actualIP {
 				return false, nil

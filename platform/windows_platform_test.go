@@ -37,6 +37,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert/certfakes"
 	fakeplat "github.com/cloudfoundry/bosh-agent/v2/platform/fakes"
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 	fakedisk "github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk/fakes"
@@ -289,15 +290,17 @@ var _ = Describe("WindowsPlatform", func() {
 	})
 
 	Describe("GetDefaultNetwork", func() {
-		It("delegates to the defaultNetworkResolver", func() {
-			defaultNetwork := boshsettings.Network{IP: "1.2.3.4"}
-			fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
-
-			network, err := platform.GetDefaultNetwork()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(network).To(Equal(defaultNetwork))
-		})
+		for _, ipProtocol := range []boship.IPProtocol{boship.IPv4, boship.IPv6} {
+			title := fmt.Sprintf("delegates to the defaultNetworkResolver with input param %s", ipProtocol)
+			It(title, func() {
+				defaultNetwork := boshsettings.Network{}
+				fakeDefaultNetworkResolver.GetDefaultNetworkNetwork = defaultNetwork
+				network, err := platform.GetDefaultNetwork(ipProtocol)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(network).To(Equal(defaultNetwork))
+				Expect(fakeDefaultNetworkResolver.GetDefaultNetworkCalledWith).To(Equal(ipProtocol))
+			})
+		}
 	})
 
 	Describe("SetTimeWithNtpServers", func() {

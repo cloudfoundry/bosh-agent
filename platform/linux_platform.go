@@ -24,6 +24,7 @@ import (
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
@@ -1530,8 +1531,8 @@ func (p linux) DeleteARPEntryWithIP(ip string) error {
 	return nil
 }
 
-func (p linux) GetDefaultNetwork() (boshsettings.Network, error) {
-	return p.defaultNetworkResolver.GetDefaultNetwork()
+func (p linux) GetDefaultNetwork(ipProtocol boship.IPProtocol) (boshsettings.Network, error) {
+	return p.defaultNetworkResolver.GetDefaultNetwork(ipProtocol)
 }
 
 func (p linux) calculateEphemeralDiskPartitionSizes(diskSizeInBytes uint64, desiredSwapSizeInBytes *uint64) (uint64, uint64, error) {

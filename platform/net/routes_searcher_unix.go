@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -27,7 +28,7 @@ func NewRoutesSearcher(logger boshlog.Logger, runner boshsys.CmdRunner, _ Interf
 }
 
 func parseRoute(ipString string) (Route, error) {
-	var r = regexp.MustCompile(`(?P<destination>[a-z0-9.]+)(/[0-9]+)?( via (?P<gateway>[0-9.]+))? dev (?P<interfaceName>[a-z0-9]+)`)
+	var r = regexp.MustCompile(`(?P<destination>[a-z0-9.:]+)(/[0-9]+)?( via (?P<gateway>[a-f0-9.:]+))? dev (?P<interfaceName>[a-z0-9]+)`)
 
 	match := r.FindStringSubmatch(ipString)
 	if len(match) == 0 {
@@ -37,14 +38,22 @@ func parseRoute(ipString string) (Route, error) {
 	for i, name := range r.SubexpNames() {
 		matches[name] = match[i]
 	}
-	gateway := DefaultAddress
-	if len(matches["gateway"]) > 0 {
-		gateway = matches["gateway"]
-	}
 
 	destination := matches["destination"]
+	gateway := matches["gateway"]
+
+	defaultGateway := DefaultAddress
+
+	if strings.Contains(destination, ":") || strings.Contains(gateway, ":") {
+		defaultGateway = DefaultAddressIpv6
+	}
+
+	if len(gateway) == 0 {
+		gateway = defaultGateway
+	}
+
 	if destination == "default" {
-		destination = DefaultAddress
+		destination = defaultGateway
 	}
 
 	return Route{
@@ -54,10 +63,20 @@ func parseRoute(ipString string) (Route, error) {
 	}, nil
 }
 
-func (s cmdRoutesSearcher) SearchRoutes() ([]Route, error) {
-	stdout, _, _, err := s.runner.RunCommandQuietly("ip", "r")
-	if err != nil {
-		return []Route{}, bosherr.WrapError(err, "Running route")
+func (s cmdRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, error) {
+	var stdout string
+	var err error
+	switch ipProtocol {
+	case boship.IPv4:
+		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "r")
+		if err != nil {
+			return []Route{}, bosherr.WrapError(err, "Running IPv4 route")
+		}
+	case boship.IPv6:
+		stdout, _, _, err = s.runner.RunCommandQuietly("ip", "-6", "r")
+		if err != nil {
+			return []Route{}, bosherr.WrapError(err, "Running IPv6 route")
+		}
 	}
 
 	routeEntries := strings.Split(stdout, "\n")
