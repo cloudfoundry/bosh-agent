@@ -1,8 +1,8 @@
-# code.cloudfoundry.org/clock v1.41.0
+# code.cloudfoundry.org/clock v1.42.0
 ## explicit; go 1.23.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.30.0
+# code.cloudfoundry.org/tlsconfig v0.31.0
 ## explicit; go 1.23.0
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.0.0-20221128193559-754e69321358
@@ -72,12 +72,12 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.9.7
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.425
+# github.com/cloudfoundry/bosh-davcli v0.0.427
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.548
+# github.com/cloudfoundry/bosh-utils v0.0.551
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -99,7 +99,7 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851
 ## explicit; go 1.21.0
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.95
+# github.com/cloudfoundry/gosigar v1.3.96
 ## explicit; go 1.23.0
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
@@ -234,8 +234,8 @@ github.com/masterzen/simplexml/dom
 ## explicit; go 1.21
 github.com/masterzen/winrm
 github.com/masterzen/winrm/soap
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
-## explicit; go 1.23
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
+## explicit; go 1.23.0
 github.com/maxbrunsfeld/counterfeiter/v6
 github.com/maxbrunsfeld/counterfeiter/v6/arguments
 github.com/maxbrunsfeld/counterfeiter/v6/command
@@ -352,7 +352,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20250711185948-6ae5c78190dc
+# golang.org/x/exp/typeparams v0.0.0-20250718183923-645b1fa84792
 ## explicit; go 1.23.0
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.26.0

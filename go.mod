@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.23.0
 
 require (
-	code.cloudfoundry.org/clock v1.41.0
-	code.cloudfoundry.org/tlsconfig v0.30.0
+	code.cloudfoundry.org/clock v1.42.0
+	code.cloudfoundry.org/tlsconfig v0.31.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.7
-	github.com/cloudfoundry/bosh-davcli v0.0.425
-	github.com/cloudfoundry/bosh-utils v0.0.548
-	github.com/cloudfoundry/gosigar v1.3.95
+	github.com/cloudfoundry/bosh-davcli v0.0.427
+	github.com/cloudfoundry/bosh-utils v0.0.551
+	github.com/cloudfoundry/gosigar v1.3.96
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -18,7 +18,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.2.0
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.43.0
 	github.com/onsi/ginkgo/v2 v2.23.4
@@ -76,7 +76,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20250711185948-6ae5c78190dc // indirect
+	golang.org/x/exp/typeparams v0.0.0-20250718183923-645b1fa84792 // indirect
 	golang.org/x/mod v0.26.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
