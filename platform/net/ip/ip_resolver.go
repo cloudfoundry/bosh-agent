@@ -49,7 +49,7 @@ func (r ipResolver) GetPrimaryIP(interfaceName string, ipProtocol IPProtocol) (*
 			continue
 		}
 
-		if ip.IP.To16() != nil && ip.IP.IsGlobalUnicast() && ipProtocol == IPv6 {
+		if ip.IP.To4() == nil && ip.IP.IsGlobalUnicast() && ipProtocol == IPv6 {
 			return ip, nil
 		}
 
