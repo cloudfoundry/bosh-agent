@@ -78,18 +78,18 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
-				boship.NewSimpleInterfaceAddress("ethstatic1", "2601:646:100:e8e8::103"),
+				boship.NewSimpleInterfaceAddress("ethstatic1", "2001:db8::103"),
 				boship.NewSimpleInterfaceAddress("ethstatic2", "1.2.3.4"),
-				boship.NewSimpleInterfaceAddress("ethstatic3", "2601:646:100:eeee::10"),
+				boship.NewSimpleInterfaceAddress("ethstatic3", "3fff::100"),
 			}
 		})
 
 		It("enables IPv6 if there are any static IPv6 addresses", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -108,9 +108,9 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		It("enables IPv6 if there are any dhcp IPv6 addresses", func() {
 			dhcp1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -130,9 +130,9 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		It("returns error if enabling IPv6 in kernel fails", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -193,9 +193,9 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 		It("writes /etc/network/interfaces with static inet6 configuration when manual network is used", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -210,7 +210,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			}
 			static3Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:eeee::10",
+				IP:      "3fff::100",
 				Netmask: "ffff:ffff:ffff:ffff:ffff:0000:0000:0000",
 				Gateway: "2601:646:100:eeee::",
 				Default: []string{},
@@ -245,10 +245,10 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 Name=ethstatic1
 
 [Address]
-Address=2601:646:100:e8e8::103/64
+Address=2001:db8::103/64
 
 [Network]
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
@@ -275,7 +275,7 @@ DNS=9.9.9.9
 Name=ethstatic3
 
 [Address]
-Address=2601:646:100:eeee::10/80
+Address=3fff::100/80
 
 [Network]
 IPv6AcceptRA=true
@@ -288,16 +288,16 @@ DNS=9.9.9.9
 		It("configures postup routes for static network", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
 				Routes: []boshsettings.Route{
 					boshsettings.Route{
 						Destination: "2001:db8:1234::",
-						Gateway:     "2601:646:100:e8e8::",
+						Gateway:     "2001:db8::1",
 						Netmask:     "ffff:ffff:ffff:0000:0000:0000:0000:0000",
 					},
 				},
@@ -324,17 +324,17 @@ DNS=9.9.9.9
 Name=ethstatic1
 
 [Address]
-Address=2601:646:100:e8e8::103/64
+Address=2001:db8::103/64
 
 [Network]
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
 
 [Route]
 Destination=2001:db8:1234::/48
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 
 `))
 		})
