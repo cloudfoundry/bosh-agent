@@ -1,6 +1,7 @@
 package ip
 
 import (
+	"fmt"
 	gonet "net"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -14,6 +15,13 @@ func NetworkInterfaceToAddrsFunc(interfaceName string) ([]gonet.Addr, error) {
 		return []gonet.Addr{}, bosherr.WrapErrorf(err, "Searching for '%s' interface", interfaceName)
 	}
 
+	// Retrieve addresses associated with the interface
+	addrs, _ := iface.Addrs()
+
+	fmt.Printf("Interface: %s\n", iface.Name)
+	for _, addr := range addrs {
+		fmt.Printf("  Address: %v\n", addr)
+	}
 	return iface.Addrs()
 }
 

@@ -80,12 +80,15 @@ func (s cmdRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, 
 	}
 
 	routeEntries := strings.Split(stdout, "\n")
+	s.logger.Warn("SearchRoutes", "SEARCH ROUTES: %s", routeEntries)
 	routes := make([]Route, 0, len(routeEntries))
 	for _, routeEntry := range routeEntries {
 		if len(routeEntry) == 0 {
 			continue
 		}
 		route, err := parseRoute(routeEntry)
+		s.logger.Warn("SearchRoutes", "PARSE ROUTE '%s': %s", routeEntry, route)
+
 		if err != nil {
 			s.logger.Warn("SearchRoutes", "parseRoute error for route '%s': %s", routeEntry, err.Error())
 			continue
