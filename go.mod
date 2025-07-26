@@ -8,8 +8,8 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.7
-	github.com/cloudfoundry/bosh-davcli v0.0.427
-	github.com/cloudfoundry/bosh-utils v0.0.551
+	github.com/cloudfoundry/bosh-davcli v0.0.428
+	github.com/cloudfoundry/bosh-utils v0.0.552
 	github.com/cloudfoundry/gosigar v1.3.96
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -22,7 +22,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.43.0
 	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.37.0
+	github.com/onsi/gomega v1.38.0
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
