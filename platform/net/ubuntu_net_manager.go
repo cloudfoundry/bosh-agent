@@ -364,6 +364,12 @@ func interfaceConfigurationFile(name string) string {
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
+type MultipleDHCPInterfaceConfiguration struct {
+	boolean      bool
+	PostUpRoutes []boshsettings.Routes
+	Address      []string
+}
+
 func (net UbuntuNetManager) writeNetworkInterfaces(
 	dhcpConfigs DHCPInterfaceConfigurations,
 	staticConfigs StaticInterfaceConfigurations,
@@ -386,6 +392,21 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	}
 
 	anyChanged := false
+
+	multiple_dhcp_configs_for_one_interface := make(map[string]MultipleDHCPInterfaceConfiguration)
+	for _, dynamicAddressConfiguration := range dhcpConfigs {
+		if _, ok := multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name]; ok {
+			multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name].PostUpRoutes = append(multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name].PostUpRoutes, dynamicAddressConfiguration.PostUpRoutes)
+			multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name].Address = append(multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name].Address, dynamicAddressConfiguration.Address)
+			multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name].boolean = true
+		} else {
+			multiple_dhcp_configs_for_one_interface[dynamicAddressConfiguration.Name] = MultipleDHCPInterfaceConfiguration{
+				boolean: false,
+				PostUpRoutes: []boshsettings.Route{dynamicAddressConfiguration.PostUpRoutes},
+				Address: []string{dynamicAddressConfiguration.Address},
+		}
+	}
+
 	for _, dynamicAddressConfiguration := range dhcpConfigs {
 		changed, err := net.writeDynamicInterfaceConfiguration(dynamicAddressConfiguration, dnsServers, opts)
 		if err != nil {

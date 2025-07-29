@@ -85,7 +85,10 @@ func (s cmdRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, 
 		if len(routeEntry) == 0 {
 			continue
 		}
+		s.logger.Debug("SearchRoutes", "Parsing route entry: '%s'", routeEntry)
 		route, err := parseRoute(routeEntry)
+		s.logger.Debug("SearchRoutes", "Parsed route entry: '%s'", route)
+
 		if err != nil {
 			s.logger.Warn("SearchRoutes", "parseRoute error for route '%s': %s", routeEntry, err.Error())
 			continue
@@ -93,5 +96,6 @@ func (s cmdRoutesSearcher) SearchRoutes(ipProtocol boship.IPProtocol) ([]Route, 
 		routes = append(routes, route)
 	}
 
+	s.logger.Debug("SearchRoutes", "Found routes: %v", routes)
 	return routes, nil
 }
