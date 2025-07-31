@@ -432,6 +432,28 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 					}))
 				})
 			})
+
+			Context("when multiple networks for one interface exist", func() {
+				BeforeEach(func() {
+					networks["foo"] = dhcpNetwork
+					networks["bar"] = dhcpNetwork
+					interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+				})
+				It("creates interface configurations for each network", func() {
+					_, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(dhcpInterfaceConfigurations).To(ConsistOf([]DHCPInterfaceConfiguration{
+						{
+							Name: "dhcp-interface-name",
+						},
+						{
+							Name: "dhcp-interface-name",
+						},
+					}))
+				})
+			})
+
 		})
 
 		Context("when the number of networks does not match the number of devices", func() {
