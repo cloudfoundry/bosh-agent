@@ -127,7 +127,7 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration")
 	}
-	if StaticInterfaceConfigurations(staticConfigs).HasVersion6() {
+	if StaticInterfaceConfigurations(staticConfigs).HasVersion6() || DHCPInterfaceConfigurations(dhcpConfigs).HasVersion6() {
 		err := net.kernelIPv6.Enable(make(chan struct{}))
 		if err != nil {
 			return bosherr.WrapError(err, "Enabling IPv6 in kernel")
