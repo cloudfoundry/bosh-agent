@@ -378,18 +378,14 @@ func (n Network) IsDefaultFor(category string) bool {
 }
 
 func (n Networks) NetworksForMac(mac string) ([]Network, bool) {
-	networks := []Network{} // Initialize an empty slice of Network
+	var networks []Network // Initialize an empty slice of Network
 	for _, network := range n {
 		if network.Mac == mac {
 			networks = append(networks, network) // Append matching networks
 		}
 	}
 
-	if len(networks) > 0 {
-		return networks, true // Return the first match
-	}
-
-	return []Network{}, false
+	return networks, len(networks) > 0
 }
 
 func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
