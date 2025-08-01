@@ -18,6 +18,10 @@ var _ = Describe("Route", func() {
 			Expect(Route{Destination: "::"}.IsDefault(boship.IPv6)).To(BeTrue())
 		})
 
+		It("returns false if destination is not ::", func() {
+			Expect(Route{Destination: "::1"}.IsDefault(boship.IPv6)).To(BeFalse())
+		})
+
 		It("returns false if destination is not 0.0.0.0", func() {
 			Expect(Route{}.IsDefault(boship.IPv4)).To(BeFalse())
 			Expect(Route{Destination: "1.1.1.1"}.IsDefault(boship.IPv4)).To(BeFalse())
