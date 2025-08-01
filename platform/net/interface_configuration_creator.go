@@ -160,7 +160,7 @@ func (creator interfaceConfigurationCreator) createMultipleInterfaceConfiguratio
 
 	// create interface configuration for networks that have a MAC specified
 	for mac, ifaceName := range interfacesByMAC {
-		networksSettings, _ := networks.NetworksForMac(mac)
+		networksSettings := networks.NetworksForMac(mac)
 		for _, networkSettings = range networksSettings {
 			staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, ifaceName, networkSettings)
 			if err != nil {
