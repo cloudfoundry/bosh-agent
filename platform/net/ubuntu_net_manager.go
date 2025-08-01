@@ -364,11 +364,6 @@ func interfaceConfigurationFile(name string) string {
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
-type MultipleDHCPInterfaceConfiguration struct {
-	PostUpRoutes []boshsettings.Routes
-	Address      []string
-}
-
 func (net UbuntuNetManager) writeNetworkInterfaces(
 	dhcpConfigs DHCPInterfaceConfigurations,
 	staticConfigs StaticInterfaceConfigurations,
