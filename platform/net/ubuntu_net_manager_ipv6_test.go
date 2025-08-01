@@ -136,6 +136,12 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 				Gateway: "3.4.5.6",
 				Mac:     "mac1",
 				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "1.2.3.4",
+					Gateway:     "3.4.5.6",
+					Netmask:     "255.255.255.0",
+				},
+				},
 			}
 			static2Net := boshsettings.Network{
 				Type:    "manual",
@@ -146,6 +152,12 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
 				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "2601:646:100:e8e8::103",
+					Gateway:     "2601:646:100:e8e8::",
+					Netmask:     "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				},
+				},
 			}
 
 			stubInterfaces(map[string]boshsettings.Network{
@@ -179,6 +191,13 @@ DNS=9.9.9.9
 UseDomains=yes
 UseMTU=yes
 
+[Route]
+Destination=1.2.3.4/24
+Gateway=3.4.5.6
+
+[Route]
+Destination=2601:646:100:e8e8::103/64
+Gateway=2601:646:100:e8e8::
 `))
 		})
 

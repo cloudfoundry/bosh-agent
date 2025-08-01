@@ -396,13 +396,13 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		}
 	}
 
-	for _, dynamicAddressConfiguration := range dhcpConfigsForOneInterface {
-		changed, err := net.writeDynamicInterfaceConfiguration(dynamicAddressConfiguration, dnsServers, opts)
+	for interfaceName, dynamicAddressConfigurations := range dhcpConfigsForOneInterface {
+		changed, err := net.writeDynamicInterfaceConfiguration(dynamicAddressConfigurations, dnsServers, opts)
 		if err != nil {
-			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", dynamicAddressConfiguration[0].Name))
+			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", interfaceName))
 		}
 
-		newNetworkFile := interfaceConfigurationFile(dynamicAddressConfiguration[0].Name)
+		newNetworkFile := interfaceConfigurationFile(interfaceName)
 		if _, ok := staleNetworkConfigFiles[newNetworkFile]; ok {
 			staleNetworkConfigFiles[newNetworkFile] = false
 		}
@@ -512,6 +512,7 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(config StaticInter
 
 func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInterfaceConfigurations, dnsServers []string, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
 	var err error
+	// all configs share the same name, so we just use the name from the first config
 	configPath := interfaceConfigurationFile(configs[0].Name)
 
 	file := ini.Empty()
