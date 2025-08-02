@@ -3,12 +3,12 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.23.0
 
 require (
-	code.cloudfoundry.org/clock v1.42.0
+	code.cloudfoundry.org/clock v1.43.0
 	code.cloudfoundry.org/tlsconfig v0.31.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.7
-	github.com/cloudfoundry/bosh-davcli v0.0.428
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.8
+	github.com/cloudfoundry/bosh-davcli v0.0.429
 	github.com/cloudfoundry/bosh-utils v0.0.552
 	github.com/cloudfoundry/gosigar v1.3.96
 	github.com/containerd/cgroups v1.1.0
@@ -20,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20240702205601-3fad6e106085
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.43.0
+	github.com/nats-io/nats.go v1.44.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.38.0
 	github.com/opencontainers/runtime-spec v1.2.1
