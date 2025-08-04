@@ -17,6 +17,8 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 		staticNetworkWithoutMAC         boshsettings.Network
 		staticNetworkWithDefaultGateway boshsettings.Network
 		dhcpNetwork                     boshsettings.Network
+		staticNetworkipv6               boshsettings.Network
+		anotherStaticNetworkipv6        boshsettings.Network
 	)
 
 	BeforeEach(func() {
@@ -27,6 +29,18 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 			Default: []string{"dns"},
 			DNS:     []string{"8.8.8.8", "9.9.9.9"},
 			Mac:     "fake-dhcp-mac-address",
+		}
+		staticNetworkipv6 = boshsettings.Network{
+			Type:    "manual",
+			IP:      "2001:db8::1",
+			Mac:     "fake-static-mac-address",
+			UseDHCP: true,
+		}
+		anotherStaticNetworkipv6 = boshsettings.Network{
+			Type:    "manual",
+			IP:      "2001:db8::2",
+			Mac:     "fake-static-mac-address",
+			UseDHCP: true,
 		}
 		staticNetwork = boshsettings.Network{
 			IP:      "1.2.3.4",
@@ -432,6 +446,51 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 					}))
 				})
 			})
+
+			Context("when multiple networks for one interface exist", func() {
+				BeforeEach(func() {
+					networks["foo"] = dhcpNetwork
+					networks["bar"] = dhcpNetwork
+					interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+				})
+				It("creates interface configurations for each network", func() {
+					_, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(dhcpInterfaceConfigurations).To(ConsistOf([]DHCPInterfaceConfiguration{
+						{
+							Name: "dhcp-interface-name",
+						},
+						{
+							Name: "dhcp-interface-name",
+						},
+					}))
+				})
+			})
+
+			Context("when multiple networks with ipv6 for one interface exist", func() {
+				BeforeEach(func() {
+					networks["foo"] = staticNetworkipv6
+					networks["bar"] = anotherStaticNetworkipv6
+					interfacesByMAC[staticNetworkipv6.Mac] = "dhcp-interface-name"
+				})
+				It("creates interface configurations for each network", func() {
+					_, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(dhcpInterfaceConfigurations).To(ConsistOf([]DHCPInterfaceConfiguration{
+						{
+							Name:    "dhcp-interface-name",
+							Address: "2001:db8::1",
+						},
+						{
+							Name:    "dhcp-interface-name",
+							Address: "2001:db8::2",
+						},
+					}))
+				})
+			})
+
 		})
 
 		Context("when the number of networks does not match the number of devices", func() {
