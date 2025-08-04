@@ -389,11 +389,10 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 
 	dhcpConfigsForOneInterface := make(map[string]DHCPInterfaceConfigurations)
 	for _, dynamicAddressConfiguration := range dhcpConfigs {
-		if _, ok := dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name]; ok {
-			dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name] = append(dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name], dynamicAddressConfiguration)
-		} else {
-			dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name] = DHCPInterfaceConfigurations{dynamicAddressConfiguration}
-		}
+		dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name] = append(
+			dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name],
+			dynamicAddressConfiguration,
+		)
 	}
 
 	for interfaceName, dynamicAddressConfigurations := range dhcpConfigsForOneInterface {

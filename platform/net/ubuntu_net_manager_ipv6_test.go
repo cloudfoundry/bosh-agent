@@ -202,8 +202,8 @@ Gateway=3.4.5.6
 `)).To(BeTrue())
 			Expect(strings.Contains(networkConfig.StringContents(), `
 [Route]
-Destination=2601:646:100:e8e8::103/64
-Gateway=2601:646:100:e8e8::
+Destination=2001:db8:1234::/48
+Gateway=2001:db8::1
 `)).To(BeTrue())
 		})
 
