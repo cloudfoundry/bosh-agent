@@ -473,8 +473,8 @@ func (n Networks) IsPreconfigured() bool {
 
 func (n Network) String() string {
 	return fmt.Sprintf(
-		"type: '%s', ip: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t', preconfigured: '%t', use_dhcp: '%t'",
-		n.Type, n.IP, n.Netmask, n.Gateway, n.Mac, n.Resolved, n.Preconfigured, n.UseDHCP,
+		"type: '%s', ip: '%s', prefix: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t', preconfigured: '%t', use_dhcp: '%t'",
+		n.Type, n.IP, n.Prefix, n.Netmask, n.Gateway, n.Mac, n.Resolved, n.Preconfigured, n.UseDHCP,
 	)
 }
 
