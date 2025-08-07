@@ -5,6 +5,7 @@ package net_test
 
 import (
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -78,18 +79,18 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
-				boship.NewSimpleInterfaceAddress("ethstatic1", "2601:646:100:e8e8::103"),
+				boship.NewSimpleInterfaceAddress("ethstatic1", "2001:db8::103"),
 				boship.NewSimpleInterfaceAddress("ethstatic2", "1.2.3.4"),
-				boship.NewSimpleInterfaceAddress("ethstatic3", "2601:646:100:eeee::10"),
+				boship.NewSimpleInterfaceAddress("ethstatic3", "3fff::100"),
 			}
 		})
 
-		It("enables IPv6 if there are any IPv6 addresses", func() {
+		It("enables IPv6 if there are any static IPv6 addresses", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -105,12 +106,113 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(kernelIPv6.Enabled).To(BeTrue())
 		})
 
+		It("enables IPv6 if there are any dhcp IPv6 addresses", func() {
+			dhcp1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "2001:db8::103",
+				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				Gateway: "2001:db8::1",
+				Default: []string{"gateway", "dns"},
+				DNS:     []string{"8.8.8.8", "9.9.9.9"},
+				Mac:     "mac1",
+				UseDHCP: true,
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp1": dhcp1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": dhcp1Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeTrue())
+		})
+
+		It("enables IPv6 if there are IPv4 and IPv6 addresses with the same mac address", func() {
+			static1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Default: nil,
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "mac1",
+				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "1.2.3.4",
+					Gateway:     "3.4.5.6",
+					Netmask:     "255.255.255.0",
+				},
+				},
+			}
+			static2Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "2001:db8::103",
+				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				Gateway: "2001:db8::1",
+				Default: []string{"gateway", "dns"},
+				DNS:     []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
+				Mac:     "mac1",
+				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "2001:db8:1234::",
+					Gateway:     "2001:db8::1",
+					Netmask:     "ffff:ffff:ffff:0000:0000:0000:0000:0000",
+				},
+				},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethstatic1": static1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net, "net2": static2Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeTrue())
+
+			matches, err := fs.Ls("/etc/systemd/network/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(matches).To(ConsistOf(
+				"/etc/systemd/network/10_ethstatic1.network",
+			))
+
+			networkConfig := fs.GetFileTestStat("/etc/systemd/network/10_ethstatic1.network")
+			Expect(networkConfig).ToNot(BeNil())
+
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Match]
+Name=ethstatic1
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Network]
+DHCP=yes
+IPv6AcceptRA=true
+DNS=2001:4860:4860::8888
+DNS=2001:4860:4860::8844
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[DHCP]
+UseDomains=yes
+UseMTU=yes
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Route]
+Destination=1.2.3.4/24
+Gateway=3.4.5.6
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Route]
+Destination=2001:db8:1234::/48
+Gateway=2001:db8::1
+`)).To(BeTrue())
+		})
+
 		It("returns error if enabling IPv6 in kernel fails", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -127,7 +229,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(err.Error()).To(ContainSubstring("fake-err"))
 		})
 
-		It("does not enable IPv6 if there aren't any IPv6 addresses", func() {
+		It("does not enable IPv6 if there aren't any static IPv6 addresses", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
 				IP:      "1.2.3.4",
@@ -147,12 +249,33 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(kernelIPv6.Enabled).To(BeFalse())
 		})
 
+		It("does not enable IPv6 if there aren't any dhcp IPv6 addresses", func() {
+			dhcp1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Default: nil,
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "mac2",
+				UseDHCP: true,
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethstatic2": dhcp1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": dhcp1Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeFalse())
+		})
+
 		It("writes /etc/network/interfaces with static inet6 configuration when manual network is used", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
@@ -167,7 +290,7 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			}
 			static3Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:eeee::10",
+				IP:      "3fff::100",
 				Netmask: "ffff:ffff:ffff:ffff:ffff:0000:0000:0000",
 				Gateway: "2601:646:100:eeee::",
 				Default: []string{},
@@ -202,10 +325,10 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 Name=ethstatic1
 
 [Address]
-Address=2601:646:100:e8e8::103/64
+Address=2001:db8::103/64
 
 [Network]
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
@@ -232,7 +355,7 @@ DNS=9.9.9.9
 Name=ethstatic3
 
 [Address]
-Address=2601:646:100:eeee::10/80
+Address=3fff::100/80
 
 [Network]
 IPv6AcceptRA=true
@@ -245,16 +368,16 @@ DNS=9.9.9.9
 		It("configures postup routes for static network", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
-				IP:      "2601:646:100:e8e8::103",
+				IP:      "2001:db8::103",
 				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
-				Gateway: "2601:646:100:e8e8::",
+				Gateway: "2001:db8::1",
 				Default: []string{"gateway", "dns"},
 				DNS:     []string{"8.8.8.8", "9.9.9.9"},
 				Mac:     "mac1",
 				Routes: []boshsettings.Route{
 					boshsettings.Route{
 						Destination: "2001:db8:1234::",
-						Gateway:     "2601:646:100:e8e8::",
+						Gateway:     "2001:db8::1",
 						Netmask:     "ffff:ffff:ffff:0000:0000:0000:0000:0000",
 					},
 				},
@@ -281,17 +404,17 @@ DNS=9.9.9.9
 Name=ethstatic1
 
 [Address]
-Address=2601:646:100:e8e8::103/64
+Address=2001:db8::103/64
 
 [Network]
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
 
 [Route]
 Destination=2001:db8:1234::/48
-Gateway=2601:646:100:e8e8::
+Gateway=2001:db8::1
 
 `))
 		})
