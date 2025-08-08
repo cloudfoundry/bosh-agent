@@ -206,7 +206,7 @@ Destination=2001:db8:1234::/48
 Gateway=2001:db8::1
 `)).To(BeTrue())
 		})
-    
+
 		It("returns error if enabling IPv6 in kernel fails", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
