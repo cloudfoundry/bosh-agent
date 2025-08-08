@@ -487,6 +487,14 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		AfterEach(func() {
 			Expect(jobSupervisor.Stop()).To(Succeed())
 			Expect(jobSupervisor.RemoveAllJobs()).To(Succeed())
+
+			for _, proc := range conf.Processes {
+				Eventually(func() svc.State {
+					st, _ := GetServiceState(proc.Name)
+					return st
+				}, 30*time.Second, 500*time.Millisecond).Should(Equal(svc.Stopped))
+			}
+
 			Eventually(func() error { return fs.RemoveAll(jobDir) }, 60*time.Second).Should(Succeed())
 			Expect(fs.RemoveAll(logDir)).To(Succeed())
 		})
