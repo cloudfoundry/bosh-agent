@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	code.cloudfoundry.org/clock v1.43.0
-	code.cloudfoundry.org/tlsconfig v0.31.0
+	code.cloudfoundry.org/tlsconfig v0.32.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.8
@@ -27,10 +27,10 @@ require (
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/crypto v0.40.0
-	golang.org/x/net v0.42.0
-	golang.org/x/sys v0.34.0
-	golang.org/x/tools v0.35.0
+	golang.org/x/crypto v0.41.0
+	golang.org/x/net v0.43.0
+	golang.org/x/sys v0.35.0
+	golang.org/x/tools v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
@@ -76,10 +76,10 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20250718183923-645b1fa84792 // indirect
-	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20250808145144-a408d31f581a // indirect
+	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/text v0.27.0 // indirect
+	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
