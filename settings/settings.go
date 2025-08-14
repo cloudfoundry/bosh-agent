@@ -377,14 +377,18 @@ func (n Network) IsDefaultFor(category string) bool {
 	return stringArrayContains(n.Default, category)
 }
 
-func (n Networks) NetworkForMac(mac string) (Network, bool) {
-	for i := range n {
-		if n[i].Mac == mac {
-			return n[i], true
+func (n Networks) NetworksForMac(mac string) []Network {
+	var networks []Network
+	for _, network := range n {
+		if network.Mac == mac {
+			networks = append(networks, network)
 		}
 	}
+	if len(networks) == 0 {
+		networks = append(networks, Network{})
+	}
 
-	return Network{}, false
+	return networks
 }
 
 func (n Networks) DefaultNetworkFor(category string) (Network, bool) {
@@ -469,8 +473,8 @@ func (n Networks) IsPreconfigured() bool {
 
 func (n Network) String() string {
 	return fmt.Sprintf(
-		"type: '%s', ip: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t', preconfigured: '%t', use_dhcp: '%t'",
-		n.Type, n.IP, n.Netmask, n.Gateway, n.Mac, n.Resolved, n.Preconfigured, n.UseDHCP,
+		"type: '%s', ip: '%s', prefix: '%s', netmask: '%s', gateway: '%s', mac: '%s', resolved: '%t', preconfigured: '%t', use_dhcp: '%t'",
+		n.Type, n.IP, n.Prefix, n.Netmask, n.Gateway, n.Mac, n.Resolved, n.Preconfigured, n.UseDHCP,
 	)
 }
 

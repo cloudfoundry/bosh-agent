@@ -5,6 +5,7 @@ package net_test
 
 import (
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -125,6 +126,85 @@ var _ = Describe("UbuntuNetManager (IPv6)", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(kernelIPv6.Enabled).To(BeTrue())
+		})
+
+		It("enables IPv6 if there are IPv4 and IPv6 addresses with the same mac address", func() {
+			static1Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Default: nil,
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				Mac:     "mac1",
+				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "1.2.3.4",
+					Gateway:     "3.4.5.6",
+					Netmask:     "255.255.255.0",
+				},
+				},
+			}
+			static2Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "2001:db8::103",
+				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				Gateway: "2001:db8::1",
+				Default: []string{"gateway", "dns"},
+				DNS:     []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
+				Mac:     "mac1",
+				UseDHCP: true,
+				Routes: boshsettings.Routes{boshsettings.Route{
+					Destination: "2001:db8:1234::",
+					Gateway:     "2001:db8::1",
+					Netmask:     "ffff:ffff:ffff:0000:0000:0000:0000:0000",
+				},
+				},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethstatic1": static1Net,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"net1": static1Net, "net2": static2Net}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeTrue())
+
+			matches, err := fs.Ls("/etc/systemd/network/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(matches).To(ConsistOf(
+				"/etc/systemd/network/10_ethstatic1.network",
+			))
+
+			networkConfig := fs.GetFileTestStat("/etc/systemd/network/10_ethstatic1.network")
+			Expect(networkConfig).ToNot(BeNil())
+
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Match]
+Name=ethstatic1
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Network]
+DHCP=yes
+IPv6AcceptRA=true
+DNS=2001:4860:4860::8888
+DNS=2001:4860:4860::8844
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[DHCP]
+UseDomains=yes
+UseMTU=yes
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Route]
+Destination=1.2.3.4/24
+Gateway=3.4.5.6
+`)).To(BeTrue())
+			Expect(strings.Contains(networkConfig.StringContents(), `
+[Route]
+Destination=2001:db8:1234::/48
+Gateway=2001:db8::1
+`)).To(BeTrue())
 		})
 
 		It("returns error if enabling IPv6 in kernel fails", func() {
