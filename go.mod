@@ -4,13 +4,13 @@ go 1.23.0
 
 require (
 	code.cloudfoundry.org/clock v1.43.0
-	code.cloudfoundry.org/tlsconfig v0.32.0
+	code.cloudfoundry.org/tlsconfig v0.33.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.8
-	github.com/cloudfoundry/bosh-davcli v0.0.429
-	github.com/cloudfoundry/bosh-utils v0.0.552
-	github.com/cloudfoundry/gosigar v1.3.96
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.9
+	github.com/cloudfoundry/bosh-davcli v0.0.433
+	github.com/cloudfoundry/bosh-utils v0.0.553
+	github.com/cloudfoundry/gosigar v1.3.98
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -81,6 +81,6 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.7 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 )
