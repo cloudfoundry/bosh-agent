@@ -507,6 +507,17 @@ type FakePlatform struct {
 	setupDataDirReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupDynamicDiskStub        func(settings.DiskSettings) error
+	setupDynamicDiskMutex       sync.RWMutex
+	setupDynamicDiskArgsForCall []struct {
+		arg1 settings.DiskSettings
+	}
+	setupDynamicDiskReturns struct {
+		result1 error
+	}
+	setupDynamicDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupEphemeralDiskWithPathStub        func(string, *uint64, string) error
 	setupEphemeralDiskWithPathMutex       sync.RWMutex
 	setupEphemeralDiskWithPathArgsForCall []struct {
@@ -3267,6 +3278,67 @@ func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.setupDataDirReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDynamicDisk(arg1 settings.DiskSettings) error {
+	fake.setupDynamicDiskMutex.Lock()
+	ret, specificReturn := fake.setupDynamicDiskReturnsOnCall[len(fake.setupDynamicDiskArgsForCall)]
+	fake.setupDynamicDiskArgsForCall = append(fake.setupDynamicDiskArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	stub := fake.SetupDynamicDiskStub
+	fakeReturns := fake.setupDynamicDiskReturns
+	fake.recordInvocation("SetupDynamicDisk", []interface{}{arg1})
+	fake.setupDynamicDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCallCount() int {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	return len(fake.setupDynamicDiskArgsForCall)
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCalls(stub func(settings.DiskSettings) error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = stub
+}
+
+func (fake *FakePlatform) SetupDynamicDiskArgsForCall(i int) settings.DiskSettings {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	argsForCall := fake.setupDynamicDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturns(result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	fake.setupDynamicDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturnsOnCall(i int, result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	if fake.setupDynamicDiskReturnsOnCall == nil {
+		fake.setupDynamicDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupDynamicDiskReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
