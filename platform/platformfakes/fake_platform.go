@@ -8,13 +8,13 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 	"github.com/cloudfoundry/bosh-utils/fileutil"
 	"github.com/cloudfoundry/bosh-utils/system"
-	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakePlatform struct {
@@ -151,9 +151,10 @@ type FakePlatform struct {
 	getCopierReturnsOnCall map[int]struct {
 		result1 fileutil.Copier
 	}
-	GetDefaultNetworkStub        func() (settings.Network, error)
+	GetDefaultNetworkStub        func(ip.IPProtocol) (settings.Network, error)
 	getDefaultNetworkMutex       sync.RWMutex
 	getDefaultNetworkArgsForCall []struct {
+		arg1 ip.IPProtocol
 	}
 	getDefaultNetworkReturns struct {
 		result1 settings.Network
@@ -493,6 +494,17 @@ type FakePlatform struct {
 		result1 error
 	}
 	setupDataDirReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupDynamicDiskStub        func(settings.DiskSettings) error
+	setupDynamicDiskMutex       sync.RWMutex
+	setupDynamicDiskArgsForCall []struct {
+		arg1 settings.DiskSettings
+	}
+	setupDynamicDiskReturns struct {
+		result1 error
+	}
+	setupDynamicDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
 	SetupEphemeralDiskWithPathStub        func(string, *uint64, string) error
@@ -1421,17 +1433,18 @@ func (fake *FakePlatform) GetCopierReturnsOnCall(i int, result1 fileutil.Copier)
 	}{result1}
 }
 
-func (fake *FakePlatform) GetDefaultNetwork(ipProtocol boship.IPProtocol) (settings.Network, error) {
+func (fake *FakePlatform) GetDefaultNetwork(arg1 ip.IPProtocol) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
-	}{})
+		arg1 ip.IPProtocol
+	}{arg1})
 	stub := fake.GetDefaultNetworkStub
 	fakeReturns := fake.getDefaultNetworkReturns
-	fake.recordInvocation("GetDefaultNetwork", []interface{}{})
+	fake.recordInvocation("GetDefaultNetwork", []interface{}{arg1})
 	fake.getDefaultNetworkMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -1445,10 +1458,17 @@ func (fake *FakePlatform) GetDefaultNetworkCallCount() int {
 	return len(fake.getDefaultNetworkArgsForCall)
 }
 
-func (fake *FakePlatform) GetDefaultNetworkCalls(stub func() (settings.Network, error)) {
+func (fake *FakePlatform) GetDefaultNetworkCalls(stub func(ip.IPProtocol) (settings.Network, error)) {
 	fake.getDefaultNetworkMutex.Lock()
 	defer fake.getDefaultNetworkMutex.Unlock()
 	fake.GetDefaultNetworkStub = stub
+}
+
+func (fake *FakePlatform) GetDefaultNetworkArgsForCall(i int) ip.IPProtocol {
+	fake.getDefaultNetworkMutex.RLock()
+	defer fake.getDefaultNetworkMutex.RUnlock()
+	argsForCall := fake.getDefaultNetworkArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakePlatform) GetDefaultNetworkReturns(result1 settings.Network, result2 error) {
@@ -3188,6 +3208,67 @@ func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupDynamicDisk(arg1 settings.DiskSettings) error {
+	fake.setupDynamicDiskMutex.Lock()
+	ret, specificReturn := fake.setupDynamicDiskReturnsOnCall[len(fake.setupDynamicDiskArgsForCall)]
+	fake.setupDynamicDiskArgsForCall = append(fake.setupDynamicDiskArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	stub := fake.SetupDynamicDiskStub
+	fakeReturns := fake.setupDynamicDiskReturns
+	fake.recordInvocation("SetupDynamicDisk", []interface{}{arg1})
+	fake.setupDynamicDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCallCount() int {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	return len(fake.setupDynamicDiskArgsForCall)
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCalls(stub func(settings.DiskSettings) error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = stub
+}
+
+func (fake *FakePlatform) SetupDynamicDiskArgsForCall(i int) settings.DiskSettings {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	argsForCall := fake.setupDynamicDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturns(result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	fake.setupDynamicDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturnsOnCall(i int, result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	if fake.setupDynamicDiskReturnsOnCall == nil {
+		fake.setupDynamicDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupDynamicDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupEphemeralDiskWithPath(arg1 string, arg2 *uint64, arg3 string) error {
 	fake.setupEphemeralDiskWithPathMutex.Lock()
 	ret, specificReturn := fake.setupEphemeralDiskWithPathReturnsOnCall[len(fake.setupEphemeralDiskWithPathArgsForCall)]
@@ -4350,130 +4431,6 @@ func (fake *FakePlatform) UnmountPersistentDiskReturnsOnCall(i int, result1 bool
 func (fake *FakePlatform) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.addUserToGroupsMutex.RLock()
-	defer fake.addUserToGroupsMutex.RUnlock()
-	fake.adjustPersistentDiskPartitioningMutex.RLock()
-	defer fake.adjustPersistentDiskPartitioningMutex.RUnlock()
-	fake.associateDiskMutex.RLock()
-	defer fake.associateDiskMutex.RUnlock()
-	fake.createUserMutex.RLock()
-	defer fake.createUserMutex.RUnlock()
-	fake.deleteARPEntryWithIPMutex.RLock()
-	defer fake.deleteARPEntryWithIPMutex.RUnlock()
-	fake.deleteEphemeralUsersMatchingMutex.RLock()
-	defer fake.deleteEphemeralUsersMatchingMutex.RUnlock()
-	fake.getAgentSettingsPathMutex.RLock()
-	defer fake.getAgentSettingsPathMutex.RUnlock()
-	fake.getAuditLoggerMutex.RLock()
-	defer fake.getAuditLoggerMutex.RUnlock()
-	fake.getCertManagerMutex.RLock()
-	defer fake.getCertManagerMutex.RUnlock()
-	fake.getCompressorMutex.RLock()
-	defer fake.getCompressorMutex.RUnlock()
-	fake.getConfiguredNetworkInterfacesMutex.RLock()
-	defer fake.getConfiguredNetworkInterfacesMutex.RUnlock()
-	fake.getCopierMutex.RLock()
-	defer fake.getCopierMutex.RUnlock()
-	fake.getDefaultNetworkMutex.RLock()
-	defer fake.getDefaultNetworkMutex.RUnlock()
-	fake.getDevicePathResolverMutex.RLock()
-	defer fake.getDevicePathResolverMutex.RUnlock()
-	fake.getDirProviderMutex.RLock()
-	defer fake.getDirProviderMutex.RUnlock()
-	fake.getEphemeralDiskPathMutex.RLock()
-	defer fake.getEphemeralDiskPathMutex.RUnlock()
-	fake.getFileContentsFromCDROMMutex.RLock()
-	defer fake.getFileContentsFromCDROMMutex.RUnlock()
-	fake.getFilesContentsFromDiskMutex.RLock()
-	defer fake.getFilesContentsFromDiskMutex.RUnlock()
-	fake.getFsMutex.RLock()
-	defer fake.getFsMutex.RUnlock()
-	fake.getHostPublicKeyMutex.RLock()
-	defer fake.getHostPublicKeyMutex.RUnlock()
-	fake.getLogsTarProviderMutex.RLock()
-	defer fake.getLogsTarProviderMutex.RUnlock()
-	fake.getMonitCredentialsMutex.RLock()
-	defer fake.getMonitCredentialsMutex.RUnlock()
-	fake.getPersistentDiskSettingsPathMutex.RLock()
-	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
-	fake.getRunnerMutex.RLock()
-	defer fake.getRunnerMutex.RUnlock()
-	fake.getServiceManagerMutex.RLock()
-	defer fake.getServiceManagerMutex.RUnlock()
-	fake.getUpdateSettingsPathMutex.RLock()
-	defer fake.getUpdateSettingsPathMutex.RUnlock()
-	fake.getVitalsServiceMutex.RLock()
-	defer fake.getVitalsServiceMutex.RUnlock()
-	fake.isMountPointMutex.RLock()
-	defer fake.isMountPointMutex.RUnlock()
-	fake.isPersistentDiskMountableMutex.RLock()
-	defer fake.isPersistentDiskMountableMutex.RUnlock()
-	fake.isPersistentDiskMountedMutex.RLock()
-	defer fake.isPersistentDiskMountedMutex.RUnlock()
-	fake.migratePersistentDiskMutex.RLock()
-	defer fake.migratePersistentDiskMutex.RUnlock()
-	fake.mountPersistentDiskMutex.RLock()
-	defer fake.mountPersistentDiskMutex.RUnlock()
-	fake.prepareForNetworkingChangeMutex.RLock()
-	defer fake.prepareForNetworkingChangeMutex.RUnlock()
-	fake.removeDevToolsMutex.RLock()
-	defer fake.removeDevToolsMutex.RUnlock()
-	fake.removeStaticLibrariesMutex.RLock()
-	defer fake.removeStaticLibrariesMutex.RUnlock()
-	fake.saveDNSRecordsMutex.RLock()
-	defer fake.saveDNSRecordsMutex.RUnlock()
-	fake.setTimeWithNtpServersMutex.RLock()
-	defer fake.setTimeWithNtpServersMutex.RUnlock()
-	fake.setUserPasswordMutex.RLock()
-	defer fake.setUserPasswordMutex.RUnlock()
-	fake.setupBlobsDirMutex.RLock()
-	defer fake.setupBlobsDirMutex.RUnlock()
-	fake.setupBoshSettingsDiskMutex.RLock()
-	defer fake.setupBoshSettingsDiskMutex.RUnlock()
-	fake.setupCanRestartDirMutex.RLock()
-	defer fake.setupCanRestartDirMutex.RUnlock()
-	fake.setupDataDirMutex.RLock()
-	defer fake.setupDataDirMutex.RUnlock()
-	fake.setupEphemeralDiskWithPathMutex.RLock()
-	defer fake.setupEphemeralDiskWithPathMutex.RUnlock()
-	fake.setupHomeDirMutex.RLock()
-	defer fake.setupHomeDirMutex.RUnlock()
-	fake.setupHostnameMutex.RLock()
-	defer fake.setupHostnameMutex.RUnlock()
-	fake.setupIPv6Mutex.RLock()
-	defer fake.setupIPv6Mutex.RUnlock()
-	fake.setupLogDirMutex.RLock()
-	defer fake.setupLogDirMutex.RUnlock()
-	fake.setupLoggingAndAuditingMutex.RLock()
-	defer fake.setupLoggingAndAuditingMutex.RUnlock()
-	fake.setupLogrotateMutex.RLock()
-	defer fake.setupLogrotateMutex.RUnlock()
-	fake.setupMonitUserMutex.RLock()
-	defer fake.setupMonitUserMutex.RUnlock()
-	fake.setupNetworkingMutex.RLock()
-	defer fake.setupNetworkingMutex.RUnlock()
-	fake.setupOptDirMutex.RLock()
-	defer fake.setupOptDirMutex.RUnlock()
-	fake.setupRawEphemeralDisksMutex.RLock()
-	defer fake.setupRawEphemeralDisksMutex.RUnlock()
-	fake.setupRecordsJSONPermissionMutex.RLock()
-	defer fake.setupRecordsJSONPermissionMutex.RUnlock()
-	fake.setupRootDiskMutex.RLock()
-	defer fake.setupRootDiskMutex.RUnlock()
-	fake.setupRuntimeConfigurationMutex.RLock()
-	defer fake.setupRuntimeConfigurationMutex.RUnlock()
-	fake.setupSSHMutex.RLock()
-	defer fake.setupSSHMutex.RUnlock()
-	fake.setupSharedMemoryMutex.RLock()
-	defer fake.setupSharedMemoryMutex.RUnlock()
-	fake.setupTmpDirMutex.RLock()
-	defer fake.setupTmpDirMutex.RUnlock()
-	fake.shutdownMutex.RLock()
-	defer fake.shutdownMutex.RUnlock()
-	fake.startMonitMutex.RLock()
-	defer fake.startMonitMutex.RUnlock()
-	fake.unmountPersistentDiskMutex.RLock()
-	defer fake.unmountPersistentDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
