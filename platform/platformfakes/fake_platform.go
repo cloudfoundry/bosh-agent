@@ -54,6 +54,17 @@ type FakePlatform struct {
 	associateDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
+	CleanupDynamicDiskStub        func(string) error
+	cleanupDynamicDiskMutex       sync.RWMutex
+	cleanupDynamicDiskArgsForCall []struct {
+		arg1 string
+	}
+	cleanupDynamicDiskReturns struct {
+		result1 error
+	}
+	cleanupDynamicDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
 	CreateUserStub        func(string, string) error
 	createUserMutex       sync.RWMutex
 	createUserArgsForCall []struct {
@@ -916,6 +927,67 @@ func (fake *FakePlatform) AssociateDiskReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.associateDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) CleanupDynamicDisk(arg1 string) error {
+	fake.cleanupDynamicDiskMutex.Lock()
+	ret, specificReturn := fake.cleanupDynamicDiskReturnsOnCall[len(fake.cleanupDynamicDiskArgsForCall)]
+	fake.cleanupDynamicDiskArgsForCall = append(fake.cleanupDynamicDiskArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.CleanupDynamicDiskStub
+	fakeReturns := fake.cleanupDynamicDiskReturns
+	fake.recordInvocation("CleanupDynamicDisk", []interface{}{arg1})
+	fake.cleanupDynamicDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskCallCount() int {
+	fake.cleanupDynamicDiskMutex.RLock()
+	defer fake.cleanupDynamicDiskMutex.RUnlock()
+	return len(fake.cleanupDynamicDiskArgsForCall)
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskCalls(stub func(string) error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = stub
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskArgsForCall(i int) string {
+	fake.cleanupDynamicDiskMutex.RLock()
+	defer fake.cleanupDynamicDiskMutex.RUnlock()
+	argsForCall := fake.cleanupDynamicDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskReturns(result1 error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = nil
+	fake.cleanupDynamicDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskReturnsOnCall(i int, result1 error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = nil
+	if fake.cleanupDynamicDiskReturnsOnCall == nil {
+		fake.cleanupDynamicDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanupDynamicDiskReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }

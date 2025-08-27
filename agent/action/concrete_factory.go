@@ -86,6 +86,7 @@ func NewFactory(
 			"add_persistent_disk":    NewAddPersistentDiskAction(settingsService),
 			"remove_persistent_disk": NewRemovePersistentDiskAction(settingsService),
 			"add_dynamic_disk":       NewAddDynamicDiskAction(settingsService, platform),
+			"remove_dynamic_disk":    NewRemoveDynamicDiskAction(platform),
 
 			// ARP cache management
 			"delete_arp_entries": NewDeleteARPEntries(platform),

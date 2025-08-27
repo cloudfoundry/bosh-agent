@@ -552,6 +552,10 @@ func (p WindowsPlatform) SetupDynamicDisk(diskSetting boshsettings.DiskSettings)
 	return
 }
 
+func (p WindowsPlatform) CleanupDynamicDisk(diskID string) (err error) {
+	return
+}
+
 func (p WindowsPlatform) SetupDataDir(_ boshsettings.JobDir, _ boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 	sysDataDir := filepath.Join(dataDir, "sys")

@@ -226,6 +226,10 @@ func (p dummyPlatform) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) (
 	return
 }
 
+func (p dummyPlatform) CleanupDynamicDisk(diskCID string) (err error) {
+	return
+}
+
 func (p dummyPlatform) SetupDataDir(_ boshsettings.JobDir, _ boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 
