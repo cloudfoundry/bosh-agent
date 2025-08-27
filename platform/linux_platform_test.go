@@ -996,6 +996,25 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		})
 	})
 
+	Describe("CleanupDynamicDisk", func() {
+		BeforeEach(func() {
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+		})
+
+		It("removes dynamic disk symlink", func() {
+			err := platform.SetupDynamicDisk(boshsettings.DiskSettings{ID: "diskID", Path: "/dev/sdb"})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = platform.CleanupDynamicDisk("diskID")
+			Expect(err).NotTo(HaveOccurred())
+
+			sysStats := fs.GetFileTestStat("/fake-dir/data/dynamic_disks/diskID")
+			Expect(sysStats).To(BeNil())
+		})
+	})
+
 	Describe("SetupEphemeralDiskWithPath", func() {
 		var (
 			labelPrefix         string
