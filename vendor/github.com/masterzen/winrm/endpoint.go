@@ -1,7 +1,9 @@
 package winrm
 
 import (
-	"fmt"
+	"net"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -37,7 +39,14 @@ func (ep *Endpoint) url() string {
 		scheme = "http"
 	}
 
-	return fmt.Sprintf("%s://%s:%d/wsman", scheme, ep.Host, ep.Port)
+	u := &url.URL{
+		Scheme: scheme,
+		Host:   net.JoinHostPort(ep.Host, strconv.Itoa(ep.Port)),
+		Path:   "/wsman",
+	}
+
+	return u.String()
+
 }
 
 // NewEndpoint returns new pointer to struct Endpoint, with a default 60s response header timeout
