@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.10
 	github.com/cloudfoundry/bosh-davcli v0.0.435
-	github.com/cloudfoundry/bosh-utils v0.0.554
+	github.com/cloudfoundry/bosh-utils v0.0.555
 	github.com/cloudfoundry/gosigar v1.3.99
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -21,12 +21,12 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.45.0
-	github.com/onsi/ginkgo/v2 v2.25.2
+	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.41.0
 	golang.org/x/net v0.43.0
 	golang.org/x/sys v0.35.0
