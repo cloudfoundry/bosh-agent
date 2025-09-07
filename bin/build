@@ -4,7 +4,12 @@ set -eu -o pipefail
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 GOOS="${GOOS:-$(go env GOOS)}"
+
 export CGO_ENABLED=0
+if [[ "$GOOS" == "darwin" && "$(go env GOARCH)" == "arm64" ]]; then
+  export CGO_ENABLED=1
+fi
+
 
 default_version='[DEV BUILD]'
 VERSION_LABEL="${VERSION_LABEL:-${default_version}}"
