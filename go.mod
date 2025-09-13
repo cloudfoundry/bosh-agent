@@ -7,10 +7,10 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.34.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.10
-	github.com/cloudfoundry/bosh-davcli v0.0.435
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.11
+	github.com/cloudfoundry/bosh-davcli v0.0.436
 	github.com/cloudfoundry/bosh-utils v0.0.555
-	github.com/cloudfoundry/gosigar v1.3.99
+	github.com/cloudfoundry/gosigar v1.3.100
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
