@@ -34,8 +34,8 @@ github.com/cloudfoundry/bosh-cli/v7 v7.9.13 h1:8NiiRBqL0tVnXstoaAmaUOHn0pjAO6zjX
 github.com/cloudfoundry/bosh-cli/v7 v7.9.13/go.mod h1:E+D2bwNH2SHwcMx3q7kas3seKOBqyyKdkwSxABhHu/k=
 github.com/cloudfoundry/bosh-davcli v0.0.439 h1:XkRfx2vof+41W1Zh6OD+f6FYBKJQXD620/aq280xXAM=
 github.com/cloudfoundry/bosh-davcli v0.0.439/go.mod h1:DARCDn7MWhrmWcF7Y0ciVl+9XP0EH1k0W9QcU11+7Rs=
-github.com/cloudfoundry/bosh-utils v0.0.560 h1:4vsa4dbw0gDe0/5AnFSYPrt2L+lrCxKwbJDs3hhdw6M=
-github.com/cloudfoundry/bosh-utils v0.0.560/go.mod h1:LNoUi8A9pr1KHF4RjwMKx4eBF6d/jhgFxZY32QVPQGY=
+github.com/cloudfoundry/bosh-utils v0.0.562 h1:xwuPbvB4eNQe72GeKLFlHavTUCkXs1K8xvuOafTHMqU=
+github.com/cloudfoundry/bosh-utils v0.0.562/go.mod h1:LNoUi8A9pr1KHF4RjwMKx4eBF6d/jhgFxZY32QVPQGY=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 h1:oy59UYcspoP44ggE8DM3kjxl1+sTFd802bbZlBBhBMk=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.106 h1:va44gJVkCRV90GT6bPSvf/lI6NBNfAxkFaYwjApRnmA=

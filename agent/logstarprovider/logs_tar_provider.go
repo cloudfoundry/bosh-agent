@@ -64,7 +64,7 @@ func (l logsTarProvider) Get(logTypes string, filters []string) (string, error) 
 
 	defer l.copier.CleanUp(tmpDir)
 
-	tarball, err := l.compressor.CompressFilesInDir(tmpDir)
+	tarball, err := l.compressor.CompressFilesInDir(tmpDir, boshcmd.CompressorOptions{})
 	if err != nil {
 		return "", bosherr.WrapError(err, "Making logs tarball")
 	}
