@@ -231,7 +231,12 @@ func (e *WindowsEnvironment) AssertDataACLed() {
 	aclErrsCount := strings.Count(checkACLsOutput, "Error")
 	ExpectWithOffset(1, aclErrsCount == 0).To(
 		BeTrue(),
-		fmt.Sprintf("Expected data directory to have correct ACLs. Counted %d errors.", aclErrsCount),
+		fmt.Sprintf(
+			"Expected data directory to have correct ACLs. Counted %d errors.\n'Check-Acls %s' command output: \n%s",
+			aclErrsCount,
+			dataDir,
+			checkACLsOutput,
+		),
 	)
 }
 
