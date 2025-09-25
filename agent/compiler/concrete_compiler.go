@@ -26,6 +26,7 @@ type CompileDirProvider interface {
 }
 
 type concreteCompiler struct {
+	noCompression      bool
 	compressor         boshcmd.Compressor
 	blobstore          blobstore_delegator.BlobstoreDelegator
 	fs                 boshsys.FileSystem
@@ -37,6 +38,7 @@ type concreteCompiler struct {
 }
 
 func NewConcreteCompiler(
+	noCompression bool,
 	compressor boshcmd.Compressor,
 	blobstore blobstore_delegator.BlobstoreDelegator,
 	fs boshsys.FileSystem,
@@ -47,6 +49,7 @@ func NewConcreteCompiler(
 	timeProvider clock.Clock,
 ) Compiler {
 	return concreteCompiler{
+		noCompression:      noCompression,
 		compressor:         compressor,
 		blobstore:          blobstore,
 		fs:                 fs,
@@ -113,7 +116,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		}
 	}
 
-	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath)
+	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath, boshcmd.CompressorOptions{NoCompression: c.noCompression})
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Compressing compiled package")
 	}

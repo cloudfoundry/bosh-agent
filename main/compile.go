@@ -36,7 +36,7 @@ func compileTarball(command string, args []string) {
 		log.Fatal(err)
 	}
 
-	compiler, err := releasetarball.NewCompiler(dirProvider)
+	compiler, err := releasetarball.NewCompiler(dirProvider, options.NoCompression)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,12 +52,14 @@ func compileTarball(command string, args []string) {
 type CompileTarballOptions struct {
 	OutputDirectory string
 	SourceReleases  []string
+	NoCompression   bool
 }
 
 func newCompileTarballOptions(command string, args []string) (CompileTarballOptions, error) {
 	var options CompileTarballOptions
 	flags := flag.NewFlagSet(command, flag.ExitOnError)
 	flags.StringVar(&options.OutputDirectory, "output-directory", "/tmp", "the directory to put the compiled release tarball")
+	flags.BoolVar(&options.NoCompression, "no-compression", false, "do not compress the compiled release tarball")
 	flags.Usage = func() {
 		_, _ = fmt.Fprintf(flags.Output(), //nolint:errcheck
 			`The BOSH Agent %[1]s command creates BOSH Release tarballs with compiled packages from tarballs with source packages.

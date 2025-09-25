@@ -80,7 +80,7 @@ github.com/cloudfoundry/bosh-cli/v7/release/manifest
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.555
+# github.com/cloudfoundry/bosh-utils v0.0.555 => github.com/mdzhigarov/bosh-utils v0.0.0-20250920040931-791f4db5c713
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -682,3 +682,4 @@ honnef.co/go/tools/unused
 # inet.af/wf v0.0.0-20221017222439-36129f591884
 ## explicit; go 1.18
 inet.af/wf
+# github.com/cloudfoundry/bosh-utils => github.com/mdzhigarov/bosh-utils v0.0.0-20250920040931-791f4db5c713

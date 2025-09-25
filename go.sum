@@ -34,8 +34,6 @@ github.com/cloudfoundry/bosh-cli/v7 v7.9.11 h1:H4olQfH7JVdo8xh+H8iCMcXdl6CjMufDP
 github.com/cloudfoundry/bosh-cli/v7 v7.9.11/go.mod h1:0QGMhpafLr28cslIUIdaiEdyQq3r8rRWYJ9bEXt6wV0=
 github.com/cloudfoundry/bosh-davcli v0.0.436 h1:fDJ2rtZCJ8QPg/tPI0vK/ykPuaHUldsbq5Kt/R5ptts=
 github.com/cloudfoundry/bosh-davcli v0.0.436/go.mod h1:nnjEM70DI8uwWCkl+FeGP9pJKRWM6kLc4Xh9RdaaO7Q=
-github.com/cloudfoundry/bosh-utils v0.0.555 h1:tISTfz5Yb3El48lCtj/C663vyAlqVOdn1ByFdPfMIbM=
-github.com/cloudfoundry/bosh-utils v0.0.555/go.mod h1:pqiwKNIx0KMUafC4lXeuq0FEK2zTU3jqbGcBXzHp/DY=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 h1:oy59UYcspoP44ggE8DM3kjxl1+sTFd802bbZlBBhBMk=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.100 h1:if4xcvHR1ctro/A3C9GdyQBUrCz7mQFlcMv1piOhazc=
@@ -161,6 +159,8 @@ github.com/masterzen/winrm v0.0.0-20250819055755-20c0798bc988 h1:opRNRg5Ugt4DVed
 github.com/masterzen/winrm v0.0.0-20250819055755-20c0798bc988/go.mod h1:JajVhkiG2bYSNYYPYuWG7WZHr42CTjMTcCjfInRNCqc=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3 h1:Eaq36EIyJNp7b3qDhjV7jmDVq/yPeW2v4pTqzGbOGB4=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3/go.mod h1:6KKUoQBZBW6PDXJtNfqeEjPXMj/ITTk+cWK9t9uS5+E=
+github.com/mdzhigarov/bosh-utils v0.0.0-20250920040931-791f4db5c713 h1:njrrmUue5YbvhwZ+/2qqIHpK+bNIn+JyiP7u+S64k5A=
+github.com/mdzhigarov/bosh-utils v0.0.0-20250920040931-791f4db5c713/go.mod h1:pqiwKNIx0KMUafC4lXeuq0FEK2zTU3jqbGcBXzHp/DY=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 github.com/nats-io/nats.go v1.45.0 h1:/wGPbnYXDM0pLKFjZTX+2JOw9TQPoIgTFrUaH97giwA=

@@ -56,7 +56,7 @@ var _ = Describe("NewCompiler", func() {
 			d := directories.NewProvider(temporaryDirectory)
 			Expect(os.MkdirAll(d.BlobsDir(), 0o766)).To(Succeed())
 
-			result, err := releasetarball.NewCompiler(d)
+			result, err := releasetarball.NewCompiler(d, false)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).NotTo(BeNil())
 		})

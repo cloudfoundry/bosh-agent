@@ -55,7 +55,7 @@ const (
 
 // NewCompiler can be used for multiple compilations and should be passed to Compile
 // It expects to be used in a stemcell image and has not been tested on non-warden stemcells.
-func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
+func NewCompiler(dirProvider directories.Provider, noCompression bool) (boshcomp.Compiler, error) {
 	logger := boshlog.New(boshlog.LevelWarn, log.Default())
 	cmdRunner := boshsys.NewExecCmdRunner(logger)
 	filesystem := boshsys.NewOsFileSystem(logger)
@@ -70,7 +70,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 	packageApplierProvider := boshap.NewCompiledPackageApplierProvider(dirProvider.DataDir(), dirProvider.BaseDir(), dirProvider.JobsDir(), "packages", bd, compressor, filesystem, ts, logger)
 	const truncateLen = 10 * 1024 // 10kb
 	runner := boshrunner.NewFileLoggingCmdRunner(filesystem, cmdRunner, dirProvider.LogsDir(), truncateLen)
-	compiler := boshcomp.NewConcreteCompiler(compressor, bd, filesystem, runner, dirProvider, packageApplierProvider.Root(), packageApplierProvider.RootBundleCollection(), ts)
+	compiler := boshcomp.NewConcreteCompiler(noCompression, compressor, bd, filesystem, runner, dirProvider, packageApplierProvider.Root(), packageApplierProvider.RootBundleCollection(), ts)
 	return compiler, nil
 }
 

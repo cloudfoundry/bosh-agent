@@ -86,6 +86,7 @@ func init() { //nolint:funlen,gochecknoinits
 			packagesBc = fakebc.NewFakeBundleCollection()
 
 			compiler = NewConcreteCompiler(
+				false,
 				compressor,
 				blobstore,
 				fs,

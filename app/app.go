@@ -325,6 +325,7 @@ func (app *app) buildApplierAndCompiler(
 	)
 
 	compiler := boshcomp.NewConcreteCompiler(
+		false,
 		app.platform.GetCompressor(),
 		blobstoreDelegator,
 		fileSystem,
