@@ -8,9 +8,9 @@ require (
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.11
-	github.com/cloudfoundry/bosh-davcli v0.0.436
+	github.com/cloudfoundry/bosh-davcli v0.0.437
 	github.com/cloudfoundry/bosh-utils v0.0.555
-	github.com/cloudfoundry/gosigar v1.3.100
+	github.com/cloudfoundry/gosigar v1.3.101
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -20,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20250819055755-20c0798bc988
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.45.0
+	github.com/nats-io/nats.go v1.46.0
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/runtime-spec v1.2.1
