@@ -201,6 +201,11 @@ func (c *Command) ExitCode() int {
 	return c.exitCode
 }
 
+// Error returns command execution error if any
+func (c *Command) Error() error {
+	return c.err
+}
+
 // Wait function will block the current goroutine until the remote command terminates.
 func (c *Command) Wait() {
 	// block until finished

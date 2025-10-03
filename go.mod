@@ -17,11 +17,11 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/kevinburke/ssh_config v1.4.0
-	github.com/masterzen/winrm v0.0.0-20250819055755-20c0798bc988
+	github.com/masterzen/winrm v0.0.0-20250927112105-5f8e6c707321
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.46.0
-	github.com/onsi/ginkgo/v2 v2.25.3
+	github.com/nats-io/nats.go v1.46.1
+	github.com/onsi/ginkgo/v2 v2.26.0
 	github.com/onsi/gomega v1.38.2
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5

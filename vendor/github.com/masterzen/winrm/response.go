@@ -66,45 +66,48 @@ func xPath(node tree.Node, xpath string) (tree.NodeSet, error) {
 	return nodes, nil
 }
 
-// ParseOpenShellResponse ParseOpenShellResponse
-func ParseOpenShellResponse(response string) (string, error) {
-	doc, err := xmltree.ParseXML(strings.NewReader(response))
-	if err != nil {
-		return "", err
-	}
-	return first(doc, "//w:Selector[@Name='ShellId']")
+func newExecuteCommandError(response string, format string, args ...interface{}) *ExecuteCommandError {
+	return &ExecuteCommandError{fmt.Errorf(format, args...), response}
 }
 
-// ParseExecuteCommandResponse ParseExecuteCommandResponse
-func ParseExecuteCommandResponse(response string) (commandId string, err error) {
-	defer func() {
-		if err != nil {
-			err = &ExecuteCommandError{Inner: err, Body: response}
-		}
-	}()
-
+func parseResponse(response, expectedAction, idXPath string) (string, error) {
 	doc, err := xmltree.ParseXML(strings.NewReader(response))
 	if err != nil {
-		return "", fmt.Errorf("parsing xml response: %w", err)
+		return "", newExecuteCommandError(response, "parsing xml response: %w", err)
 	}
 
 	action, err := first(doc, "//a:Action")
 	if err != nil {
-		return "", fmt.Errorf("getting response action: %w", err)
+		return "", newExecuteCommandError(response, "getting response action: %w", err)
 	}
 
-	switch action {
-	case "http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandResponse":
-		commandId, err = first(doc, "//rsp:CommandId")
+	if action == "http://schemas.dmtf.org/wbem/wsman/1/wsman/fault" {
+		return "", newExecuteCommandError(response, "received error response")
+	}
+	if action == expectedAction {
+		id, err := first(doc, idXPath)
 		if err != nil {
-			return "", fmt.Errorf("finding command id: %w", err)
+			return "", newExecuteCommandError(response, "finding %v: %w", idXPath, err)
 		}
-
-		return commandId, nil
-
-	default:
-		return "", fmt.Errorf("unsupported action: %v", action)
+		return id, nil
 	}
+	return "", newExecuteCommandError(response, "unsupported action: %v", action)
+}
+
+func ParseOpenShellResponse(response string) (string, error) {
+	return parseResponse(
+		response,
+		"http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse",
+		"//rsp:ShellId",
+	)
+}
+
+func ParseExecuteCommandResponse(response string) (string, error) {
+	return parseResponse(
+		response,
+		"http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandResponse",
+		"//rsp:CommandId",
+	)
 }
 
 // ParseSlurpOutputErrResponse ParseSlurpOutputErrResponse
