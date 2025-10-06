@@ -13,19 +13,19 @@ function Protect-Path {
     )
 
     Write-Log "Protect-Path: Grant Administrator"
-    cmd.exe /c cacls.exe $path /E /P Administrators:F
+    icacls.exe $path /grant "Administrators:(OI)(CI)F"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
     Write-Log "Protect-Path: Remove BUILTIN\Users"
-    cmd.exe /c cacls.exe $path /E /R "BUILTIN\Users"
+    icacls.exe $path /remove "BUILTIN\Users"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
 
     Write-Log "Protect-Path: Remove BUILTIN\IIS_IUSRS"
-    cmd.exe /c cacls.exe $path /E /R "BUILTIN\IIS_IUSRS"
+    icacls.exe $path /remove "BUILTIN\IIS_IUSRS"
     if ($LASTEXITCODE -ne 0) {
         Throw "Error setting ACL for $path exited with $LASTEXITCODE"
     }
