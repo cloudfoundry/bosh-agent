@@ -10,7 +10,7 @@ require (
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.11
 	github.com/cloudfoundry/bosh-davcli v0.0.437
 	github.com/cloudfoundry/bosh-utils v0.0.555
-	github.com/cloudfoundry/gosigar v1.3.101
+	github.com/cloudfoundry/gosigar v1.3.102
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
