@@ -380,10 +380,10 @@ var _ = Describe("WindowsPlatform", func() {
 
 			// Use '/Windows' to make the fakefilesystem happy...
 			Expect(len(fs.RenameOldPaths)).To(Equal(1))
-			Expect(fs.RenameOldPaths).To(ContainElement("/Windows/System32/Drivers/etc/hosts-fake-uuid-0"))
+			Expect(strings.ToLower(fs.RenameOldPaths[0])).To(Equal("/windows/system32/drivers/etc/hosts-fake-uuid-0"))
 
 			Expect(len(fs.RenameNewPaths)).To(Equal(1))
-			Expect(fs.RenameNewPaths).To(ContainElement("/Windows/System32/Drivers/etc/hosts"))
+			Expect(strings.ToLower(fs.RenameNewPaths[0])).To(Equal("/windows/system32/drivers/etc/hosts"))
 		})
 	})
 

@@ -237,7 +237,7 @@ jobs:
           input_mapping:
             bosh-agent: bumped-bosh-agent
           tags:
-            - windows-nimbus
+            - windows-2019
       - put: bosh-agent
         params:
           repository: bumped-bosh-agent
