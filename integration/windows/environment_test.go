@@ -156,14 +156,22 @@ func (e *WindowsEnvironment) CleanUpUpdateSettings() {
 func (e *WindowsEnvironment) StartAgent() {
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe install")
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+	Eventually(func() bool { return e.CheckAgentRunning(1) }).
+		WithOffset(1).
+		WithTimeout(30 * time.Second).
+		WithPolling(2 * time.Second).
+		Should(BeTrue())
+}
+
+func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
+	stdout := e.RunPowershellCommandWithOffset(offset+1, "Get-Service -Name bosh-agent | Format-List -Property Status")
+	running, err := regexp.MatchString("Running", stdout)
+	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
+	return running
 }
 
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
-	stdout := e.RunPowershellCommandWithOffset(1, "Get-Service -Name bosh-agent | Format-List -Property Status")
-
-	running, err := regexp.MatchString("Running", stdout)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	if running {
+	if e.CheckAgentRunning(1) {
 		e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe stop")
 	}
 	e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe uninstall")
@@ -224,7 +232,7 @@ func (e *WindowsEnvironment) RunPowershellCommand(cmd string) string {
 }
 
 func (e *WindowsEnvironment) AssertDataACLed() {
-	testFile := filepath.Join(dataDir + "testfile")
+	testFile := filepath.Join(dataDir, "testfile")
 
 	e.RunPowershellCommandWithOffset(1, fmt.Sprintf("echo 'content' >> %s", testFile))
 	checkACLsOutput := e.RunPowershellCommandWithOffset(1, fmt.Sprintf("Check-Acls %s", dataDir))
