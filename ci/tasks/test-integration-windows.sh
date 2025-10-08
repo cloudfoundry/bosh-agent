@@ -47,16 +47,14 @@ ssh "${agent_ip}" "powershell.exe -noprofile -command Stop-Service -Name bosh-dn
 ssh "${agent_ip}" "powershell.exe -noprofile -command Stop-Service -Name bosh-dns-windows" > /dev/null 2>&1
 
 pushd "${bosh_agent_dir}" > /dev/null
-  echo -e "\n Building agent..."
-  agent_output_path="${bosh_agent_dir}/integration/windows/fixtures/bosh-agent.exe"
-  pipe_output_path="${bosh_agent_dir}/integration/windows/fixtures/pipe.exe"
-
-  pushd main > /dev/null
-    GOOS=windows go build -o "${agent_output_path}"
-  popd > /dev/null
-  pushd jobsupervisor/pipe > /dev/null
-    GOOS=windows go build -o "${pipe_output_path}"
-  popd > /dev/null
+  pushd main
+    echo -e "\n Building bosh-agent.exe ..."
+    GOOS=windows go build -o "${bosh_agent_dir}/integration/windows/fixtures/bosh-agent.exe"
+  popd
+  pushd jobsupervisor/pipe
+    echo -e "\n Building pipe.exe ..."
+    GOOS=windows go build -o "${bosh_agent_dir}/integration/windows/fixtures/pipe.exe"
+  popd
 
   echo -e "\n Installing agent and fixtures..."
   set -x
@@ -74,5 +72,6 @@ pushd "${bosh_agent_dir}" > /dev/null
   export NATS_CA_PATH=${nats_ca_path}
   export NATS_CERTIFICATE_PATH=${nats_certificate_path}
   export NATS_PRIVATE_KEY_PATH=${nats_private_key_path}
-  go run github.com/onsi/ginkgo/v2/ginkgo --race --trace integration/windows/
-popd > /dev/null
+
+  go run github.com/onsi/ginkgo/v2/ginkgo run -vv integration/windows/
+popd
