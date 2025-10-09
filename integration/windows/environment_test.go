@@ -2,9 +2,9 @@ package windows_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,6 +17,8 @@ import (
 )
 
 const dataDir = `C:\var\vcap\data\`
+
+const boshAgentLogfile = `C:\var\vcap\bosh\log\service_wrapper.err.log`
 
 const GB = 1024 * 1024 * 1024
 
@@ -143,10 +145,14 @@ func (e *WindowsEnvironment) WaitForLink(path string) {
 }
 
 func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
-	EventuallyWithOffset(offset+1, func() bool {
+	Eventually(func() bool {
 		target, _ := e.Linker.LinkTarget(path) //nolint:errcheck
 		return target != ""
-	}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+	}).
+		WithOffset(offset + 1).
+		WithTimeout(2 * time.Minute).
+		WithPolling(5 * time.Second).
+		Should(BeTrue())
 }
 
 func (e *WindowsEnvironment) CleanUpUpdateSettings() {
@@ -154,27 +160,48 @@ func (e *WindowsEnvironment) CleanUpUpdateSettings() {
 }
 
 func (e *WindowsEnvironment) StartAgent() {
+	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`If (Test-Path %s) { Remove-Item -Force -Path %s }`, boshAgentLogfile, boshAgentLogfile))
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe install")
 	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
-	Eventually(func() bool { return e.CheckAgentRunning(1) }).
+	Eventually(func() bool {
+		return e.CheckAgentRunning(1)
+	}).
 		WithOffset(1).
-		WithTimeout(30 * time.Second).
-		WithPolling(2 * time.Second).
-		Should(BeTrue())
+		WithTimeout(1*time.Minute).
+		WithPolling(5*time.Second).
+		Should(
+			BeTrue(),
+			fmt.Sprintf("Expected agent to be running but it was not found:\n%s", e.RunPowershellCommandWithOffset(1, "Get-Service")),
+		)
+
+	Eventually(func() bool {
+		heartBeatFound :=
+			e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`Get-Content -Path %s | Select-String -Quiet -Pattern "Attempting to send Heartbeat"`, boshAgentLogfile))
+
+		return strings.TrimSpace(heartBeatFound) == "True"
+	}).
+		WithOffset(1).
+		WithTimeout(3*time.Minute).
+		WithPolling(10*time.Second).
+		Should(
+			BeTrue(),
+			fmt.Sprintf("Expectd to see heardbeat in the logss but found:\n%s", e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`Get-Content -Path %s`, boshAgentLogfile))),
+		)
 }
 
 func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
 	stdout := e.RunPowershellCommandWithOffset(offset+1, "Get-Service -Name bosh-agent | Format-List -Property Status")
-	running, err := regexp.MatchString("Running", stdout)
+	running, err := regexp.MatchString("Running", strings.TrimSpace(stdout))
 	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
 	return running
 }
 
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 	if e.CheckAgentRunning(1) {
-		e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe stop")
+		e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe stop`)
 	}
-	e.RunPowershellCommandWithOffset(1, "c:\\bosh\\service_wrapper.exe uninstall")
+	e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe uninstall`)
+	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`Remove-Item -Force -Path %s`, boshAgentLogfile))
 }
 
 func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
@@ -187,21 +214,23 @@ func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
 }
 
 func (e *WindowsEnvironment) AgentProcessRunning() bool {
-	exitCode, err := e.Client.Run( //nolint:staticcheck
-		winrm.Powershell("Get-Process -ProcessName bosh-agent"),
-		io.Discard, io.Discard,
-	)
+	exitCode, err :=
+		e.Client.RunWithContext(
+			context.Background(),
+			winrm.Powershell("Get-Process -ProcessName bosh-agent"),
+			io.Discard, io.Discard,
+		)
 	return exitCode == 0 && err == nil
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string) string {
 	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd)
 
-	ExpectWithOffset(offset+1, err).NotTo(
+	Expect(err).WithOffset(offset+1).NotTo(
 		HaveOccurred(),
 		fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, outString, errString),
 	)
-	ExpectWithOffset(offset+1, exitCode).To(
+	Expect(exitCode).WithOffset(offset+1).To(
 		BeZero(),
 		fmt.Sprintf(
 			`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, outString, errString,
@@ -215,12 +244,9 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(_offset 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	exitCode, err := e.Client.Run(winrm.Powershell(cmd), stdout, stderr) //nolint:staticcheck
+	exitCode, err := e.Client.RunWithContext(context.Background(), winrm.Powershell(cmd), stdout, stderr)
 
-	outString := stdout.String()
-	errString := stderr.String()
-
-	return outString, errString, exitCode, err
+	return stdout.String(), stderr.String(), exitCode, err
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithResponses(cmd string) (string, string, int, error) {
@@ -232,15 +258,17 @@ func (e *WindowsEnvironment) RunPowershellCommand(cmd string) string {
 }
 
 func (e *WindowsEnvironment) AssertDataACLed() {
-	testFile := filepath.Join(dataDir, "testfile")
+	// NOTE: no file separator is used below because `dataDir` has a trailing `\`
+	// NOTE: filepath.Join() _CAN_NOT_ be used because the ginkgo code executes on linux, resulting in `/`
+	testFile := fmt.Sprintf("%s%s", dataDir, fmt.Sprintf("test-file-%s", time.Now().Format("2006-01-02T15h04s05")))
+	e.RunPowershellCommandWithOffset(1, fmt.Sprintf("New-Item -Value 'AssertDataACLed test content' -Path %s", testFile))
 
-	e.RunPowershellCommandWithOffset(1, fmt.Sprintf("echo 'content' >> %s", testFile))
 	checkACLsOutput := e.RunPowershellCommandWithOffset(1, fmt.Sprintf("Check-Acls %s", dataDir))
 	aclErrsCount := strings.Count(checkACLsOutput, "Error")
-	ExpectWithOffset(1, aclErrsCount == 0).To(
-		BeTrue(),
+	Expect(aclErrsCount).WithOffset(1).To(
+		BeZero(),
 		fmt.Sprintf(
-			"Expected data directory to have correct ACLs. Counted %d errors.\n'Check-Acls %s' command output: \n%s",
+			"Expected data directory to have correct ACLs. Counted %d errors.\n'Check-Acls %s' command output:\n%s\n-----\n",
 			aclErrsCount,
 			dataDir,
 			checkACLsOutput,
