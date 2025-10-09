@@ -87,11 +87,13 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		agent.EnsureAgentServiceStopped()
 	})
+
 	It("blocks outgoing nats access for all other binaries once started", func() {
-		// The FW Rule works on basis of a binary (winAppId). Thus even shelling out from the Agent will not be allowed.
+		// The Firewall Rule works on basis of a binary (winAppId), so even shelling out from the Agent will not be allowed.
 		output := agent.RunPowershellCommand(fmt.Sprintf("Test-NetConnection -ComputerName %v -Port %v", windowsutils.FakeDirectorIP(), 4222))
 		Expect(output).To(ContainSubstring("TcpTestSucceeded       : False"))
 	})
+
 	It("responds to 'get_state' message over NATS", func() {
 		getStateSpecAgentID := func() string {
 			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
@@ -174,7 +176,7 @@ var _ = Describe("An Agent running on Windows", func() {
 				return fmt.Errorf("nil Vitals")
 			}
 			if v.Mem.Kb == "" || v.Mem.Percent == "" {
-				return fmt.Errorf("Empty Memory Vitals: %+v", v.Mem)
+				return fmt.Errorf("empty Memory Vitals: %+v", v.Mem)
 			}
 			return nil
 		}
@@ -212,9 +214,8 @@ var _ = Describe("An Agent running on Windows", func() {
 		err := natsClient.RunDrain()
 		Expect(err).NotTo(HaveOccurred())
 
-		logsDir, err := fs.TempDir("windows-agent-drain-test")
+		logsDir := GinkgoT().TempDir()
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -237,9 +238,8 @@ var _ = Describe("An Agent running on Windows", func() {
 		err = natsClient.RunDrain()
 		Expect(err).NotTo(HaveOccurred())
 
-		logsDir, err := fs.TempDir("windows-agent-drain-test")
+		logsDir := GinkgoT().TempDir()
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -281,9 +281,8 @@ var _ = Describe("An Agent running on Windows", func() {
 		err := natsClient.RunScript("pre-start")
 		Expect(err).NotTo(HaveOccurred())
 
-		logsDir, err := fs.TempDir("windows-agent-prestart-test")
+		logsDir := GinkgoT().TempDir()
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -304,9 +303,8 @@ var _ = Describe("An Agent running on Windows", func() {
 		err := natsClient.RunScript("pre-start")
 		Expect(err).NotTo(HaveOccurred())
 
-		logsDir, err := fs.TempDir("check-temp-dir-logs")
+		logsDir := GinkgoT().TempDir()
 		Expect(err).NotTo(HaveOccurred())
-		defer fs.RemoveAll(logsDir) //nolint:errcheck
 
 		natsClient.FetchLogs(logsDir)
 
@@ -333,9 +331,8 @@ var _ = Describe("An Agent running on Windows", func() {
 		path := filepath.Join(tempDir, blobName)
 		Expect(blobstoreClient.Get(result.BlobstoreID, path)).To(Succeed())
 
-		tarPath, err := os.MkdirTemp("", "")
+		tarPath := GinkgoT().TempDir()
 		Expect(err).NotTo(HaveOccurred())
-		defer os.Remove(tarPath) //nolint:errcheck
 
 		err = exec.Command("tar", "xf", path, "-C", tarPath).Run()
 		Expect(err).NotTo(HaveOccurred())
@@ -360,12 +357,12 @@ var _ = Describe("An Agent running on Windows", func() {
 	})
 
 	It("can cleanup package compilation dependencies when they are initially still in use", func() {
-		blobref, err := natsClient.CompilePackage("go")
+		blobRef, err := natsClient.CompilePackage("go")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = natsClient.CompilePackageWithDeps(
 			"execution-lock",
-			map[string]utils.MarshalableBlobRef{"go": *blobref},
+			map[string]utils.MarshalableBlobRef{"go": *blobRef},
 		)
 		Expect(err).NotTo(HaveOccurred())
 	})
