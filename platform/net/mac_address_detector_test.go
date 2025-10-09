@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/net"
@@ -18,6 +19,7 @@ var _ = Describe("MacAddressDetector", func() {
 	Describe("MacAddressDetectorLinux", func() {
 		var (
 			fs                 *fakesys.FakeFileSystem
+			logger             boshlog.Logger
 			macAddressDetector MACAddressDetector
 		)
 
@@ -63,7 +65,8 @@ var _ = Describe("MacAddressDetector", func() {
 
 		BeforeEach(func() {
 			fs = fakesys.NewFakeFileSystem()
-			macAddressDetector = NewLinuxMacAddressDetector(fs)
+			logger = boshlog.NewLogger(boshlog.LevelNone)
+			macAddressDetector = NewLinuxMacAddressDetector(fs, logger)
 		})
 
 		Describe("DetectMacAddresses", func() {
@@ -98,6 +101,32 @@ var _ = Describe("MacAddressDetector", func() {
 						"aa:bb": "eth0",
 						"cc:dd": "eth1",
 						"33:44": "veth2",
+					}))
+				})
+			})
+
+			Context("when there are SR-IOV VF interfaces", func() {
+				It("should ignore VF interfaces", func() {
+					stubInterfacesWithVirtual(map[string]string{
+						"aa:bb": "eth0",
+						"cc:dd": "eth2",
+					}, nil, nil)
+
+					sriovVF1Path := writeNetworkDevice("eth1", "aa:bb", true, "sriov-vf")
+					sriovVF2Path := writeNetworkDevice("eth3", "ee:ff", true, "sriov-vf")
+
+					existingPaths, err := fs.Glob("/sys/class/net/*")
+					Expect(err).NotTo(HaveOccurred())
+
+					allPaths := append(existingPaths, sriovVF1Path, sriovVF2Path)
+					fs.SetGlob("/sys/class/net/*", allPaths)
+
+					interfacesByMacAddress, err := macAddressDetector.DetectMacAddresses()
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interfacesByMacAddress).To(Equal(map[string]string{
+						"aa:bb": "eth0",
+						"cc:dd": "eth2",
 					}))
 				})
 			})

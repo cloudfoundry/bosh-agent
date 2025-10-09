@@ -1175,6 +1175,58 @@ DNS=10.0.80.12
 		})
 	})
 
+	Describe("unmanaged network files", func() {
+		It("preserves files ending with unmanaged.network when cleaning up systemd network directory", func() {
+			err := fs.WriteFileString("/etc/systemd/network/01_existing.network", "old managed file")
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/systemd/network/02_custom_unmanaged.network", "custom unmanaged file")
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/systemd/network/03_another.network", "another old file")
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/etc/systemd/network/04_special_unmanaged.network", "special unmanaged file")
+			Expect(err).NotTo(HaveOccurred())
+
+			staticNetwork := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Netmask: "255.255.255.0",
+				Gateway: "1.2.3.1",
+				Mac:     "fake-static-mac-address",
+				DNS:     []string{"8.8.8.8"},
+				Default: []string{"gateway"},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"eth0": staticNetwork,
+			})
+
+			interfaceAddrsProvider.GetInterfaceAddresses = []boship.InterfaceAddress{
+				boship.NewSimpleInterfaceAddress("eth0", "1.2.3.4"),
+			}
+
+			err = netManager.SetupNetworking(boshsettings.Networks{
+				"static": staticNetwork,
+			}, "", nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			matches, err := fs.Ls("/etc/systemd/network/")
+			Expect(err).NotTo(HaveOccurred())
+
+			var files []string
+			for _, match := range matches {
+				if match != "/etc/systemd/network" {
+					files = append(files, match)
+				}
+			}
+
+			Expect(files).To(ConsistOf(
+				"/etc/systemd/network/10_eth0.network",
+				"/etc/systemd/network/02_custom_unmanaged.network",
+				"/etc/systemd/network/04_special_unmanaged.network",
+			))
+		})
+	})
+
 	Describe("GetConfiguredNetworkInterfaces", func() {
 		Context("when there are network devices", func() {
 			BeforeEach(func() {

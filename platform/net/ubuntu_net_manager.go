@@ -377,6 +377,9 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 		if err != nil {
 			return err
 		}
+		if strings.HasSuffix(match, "unmanaged.network") {
+			return nil
+		}
 		staleNetworkConfigFiles[match] = true
 		return nil
 	})

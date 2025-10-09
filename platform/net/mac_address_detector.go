@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
@@ -17,11 +18,14 @@ type MACAddressDetector interface {
 }
 
 const (
-	ifaliasPrefix = "bosh-interface"
+	ifaliasPrefix            = "bosh-interface"
+	sriovVFIfalias           = "sriov-vf"
+	macAddressDetectorLogTag = "MacAddressDetector"
 )
 
 type linuxMacAddressDetector struct {
-	fs boshsys.FileSystem
+	fs     boshsys.FileSystem
+	logger boshlog.Logger
 }
 
 type windowsMacAddressDetector struct {
@@ -34,9 +38,10 @@ type netAdapter struct {
 	MacAddress string
 }
 
-func NewLinuxMacAddressDetector(fs boshsys.FileSystem) MACAddressDetector {
+func NewLinuxMacAddressDetector(fs boshsys.FileSystem, logger boshlog.Logger) MACAddressDetector {
 	return linuxMacAddressDetector{
-		fs: fs,
+		fs:     fs,
+		logger: logger,
 	}
 }
 
@@ -68,6 +73,18 @@ func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error)
 		ifalias, err = d.fs.ReadFileString(path.Join(filePath, "ifalias"))
 		if err == nil {
 			hasBoshPrefix = strings.HasPrefix(ifalias, ifaliasPrefix)
+		}
+
+		// SR-IOV VF interfaces share the same MAC address as synthetic interfaces and should be ignored
+		// They have an ifalias with the content "sriov-vf"
+		isSRIOVVF := false
+		if err == nil {
+			isSRIOVVF = strings.Contains(ifalias, sriovVFIfalias)
+			if isSRIOVVF {
+				interfaceName := path.Base(filePath)
+				d.logger.Debug(macAddressDetectorLogTag, "Ignoring SR-IOV VF interface: %s (ifalias: %s)", interfaceName, strings.TrimSpace(ifalias))
+				continue
+			}
 		}
 
 		if isPhysicalDevice || hasBoshPrefix {
