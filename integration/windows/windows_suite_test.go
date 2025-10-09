@@ -101,8 +101,8 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 	Expect(err).NotTo(HaveOccurred())
 
 	outputFile, err := os.CreateTemp("", "agent-settings")
-	defer outputFile.Close() //nolint:errcheck,staticcheck
 	Expect(err).NotTo(HaveOccurred())
+	defer outputFile.Close() //nolint:errcheck
 
 	err = settingsTmpl.Execute(outputFile, agentSettings)
 	outputFile.Close() //nolint:errcheck

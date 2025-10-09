@@ -16,12 +16,16 @@ var _ = Describe("EphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		diskNumber = "0"
 		diskLetter = ""
+
+		agent.EnsureDataDirDoesntExist()
 	})
 
 	AfterEach(func() {
 		agent.EnsureAgentServiceStopped()
+		agent.RunPowershellCommand(`Remove-Item -Force -Path c:\bosh\agent.json`)
+		agent.RunPowershellCommand(`Remove-Item -Force -Path c:\bosh\settings.json`)
+
 		agent.EnsureDataDirDoesntExist()
 
 		if diskLetter != "" {
@@ -33,140 +37,138 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.EnsureRootPartitionAtMaxSize()
 	})
 
-	It("when root disk can be used as ephemeral, creates a partition on root disk", func() {
-		agent.EnsureDataDirDoesntExist()
-		agent.ShrinkRootPartition()
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+	Describe("one disk is attached", func() {
+		BeforeEach(func() {
+			diskNumber = "0"
+		})
 
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-disk-settings.json c:\\bosh\\settings.json")
-		agent.StartAgent()
+		It("when root disk can be used as ephemeral, creates a partition on root disk", func() {
+			agent.ShrinkRootPartition()
 
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-disk-settings.json c:\bosh\settings.json`)
+			agent.StartAgent()
 
-		agent.AssertDataACLed()
+			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
+
+			agent.AssertDataACLed()
+		})
+
+		It("when root disk partition is already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
+			agent.ShrinkRootPartition()
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-disk-settings.json c:\bosh\settings.json`)
+			agent.StartAgent()
+
+			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
+
+			agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe restart`)
+
+			Eventually(func() bool {
+				return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
+			}).WithTimeout(1 * time.Minute).Should(BeTrue())
+			Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
+
+			Expect(agent.AgentProcessRunning()).To(BeTrue())
+		})
+
+		It("when there is no remaining space on the root disk, no partition is created, a warning is logged", func() {
+			initialPartitionCount := agent.PartitionCount("0")
+
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-disk-settings.json c:\bosh\settings.json`)
+			agent.StartAgent()
+
+			expectedLogMessage :=
+				"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space"
+
+			Eventually(func() bool {
+				matchingLogOutput := agent.RunPowershellCommand(fmt.Sprintf(
+					`Select-String -Path C:\var\vcap\bosh\log\service_wrapper.err.log -Pattern "%s"`,
+					expectedLogMessage,
+				))
+				return len(strings.TrimSpace(matchingLogOutput)) > 0
+			}).WithTimeout(1*time.Minute).WithPolling(5*time.Second).Should(
+				BeTrue(),
+				"Expected agent to warn about full disk",
+			)
+
+			Expect(agent.PartitionCount("0")).To(Equal(initialPartitionCount))
+			Expect(agent.AgentProcessRunning()).To(BeTrue())
+		})
 	})
 
-	It("when root disk partition is already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
-		agent.EnsureDataDirDoesntExist()
-		agent.ShrinkRootPartition()
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
+	Describe("when a second disk is attached", func() {
+		BeforeEach(func() {
+			diskNumber = "1"
+		})
 
-		agent.StartAgent()
+		It("when a second disk is attached, partition is created on that disk", func() {
+			agent.EnsureDiskCleared(diskNumber)
 
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\second-disk-settings.json c:\bosh\settings.json`)
 
-		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
+			agent.StartAgent()
 
-		Eventually(func() bool {
-			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
-		}, 60*time.Second).Should(BeTrue())
-		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
+			Eventually(func() bool {
+				return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
+			}).WithTimeout(1 * time.Minute).Should(BeTrue())
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
 
-		Expect(agent.AgentProcessRunning()).To(BeTrue())
-	})
+			agent.AssertDataACLed()
+		})
 
-	It("when there is no remaining space on the root disk, no partition is created, a warning is logged", func() {
-		initialPartitionCount := agent.PartitionCount("0")
-		agent.EnsureDataDirDoesntExist()
+		It("when a second disk is attached and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\second-disk-settings.json c:\bosh\settings.json`)
 
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
-		agent.StartAgent()
+			agent.StartAgent()
 
-		expectedLogMessage :=
-			"WARN - Unable to create ephemeral partition on disk 0, as there isn't enough free space"
+			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
 
-		Eventually(func() bool {
-			matchingLogOutput := agent.RunPowershellCommand(fmt.Sprintf(
-				`Select-String -Path C:\var\vcap\bosh\log\service_wrapper.err.log -Pattern "%s"`,
-				expectedLogMessage,
-			))
-			return len(strings.TrimSpace(matchingLogOutput)) > 0
-		}, 1*time.Minute, 5*time.Second).Should(
-			BeTrue(),
-			"Expected agent to warn about full disk",
-		)
+			agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe restart`)
 
-		Expect(agent.PartitionCount("0")).To(Equal(initialPartitionCount))
-		Expect(agent.AgentProcessRunning()).To(BeTrue())
-	})
+			Eventually(func() bool {
+				return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
+			}).WithTimeout(1 * time.Minute).Should(BeTrue())
+			Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 
-	It("when a second disk is attached, partition is created on that disk", func() {
-		agent.EnsureDataDirDoesntExist()
+			Expect(agent.AgentProcessRunning()).To(BeTrue())
+		})
 
-		diskNumber = "1"
-		agent.EnsureDiskCleared(diskNumber)
+		It("when a second disk is attached and identified by index, partition is created on that disk", func() {
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\second-disk-digit-settings.json c:\bosh\settings.json`)
 
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-settings.json c:\\bosh\\settings.json")
+			agent.StartAgent()
 
-		agent.StartAgent()
+			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
 
-		Eventually(func() bool {
-			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
-		}, 60*time.Second).Should(BeTrue())
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
+			agent.AssertDataACLed()
+		})
 
-		agent.AssertDataACLed()
-	})
+		It("when a second disk is attached, identified by index and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\root-partition-agent.json c:\bosh\agent.json`)
+			agent.RunPowershellCommand(`cp c:\bosh\agent-configuration\second-disk-digit-settings.json c:\bosh\settings.json`)
 
-	It("when a second disk is attached and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
-		agent.EnsureDataDirDoesntExist()
+			agent.StartAgent()
 
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-settings.json c:\\bosh\\settings.json")
+			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
+			diskLetter = agent.GetDriveLetterForLink(dataDir)
 
-		agent.StartAgent()
+			agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe restart`)
 
-		diskNumber = "1"
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
+			Eventually(func() bool {
+				return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
+			}).WithTimeout(1 * time.Minute).Should(BeTrue())
+			Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
 
-		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
-
-		Eventually(func() bool {
-			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
-		}, 60*time.Second).Should(BeTrue())
-		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
-
-		Expect(agent.AgentProcessRunning()).To(BeTrue())
-	})
-
-	It("when a second disk is attached and identified by index, partition is created on that disk", func() {
-		agent.EnsureDataDirDoesntExist()
-
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-digit-settings.json c:\\bosh\\settings.json")
-
-		agent.StartAgent()
-
-		diskNumber = "1"
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
-
-		agent.AssertDataACLed()
-	})
-
-	It("when a second disk is attached, identified by index and already mounted, agent restart doesn't fail and doesn't create a new partition", func() {
-		agent.EnsureDataDirDoesntExist()
-
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\root-partition-agent.json c:\\bosh\\agent.json")
-		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\second-disk-digit-settings.json c:\\bosh\\settings.json")
-
-		agent.StartAgent()
-
-		diskNumber = "1"
-		agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-		diskLetter = agent.GetDriveLetterForLink(dataDir)
-
-		agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe restart")
-
-		Eventually(func() bool {
-			return agent.IsLinkTargetedToDisk(dataDir, diskNumber)
-		}, 60*time.Second).Should(BeTrue())
-		Expect(agent.GetDriveLetterForLink(dataDir)).To(Equal(diskLetter))
-
-		Expect(agent.AgentProcessRunning()).To(BeTrue())
+			Expect(agent.AgentProcessRunning()).To(BeTrue())
+		})
 	})
 })
