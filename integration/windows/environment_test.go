@@ -37,10 +37,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 
 	for i := 0; i < 5; i++ {
 		cmd := fmt.Sprintf(cmdFmtString, sizeMinBuffer)
-		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(
-			1,
-			cmd,
-		)
+		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(cmd)
 
 		if err != nil {
 			if strings.Contains(err.Error(), retryableError) {
@@ -48,7 +45,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
-				ExpectWithOffset(1, err).NotTo(
+				Expect(err).WithOffset(1).NotTo(
 					HaveOccurred(),
 					fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, stdout, stderr),
 				)
@@ -66,7 +63,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 				sizeMinBuffer += 2 * GB
 				continue
 			} else {
-				ExpectWithOffset(1, exitCode).To(
+				Expect(exitCode).WithOffset(1).To(
 					BeZero(),
 					fmt.Sprintf(
 						`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, stdout, stderr,
@@ -86,7 +83,7 @@ func (e *WindowsEnvironment) EnsureRootPartitionAtMaxSize() {
 	)
 
 	freeSpace, err := strconv.Atoi(strings.TrimSpace(freeSpaceOutput))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).WithOffset(1).NotTo(HaveOccurred())
 
 	if freeSpace > 0 {
 		e.RunPowershellCommandWithOffset(
@@ -103,7 +100,7 @@ func (e *WindowsEnvironment) GetDriveLetterForLink(path string) string {
 func (e *WindowsEnvironment) GetDriveLetterForLinkWithOffset(offset int, path string) string {
 	target, err := e.Linker.LinkTarget(path)
 
-	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
+	Expect(err).WithOffset(offset + 1).NotTo(HaveOccurred())
 	return strings.Split(target, ":")[0]
 }
 
@@ -137,7 +134,7 @@ func (e *WindowsEnvironment) IsLinkTargetedToDisk(path, diskNumber string) bool 
 }
 
 func (e *WindowsEnvironment) EnsureLinkTargetedToDisk(path, diskNumber string) {
-	ExpectWithOffset(1, e.IsLinkTargetedToDisk(path, diskNumber)).To(BeTrue())
+	Expect(e.IsLinkTargetedToDisk(path, diskNumber)).WithOffset(1).To(BeTrue())
 }
 
 func (e *WindowsEnvironment) WaitForLink(path string) {
@@ -192,7 +189,7 @@ func (e *WindowsEnvironment) StartAgent() {
 func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
 	stdout := e.RunPowershellCommandWithOffset(offset+1, "Get-Service -Name bosh-agent | Format-List -Property Status")
 	running, err := regexp.MatchString("Running", strings.TrimSpace(stdout))
-	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
+	Expect(err).WithOffset(offset + 1).NotTo(HaveOccurred())
 	return running
 }
 
@@ -224,7 +221,7 @@ func (e *WindowsEnvironment) AgentProcessRunning() bool {
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd string) string {
-	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(offset+1, cmd)
+	outString, errString, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(cmd)
 
 	Expect(err).WithOffset(offset+1).NotTo(
 		HaveOccurred(),
@@ -240,7 +237,7 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffset(offset int, cmd stri
 	return outString
 }
 
-func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(_offset int, cmd string) (string, string, int, error) {
+func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(cmd string) (string, string, int, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
@@ -250,7 +247,7 @@ func (e *WindowsEnvironment) RunPowershellCommandWithOffsetAndResponses(_offset 
 }
 
 func (e *WindowsEnvironment) RunPowershellCommandWithResponses(cmd string) (string, string, int, error) {
-	return e.RunPowershellCommandWithOffsetAndResponses(1, cmd)
+	return e.RunPowershellCommandWithOffsetAndResponses(cmd)
 }
 
 func (e *WindowsEnvironment) RunPowershellCommand(cmd string) string {
@@ -287,7 +284,7 @@ func (e *WindowsEnvironment) PartitionCountWithOffset(offset int, diskNumber str
 	)
 
 	partitionCount, err := strconv.Atoi(strings.TrimSpace(partitionCountOutput))
-	ExpectWithOffset(offset+1, err).NotTo(HaveOccurred())
+	Expect(err).WithOffset(offset + 1).NotTo(HaveOccurred())
 
 	return partitionCount
 }
