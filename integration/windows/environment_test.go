@@ -156,13 +156,13 @@ func (e *WindowsEnvironment) WaitForLinkWithOffset(offset int, path string) {
 }
 
 func (e *WindowsEnvironment) CleanUpUpdateSettings() {
-	agent.RunPowershellCommand("rm c:\\var\\vcap\\bosh\\update_settings.json")
+	agent.RunPowershellCommand(`rm c:\var\vcap\bosh\update_settings.json`)
 }
 
 func (e *WindowsEnvironment) StartAgent() {
 	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`If (Test-Path %s) { Remove-Item -Force -Path %s }`, boshAgentLogfile, boshAgentLogfile))
-	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe install")
-	agent.RunPowershellCommand("c:\\bosh\\service_wrapper.exe start")
+	agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe install`)
+	agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe start`)
 	Eventually(func() bool {
 		return e.CheckAgentRunning(1)
 	}).
