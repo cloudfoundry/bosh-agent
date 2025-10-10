@@ -316,7 +316,7 @@ func (n *NatsClient) CompilePackageWithDeps(packageName string, deps map[string]
 		return nil, err
 	}
 
-	template := CompileTemplate{
+	compileTemplate := CompileTemplate{
 		BlobstoreID:  blobID,
 		SHA1:         tarSha1,
 		Name:         packageName,
@@ -327,7 +327,7 @@ func (n *NatsClient) CompilePackageWithDeps(packageName string, deps map[string]
 	command := NatCommand{
 		Method:    "compile_package",
 		ReplyTo:   senderID,
-		Arguments: template.Arguments(),
+		Arguments: compileTemplate.Arguments(),
 	}
 	msg, err := command.Marshal()
 	if err != nil {
@@ -361,8 +361,8 @@ func (n *NatsClient) CompilePackageWithDeps(packageName string, deps map[string]
 		return nil, fmt.Errorf(`CompilePackage missing 'sha1' field: %#v`, result)
 	}
 	compiledPackageRef := MarshalableBlobRef{
-		Name:        template.Name,
-		Version:     template.Version,
+		Name:        compileTemplate.Name,
+		Version:     compileTemplate.Version,
 		SHA1:        sha1,
 		BlobstoreID: blobstoreID,
 	}
@@ -688,15 +688,15 @@ func GenerateKeyPair() (publicKey []byte, privateAuthMethod ssh.AuthMethod, err 
 
 	publicKey = ssh.MarshalAuthorizedKey(publicRsaKey)
 
-	privDER := x509.MarshalPKCS1PrivateKey(rsaKey)
+	rsaKeyDER := x509.MarshalPKCS1PrivateKey(rsaKey)
 
-	privBlock := pem.Block{
+	privateBlock := pem.Block{
 		Type:    "RSA PRIVATE KEY",
 		Headers: nil,
-		Bytes:   privDER,
+		Bytes:   rsaKeyDER,
 	}
 
-	privatePEM := pem.EncodeToMemory(&privBlock)
+	privatePEM := pem.EncodeToMemory(&privateBlock)
 
 	privateSSHKey, err := ssh.ParsePrivateKey(privatePEM)
 	if err != nil {

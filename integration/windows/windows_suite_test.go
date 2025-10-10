@@ -77,6 +77,7 @@ var _ = BeforeSuite(func() {
 	agent.CleanUpExtraDisks()
 	agent.CleanUpUpdateSettings()
 
+	// This file will be uploaded to the test vm via NatsClient.CompilePackageWithDeps()
 	goSourcePath := filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "go", "go1.7.1.windows-amd64.zip")
 	err = os.RemoveAll(goSourcePath)
 	Expect(err).NotTo(HaveOccurred())
@@ -105,7 +106,8 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 	defer outputFile.Close() //nolint:errcheck
 
 	err = settingsTmpl.Execute(outputFile, agentSettings)
-	outputFile.Close() //nolint:errcheck
+	Expect(err).ToNot(HaveOccurred())
+	err = outputFile.Close()
 	Expect(err).ToNot(HaveOccurred())
 
 	command := exec.Command("scp", outputFile.Name(), fmt.Sprintf("%s:/bosh/agent-configuration/%s", utils.AgentIP(), filename))
@@ -126,7 +128,7 @@ func downloadFile(localPath, sourceURL string) error {
 		return err
 	}
 	defer res.Body.Close() //nolint:errcheck
-	if _, err := io.Copy(f, res.Body); err != nil {
+	if _, err = io.Copy(f, res.Body); err != nil {
 		return err
 	}
 
