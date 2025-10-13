@@ -72,7 +72,7 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-cli/v7 v7.9.11
+# github.com/cloudfoundry/bosh-cli/v7 v7.9.12
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
 # github.com/cloudfoundry/bosh-davcli v0.0.437
@@ -444,7 +444,7 @@ golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
 # golang.org/x/tools/go/expect v0.1.1-deprecated
 ## explicit; go 1.23.0
-# google.golang.org/protobuf v1.36.8
+# google.golang.org/protobuf v1.36.10
 ## explicit; go 1.23
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire

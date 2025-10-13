@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.34.0
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.11
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.12
 	github.com/cloudfoundry/bosh-davcli v0.0.437
 	github.com/cloudfoundry/bosh-utils v0.0.555
 	github.com/cloudfoundry/gosigar v1.3.102
@@ -83,6 +83,6 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
-	google.golang.org/protobuf v1.36.8 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 )

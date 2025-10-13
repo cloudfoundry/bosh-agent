@@ -30,8 +30,8 @@ github.com/charlievieth/fs v0.0.3 h1:3lZQXTj4PbE81CVPwALSn+JoyCNXkZgORHN6h2XHGlg
 github.com/charlievieth/fs v0.0.3/go.mod h1:hD4sRzto1Hw8zCua76tNVKZxaeZZr1RiKftjAJQRLLo=
 github.com/cilium/ebpf v0.0.0-20200110133405-4032b1d8aae3/go.mod h1:MA5e5Lr8slmEg9bt0VpxxWqJlO4iwu3FBdHUzV7wQVg=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/cloudfoundry/bosh-cli/v7 v7.9.11 h1:H4olQfH7JVdo8xh+H8iCMcXdl6CjMufDPKFCzc0r7GI=
-github.com/cloudfoundry/bosh-cli/v7 v7.9.11/go.mod h1:0QGMhpafLr28cslIUIdaiEdyQq3r8rRWYJ9bEXt6wV0=
+github.com/cloudfoundry/bosh-cli/v7 v7.9.12 h1:Tg9WE/LlJqdwbrv/Ad2Y9UgflSVPHGLzekLvxHQiUF8=
+github.com/cloudfoundry/bosh-cli/v7 v7.9.12/go.mod h1:6wSm79g9343QBRk8pAlpeKo7A0LKch82eZvQTv61OTs=
 github.com/cloudfoundry/bosh-davcli v0.0.437 h1:kaELNEwuYSC9FVCFYVbsiXsFjeApXJpXpS/gMnmLZPg=
 github.com/cloudfoundry/bosh-davcli v0.0.437/go.mod h1:nnjEM70DI8uwWCkl+FeGP9pJKRWM6kLc4Xh9RdaaO7Q=
 github.com/cloudfoundry/bosh-utils v0.0.555 h1:tISTfz5Yb3El48lCtj/C663vyAlqVOdn1ByFdPfMIbM=
@@ -388,8 +388,8 @@ google.golang.org/protobuf v1.22.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2
 google.golang.org/protobuf v1.23.0/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 google.golang.org/protobuf v1.23.1-0.20200526195155-81db48ad09cc/go.mod h1:EGpADcykh3NcUnDUJcl1+ZksZNG86OlYog2l/sGQquU=
 google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlbajtzgsN7c=
-google.golang.org/protobuf v1.36.8 h1:xHScyCOEuuwZEc6UtSOvPbAT4zRh0xcNRYekJwfqyMc=
-google.golang.org/protobuf v1.36.8/go.mod h1:fuxRtAxBytpl4zzqUh6/eyUujkJdNiuEkXntxiD/uRU=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c h1:Hei/4ADfdWqJk1ZMxUNpqntNwaWcugrBjAiHlqqRiVk=
