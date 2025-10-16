@@ -12,18 +12,11 @@ resource_types:
       repository: dpb587/metalink-repository-resource
       username: ((docker.username))
       password: ((docker.password))
-  - name: pivnet
-    type: docker-image
-    source:
-      repository: pivotalcf/pivnet-resource
-      tag: latest-final
-      username: ((docker.username))
-      password: ((docker.password))
   - name: semver
     type: docker-image
     source:
       repository: concourse/semver-resource
-      tag: 1.6
+      tag: "1.6"
 
 resources:
   - name: bosh-agent
