@@ -87,7 +87,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				err := partitioner.Partition(devicePath, partitions)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
+				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
 
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
@@ -140,9 +140,10 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "17180917759"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "17180917760", "25770852351"}))
@@ -196,9 +197,10 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "8590983168", "17180917759"}))
@@ -285,9 +287,10 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(13))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
+					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"wipefs", "--force", "-a", "/dev/edx"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-1", "8590983168", "17180917759"}))
@@ -352,7 +355,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				err := partitioner.Partition(devicePath, partitions)
 				Expect(err).To(HaveOccurred())
 
-				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(22))
+				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(23))
 				Expect(err.Error()).To(ContainSubstring("Removing existing partitions"))
 			})
 		})

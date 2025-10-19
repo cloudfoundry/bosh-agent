@@ -737,9 +737,11 @@ var _ = Describe("PartedPartitioner", func() {
 						fakesys.FakeCmdResult{
 							Stderr: "Error: /dev/sda: unrecognised disk label", ExitStatus: 0},
 					)
-					fakeCmdRunner.AddCmdResult(
-						"parted -s /dev/sda mklabel gpt",
-						fakesys.FakeCmdResult{Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")})
+					for i := 0; i < 20; i++ {
+						fakeCmdRunner.AddCmdResult(
+							"parted -s /dev/sda mklabel gpt",
+							fakesys.FakeCmdResult{Stdout: "Some weird error", ExitStatus: 1, Error: errors.New("Some weird error")})
+					}
 				})
 
 				It("throw an error", func() {
@@ -751,13 +753,16 @@ var _ = Describe("PartedPartitioner", func() {
 					err := partitioner.Partition("/dev/sda", partitions)
 					Expect(err).To(HaveOccurred())
 
-					Expect(err.Error()).To(ContainSubstring("Getting existing partitions of `/dev/sda': Running parted print: Parted making label: Some weird error"))
-					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+					Expect(err.Error()).To(ContainSubstring("Some weird error"))
+					expectedCommands := [][]string{
 						{"partprobe", "/dev/sda"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
-						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
-						{"udevadm", "settle"},
-					}))
+					}
+					for i := 0; i < 20; i++ {
+						expectedCommands = append(expectedCommands, []string{"parted", "-s", "/dev/sda", "mklabel", "gpt"})
+					}
+					expectedCommands = append(expectedCommands, []string{"udevadm", "settle"})
+					Expect(fakeCmdRunner.RunCommands).To(Equal(expectedCommands))
 				})
 			})
 
@@ -870,6 +875,7 @@ var _ = Describe("PartedPartitioner", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
+					{"partx", "-d", "/dev/sda"},
 					{"wipefs", "--force", "-a", "/dev/sda"},
 				}))
 			})

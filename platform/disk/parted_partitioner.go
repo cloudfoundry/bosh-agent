@@ -189,6 +189,8 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 }
 
 func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
+	_, _, _, _ = p.cmdRunner.RunCommand("partx", "-d", devicePath)
+
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 		_, _, _, err := p.cmdRunner.RunCommand(
 			"wipefs",
@@ -237,13 +239,35 @@ func (p partedPartitioner) runPartedPrint(devicePath string) (stdout, stderr str
 }
 
 func (p partedPartitioner) getPartitionTable(devicePath string) (stdout, stderr string, exitStatus int, err error) {
-	return p.cmdRunner.RunCommand(
-		"parted",
-		"-s",
-		devicePath,
-		"mklabel",
-		"gpt",
-	)
+	var lastStdout, lastStderr string
+	var lastExitStatus int
+
+	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		stdout, stderr, exitStatus, runErr := p.cmdRunner.RunCommand(
+			"parted",
+			"-s",
+			devicePath,
+			"mklabel",
+			"gpt",
+		)
+
+		lastStdout = stdout
+		lastStderr = stderr
+		lastExitStatus = exitStatus
+
+		if runErr != nil {
+			p.logger.Info(p.logTag, "Creating gpt table failed, will retry: %s", runErr.Error())
+			return true, runErr
+		}
+
+		p.logger.Info(p.logTag, "Successfully created gpt table on `%s'", devicePath)
+		return false, nil
+	})
+
+	partitionRetryStrategy := NewPartitionStrategy(partitionRetryable, p.timeService, p.logger)
+	retryErr := partitionRetryStrategy.Try()
+
+	return lastStdout, lastStderr, lastExitStatus, retryErr
 }
 
 func (p partedPartitioner) roundUp(numToRound, multiple uint64) uint64 {
