@@ -87,7 +87,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				err := partitioner.Partition(devicePath, partitions)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
+				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(16))
 
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
 				Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-s", "/dev/edx", "unit", "B", "mkpart", "fake-agent-id-0", "1048576", "8590983167"}))
@@ -140,7 +140,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(16))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
@@ -197,7 +197,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(16))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
@@ -287,7 +287,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 					err := partitioner.Partition(devicePath, partitions)
 					Expect(err).ToNot(HaveOccurred())
 
-					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(14))
+					Expect(len(fakeCmdRunner.RunCommands)).To(Equal(16))
 
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"parted", "-m", "/dev/edx", "unit", "B", "print"}))
 					Expect(fakeCmdRunner.RunCommands).To(ContainElement([]string{"partx", "-d", "/dev/edx"}))
@@ -355,7 +355,7 @@ var _ = Describe("EphemeralDevicePartitioner", func() {
 				err := partitioner.Partition(devicePath, partitions)
 				Expect(err).To(HaveOccurred())
 
-				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(23))
+				Expect(len(fakeCmdRunner.RunCommands)).To(Equal(25))
 				Expect(err.Error()).To(ContainSubstring("Removing existing partitions"))
 			})
 		})

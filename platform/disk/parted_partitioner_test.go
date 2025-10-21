@@ -130,6 +130,8 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 						{"partprobe", "/dev/sda"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
 						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						{"udevadm", "settle"},
@@ -195,6 +197,8 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 						{"partprobe", "/dev/sda"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
 						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						{"udevadm", "settle"},
@@ -757,11 +761,13 @@ var _ = Describe("PartedPartitioner", func() {
 					expectedCommands := [][]string{
 						{"partprobe", "/dev/sda"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
 					}
 					for i := 0; i < 20; i++ {
+						expectedCommands = append(expectedCommands, []string{"partprobe", "/dev/sda"})
 						expectedCommands = append(expectedCommands, []string{"parted", "-s", "/dev/sda", "mklabel", "gpt"})
+						expectedCommands = append(expectedCommands, []string{"udevadm", "settle"})
 					}
-					expectedCommands = append(expectedCommands, []string{"udevadm", "settle"})
 					Expect(fakeCmdRunner.RunCommands).To(Equal(expectedCommands))
 				})
 			})
@@ -795,6 +801,8 @@ var _ = Describe("PartedPartitioner", func() {
 					Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 						{"partprobe", "/dev/sda"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
+						{"udevadm", "settle"},
+						{"partprobe", "/dev/sda"},
 						{"parted", "-s", "/dev/sda", "mklabel", "gpt"},
 						{"parted", "-m", "/dev/sda", "unit", "B", "print"},
 						{"udevadm", "settle"},
@@ -876,6 +884,8 @@ var _ = Describe("PartedPartitioner", func() {
 
 				Expect(fakeCmdRunner.RunCommands).To(Equal([][]string{
 					{"partx", "-d", "/dev/sda"},
+					{"udevadm", "settle"},
+					{"partprobe", "/dev/sda"},
 					{"wipefs", "--force", "-a", "/dev/sda"},
 				}))
 			})

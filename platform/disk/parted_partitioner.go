@@ -190,6 +190,8 @@ func (p partedPartitioner) GetPartitions(devicePath string) (partitions []Existi
 
 func (p partedPartitioner) RemovePartitions(partitions []ExistingPartition, devicePath string) error {
 	_, _, _, _ = p.cmdRunner.RunCommand("partx", "-d", devicePath)
+	_, _, _, _ = p.cmdRunner.RunCommand("udevadm", "settle")
+	_, _, _, _ = p.cmdRunner.RunCommand("partprobe", devicePath)
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
 		_, _, _, err := p.cmdRunner.RunCommand(
@@ -243,6 +245,9 @@ func (p partedPartitioner) getPartitionTable(devicePath string) (stdout, stderr 
 	var lastExitStatus int
 
 	partitionRetryable := boshretry.NewRetryable(func() (bool, error) {
+		p.cmdRunner.RunCommand("udevadm", "settle")
+		p.cmdRunner.RunCommand("partprobe", devicePath)
+
 		stdout, stderr, exitStatus, runErr := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
