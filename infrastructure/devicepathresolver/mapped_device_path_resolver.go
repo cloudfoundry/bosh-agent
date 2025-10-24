@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,13 +17,19 @@ import (
 type mappedDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	fs              boshsys.FileSystem
+	cmdRunner       boshsys.CmdRunner
 }
 
 func NewMappedDevicePathResolver(
 	diskWaitTimeout time.Duration,
 	fs boshsys.FileSystem,
+	cmdRunner boshsys.CmdRunner,
 ) DevicePathResolver {
-	return mappedDevicePathResolver{fs: fs, diskWaitTimeout: diskWaitTimeout}
+	return mappedDevicePathResolver{
+		fs:              fs,
+		diskWaitTimeout: diskWaitTimeout,
+		cmdRunner:       cmdRunner,
+	}
 }
 
 func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
@@ -54,23 +61,67 @@ func (dpr mappedDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.
 	return realPath, false, nil
 }
 
+func (dpr mappedDevicePathResolver) getRootDevicePath() (string, error) {
+	mountInfo, err := dpr.fs.ReadFileString("/proc/mounts")
+	if err != nil {
+		return "", bosherr.WrapError(err, "Reading /proc/mounts")
+	}
+
+	mountEntries := strings.Split(mountInfo, "\n")
+	for _, mountEntry := range mountEntries {
+		if mountEntry == "" {
+			continue
+		}
+
+		mountFields := strings.Fields(mountEntry)
+		if len(mountFields) >= 2 && mountFields[1] == "/" && strings.HasPrefix(mountFields[0], "/dev/") {
+			stdout, _, _, err := dpr.cmdRunner.RunCommand("readlink", "-f", mountFields[0])
+			if err != nil {
+				return "", bosherr.WrapError(err, "Resolving root partition path")
+			}
+			rootPartition := strings.TrimSpace(stdout)
+
+			validNVMeRootPartition := regexp.MustCompile(`^/dev/[a-z]+\dn\dp\d$`)
+			validSCSIRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
+
+			if validNVMeRootPartition.MatchString(rootPartition) {
+				return rootPartition[:len(rootPartition)-2], nil
+			} else if validSCSIRootPartition.MatchString(rootPartition) {
+				return rootPartition[:len(rootPartition)-1], nil
+			}
+		}
+	}
+	return "", bosherr.Error("Root device not found")
+}
+
 func (dpr mappedDevicePathResolver) findPossibleDevice(devicePath string) (string, bool, error) {
 	needsMapping := strings.HasPrefix(devicePath, "/dev/sd")
 
 	if needsMapping { //nolint:nestif
 		pathLetterSuffix := strings.Split(devicePath, "/dev/sd")[1]
-		pathNumberSuffix := fmt.Sprintf("%d", pathLetterSuffix[0]-97) // a=0, b=1
 
 		possiblePaths := []string{
 			"/dev/xvd" + pathLetterSuffix, // Xen
 			"/dev/vd" + pathLetterSuffix,  // KVM
 			"/dev/sd" + pathLetterSuffix,
-			"/dev/nvme" + pathNumberSuffix + "n1", // Nitro instances with Noble
 		}
 
 		for _, path := range possiblePaths {
 			if dpr.fs.FileExists(path) {
 				return path, true, nil
+			}
+		}
+
+		rootDevicePath, err := dpr.getRootDevicePath()
+		if err != nil {
+			rootDevicePath = ""
+		}
+
+		nvmePattern := "/dev/nvme%dn1"
+		for i := 0; i < 10; i++ {
+			nvmePath := fmt.Sprintf(nvmePattern, i)
+			if dpr.fs.FileExists(nvmePath) && nvmePath != rootDevicePath {
+				return nvmePath, true, nil
 			}
 		}
 	} else if dpr.fs.FileExists(devicePath) {

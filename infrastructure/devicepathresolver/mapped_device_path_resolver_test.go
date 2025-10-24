@@ -17,6 +17,7 @@ import (
 var _ = Describe("mappedDevicePathResolver", func() {
 	var (
 		fs           *fakesys.FakeFileSystem
+		cmdRunner    *fakesys.FakeCmdRunner
 		diskSettings boshsettings.DiskSettings
 		resolver     DevicePathResolver
 	)
@@ -27,7 +28,8 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		}
 
 		fs = fakesys.NewFakeFileSystem()
-		resolver = NewMappedDevicePathResolver(time.Second, fs)
+		cmdRunner = fakesys.NewFakeCmdRunner()
+		resolver = NewMappedDevicePathResolver(time.Second, fs, cmdRunner)
 		diskSettings = boshsettings.DiskSettings{
 			Path: "/dev/sda",
 		}
@@ -97,6 +99,58 @@ var _ = Describe("mappedDevicePathResolver", func() {
 		})
 
 		It("returns the match", func() {
+			realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(timedOut).To(BeFalse())
+			Expect(realPath).To(Equal("/dev/nvme0n1"))
+		})
+	})
+
+	Context("when nvme devices exist but nvme0n1 is the root device", func() {
+		BeforeEach(func() {
+			diskSettings = boshsettings.DiskSettings{
+				Path: "/dev/sdb",
+			}
+			err := fs.WriteFile("/dev/nvme0n1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/nvme1n1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/nvme0n1p1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/proc/mounts", "/dev/nvme0n1p1 / ext4 rw,relatime 0 0\n")
+			Expect(err).NotTo(HaveOccurred())
+			cmdRunner.AddCmdResult("readlink -f /dev/nvme0n1p1", fakesys.FakeCmdResult{
+				Stdout: "/dev/nvme0n1p1\n",
+			})
+		})
+
+		It("returns nvme1n1 instead of nvme0n1", func() {
+			realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(timedOut).To(BeFalse())
+			Expect(realPath).To(Equal("/dev/nvme1n1"))
+		})
+	})
+
+	Context("when nvme devices exist but nvme1n1 is the root device", func() {
+		BeforeEach(func() {
+			diskSettings = boshsettings.DiskSettings{
+				Path: "/dev/sdb",
+			}
+			err := fs.WriteFile("/dev/nvme0n1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/nvme1n1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFile("/dev/nvme1n1p1", []byte{})
+			Expect(err).NotTo(HaveOccurred())
+			err = fs.WriteFileString("/proc/mounts", "/dev/nvme1n1p1 / ext4 rw,relatime 0 0\n")
+			Expect(err).NotTo(HaveOccurred())
+			cmdRunner.AddCmdResult("readlink -f /dev/nvme1n1p1", fakesys.FakeCmdResult{
+				Stdout: "/dev/nvme1n1p1\n",
+			})
+		})
+
+		It("returns nvme0n1 instead of nvme1n1", func() {
 			realPath, timedOut, err := resolver.GetRealDevicePath(diskSettings)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(timedOut).To(BeFalse())

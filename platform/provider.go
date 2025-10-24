@@ -134,7 +134,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		udev := boshudev.NewConcreteUdevDevice(runner, logger)
 		volumeIDDevicePathResolver := devicepathresolver.NewVirtioVolumeIDDevicePathResolver(500*time.Millisecond, udev, fs, logger)
 		idDevicePathResolver := devicepathresolver.NewIDDevicePathResolver(500*time.Millisecond, udev, fs, options.Linux.DiskIDTransformPattern, options.Linux.DiskIDTransformReplacement, logger)
-		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(30000*time.Millisecond, fs)
+		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(30000*time.Millisecond, fs, runner)
 		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(volumeIDDevicePathResolver, idDevicePathResolver, mappedDevicePathResolver, logger)
 	case "scsi":
 		scsiIDPathResolver := devicepathresolver.NewSCSIIDDevicePathResolver(50000*time.Millisecond, fs, logger)
