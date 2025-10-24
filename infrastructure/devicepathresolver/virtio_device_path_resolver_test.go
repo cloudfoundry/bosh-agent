@@ -16,18 +16,20 @@ import (
 
 var _ = Describe("VirtioDevicePathResolver", func() {
 	var (
-		pathResolver             DevicePathResolver
-		idDevicePathResolver     *fakedpresolv.FakeDevicePathResolver
-		mappedDevicePathResolver *fakedpresolv.FakeDevicePathResolver
+		pathResolver               DevicePathResolver
+		volumeIDDevicePathResolver *fakedpresolv.FakeDevicePathResolver
+		idDevicePathResolver       *fakedpresolv.FakeDevicePathResolver
+		mappedDevicePathResolver   *fakedpresolv.FakeDevicePathResolver
 
 		diskSettings boshsettings.DiskSettings
 	)
 
 	BeforeEach(func() {
+		volumeIDDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		idDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		mappedDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger := boshlog.NewLogger(boshlog.LevelNone)
-		pathResolver = NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
+		pathResolver = NewVirtioDevicePathResolver(volumeIDDevicePathResolver, idDevicePathResolver, mappedDevicePathResolver, logger)
 
 		diskSettings = boshsettings.DiskSettings{
 			ID:       "fake-disk-id",
@@ -37,58 +39,77 @@ var _ = Describe("VirtioDevicePathResolver", func() {
 	})
 
 	Describe("GetRealDevicePath", func() {
-		Context("when idDevicePathResolver returns path", func() {
+		Context("when volumeIDDevicePathResolver returns path", func() {
 			BeforeEach(func() {
-				idDevicePathResolver.RealDevicePath = "fake-id-resolved-device-path"
+				volumeIDDevicePathResolver.RealDevicePath = "fake-volumeid-resolved-device-path"
 			})
 
 			It("returns the path", func() {
 				realPath, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(timeout).To(BeFalse())
-				Expect(realPath).To(Equal("fake-id-resolved-device-path"))
+				Expect(realPath).To(Equal("fake-volumeid-resolved-device-path"))
 			})
 		})
 
-		Context("when idDevicePathResolver errors", func() {
+		Context("when volumeIDDevicePathResolver errors", func() {
 			BeforeEach(func() {
-				idDevicePathResolver.GetRealDevicePathErr = errors.New("fake-id-error")
+				volumeIDDevicePathResolver.GetRealDevicePathErr = errors.New("fake-volumeid-error")
 			})
 
-			It("calls mappedDevicePathResolver", func() {
-				mappedDevicePathResolver.RealDevicePath = "fake-mapped-resolved-device-path"
-
-				realPath, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(timeout).To(BeFalse())
-				Expect(realPath).To(Equal("fake-mapped-resolved-device-path"))
-
-				Expect(mappedDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
-			})
-
-			Context("when mappedDevicePathResolver times out", func() {
+			Context("when idDevicePathResolver returns path", func() {
 				BeforeEach(func() {
-					mappedDevicePathResolver.GetRealDevicePathErr = errors.New("fake-id-error")
-					mappedDevicePathResolver.GetRealDevicePathTimedOut = true
+					idDevicePathResolver.RealDevicePath = "fake-id-resolved-device-path"
 				})
 
-				It("returns timeout", func() {
-					_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-					Expect(err).To(HaveOccurred())
-					Expect(timeout).To(BeTrue())
-				})
-			})
-
-			Context("when mappedDevicePathResolver errors", func() {
-				BeforeEach(func() {
-					mappedDevicePathResolver.GetRealDevicePathErr = errors.New("fake-mapped-error")
-				})
-
-				It("returns error", func() {
-					_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-mapped-error"))
+				It("returns the path", func() {
+					realPath, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+					Expect(err).ToNot(HaveOccurred())
 					Expect(timeout).To(BeFalse())
+					Expect(realPath).To(Equal("fake-id-resolved-device-path"))
+				})
+			})
+
+			Context("when idDevicePathResolver errors", func() {
+				BeforeEach(func() {
+					idDevicePathResolver.GetRealDevicePathErr = errors.New("fake-id-error")
+				})
+
+				It("calls mappedDevicePathResolver", func() {
+					mappedDevicePathResolver.RealDevicePath = "fake-mapped-resolved-device-path"
+
+					realPath, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(timeout).To(BeFalse())
+					Expect(realPath).To(Equal("fake-mapped-resolved-device-path"))
+
+					Expect(mappedDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+				})
+
+				Context("when mappedDevicePathResolver times out", func() {
+					BeforeEach(func() {
+						mappedDevicePathResolver.GetRealDevicePathErr = errors.New("fake-id-error")
+						mappedDevicePathResolver.GetRealDevicePathTimedOut = true
+					})
+
+					It("returns timeout", func() {
+						_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).To(HaveOccurred())
+						Expect(timeout).To(BeTrue())
+					})
+				})
+
+				Context("when mappedDevicePathResolver errors", func() {
+					BeforeEach(func() {
+						mappedDevicePathResolver.GetRealDevicePathErr = errors.New("fake-mapped-error")
+					})
+
+					It("returns error", func() {
+						_, timeout, err := pathResolver.GetRealDevicePath(diskSettings)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("fake-mapped-error"))
+						Expect(timeout).To(BeFalse())
+					})
 				})
 			})
 		})

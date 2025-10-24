@@ -132,9 +132,10 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	switch options.Linux.DevicePathResolutionType {
 	case "virtio":
 		udev := boshudev.NewConcreteUdevDevice(runner, logger)
+		volumeIDDevicePathResolver := devicepathresolver.NewVirtioVolumeIDDevicePathResolver(500*time.Millisecond, udev, fs, logger)
 		idDevicePathResolver := devicepathresolver.NewIDDevicePathResolver(500*time.Millisecond, udev, fs, options.Linux.DiskIDTransformPattern, options.Linux.DiskIDTransformReplacement, logger)
 		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(30000*time.Millisecond, fs)
-		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
+		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(volumeIDDevicePathResolver, idDevicePathResolver, mappedDevicePathResolver, logger)
 	case "scsi":
 		scsiIDPathResolver := devicepathresolver.NewSCSIIDDevicePathResolver(50000*time.Millisecond, fs, logger)
 		scsiVolumeIDPathResolver := devicepathresolver.NewSCSIVolumeIDDevicePathResolver(500*time.Millisecond, fs)

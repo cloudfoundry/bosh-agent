@@ -152,7 +152,7 @@ func init() { //nolint:funlen,gochecknoinits
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(app.GetPlatform().GetDevicePathResolver()).To(
-					BeAssignableToTypeOf(devicepathresolver.NewVirtioDevicePathResolver(nil, nil, boshlog.NewLogger(logLevel))))
+					BeAssignableToTypeOf(devicepathresolver.NewVirtioDevicePathResolver(nil, nil, nil, boshlog.NewLogger(logLevel))))
 			})
 		})
 

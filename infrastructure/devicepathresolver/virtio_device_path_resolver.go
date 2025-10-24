@@ -8,27 +8,43 @@ import (
 )
 
 type virtioDevicePathResolver struct {
-	idDevicePathResolver     DevicePathResolver
-	mappedDevicePathResolver DevicePathResolver
-	logger                   boshlog.Logger
-	logTag                   string
+	volumeIDDevicePathResolver DevicePathResolver
+	idDevicePathResolver       DevicePathResolver
+	mappedDevicePathResolver   DevicePathResolver
+	logger                     boshlog.Logger
+	logTag                     string
 }
 
 func NewVirtioDevicePathResolver(
+	volumeIDDevicePathResolver DevicePathResolver,
 	idDevicePathResolver DevicePathResolver,
 	mappedDevicePathResolver DevicePathResolver,
 	logger boshlog.Logger,
 ) DevicePathResolver {
 	return virtioDevicePathResolver{
-		idDevicePathResolver:     idDevicePathResolver,
-		mappedDevicePathResolver: mappedDevicePathResolver,
-		logger:                   logger,
-		logTag:                   "virtioDevicePathResolver",
+		volumeIDDevicePathResolver: volumeIDDevicePathResolver,
+		idDevicePathResolver:       idDevicePathResolver,
+		mappedDevicePathResolver:   mappedDevicePathResolver,
+		logger:                     logger,
+		logTag:                     "virtioDevicePathResolver",
 	}
 }
 
 func (vpr virtioDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-	realPath, timeout, err := vpr.idDevicePathResolver.GetRealDevicePath(diskSettings)
+	realPath, timeout, err := vpr.volumeIDDevicePathResolver.GetRealDevicePath(diskSettings)
+	if err == nil {
+		vpr.logger.Debug(vpr.logTag, "Resolved disk %+v by VolumeID as '%s'", diskSettings, realPath)
+		return realPath, false, nil
+	}
+
+	vpr.logger.Debug(vpr.logTag,
+		"Failed to get device real path by VolumeID: '%s'. Error: '%s', timeout: '%t'",
+		diskSettings.VolumeID,
+		err.Error(),
+		timeout,
+	)
+
+	realPath, timeout, err = vpr.idDevicePathResolver.GetRealDevicePath(diskSettings)
 	if err == nil {
 		vpr.logger.Debug(vpr.logTag, "Resolved disk %+v by ID as '%s'", diskSettings, realPath)
 		return realPath, false, nil
