@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path"
@@ -17,6 +18,15 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+)
+
+var (
+	gzipMagic   = []byte{0x1f, 0x8b}
+	bzip2Magic  = []byte{0x42, 0x5a, 0x68} // "BZh"
+	xzMagic     = []byte{0xfd, 0x37, 0x7a, 0x58, 0x5a, 0x00}
+	zstdMagic   = []byte{0x28, 0xb5, 0x2f, 0xfd}
+	ustarMagic  = []byte("ustar")
+	ustarOffset = 257 // Offset of the TAR magic string in the file
 )
 
 const PackagingScriptName = "packaging"
@@ -73,7 +83,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 
 	compilePath := path.Join(c.compileDirProvider.CompileDir(), pkg.Name)
 
-	err = c.fetchAndUncompress(pkg, compilePath)
+	depFilePath, err := c.fetchAndUncompress(pkg, compilePath)
 	if err != nil {
 		return "", nil, bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
 	}
@@ -113,7 +123,7 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		}
 	}
 
-	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath)
+	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath, boshcmd.CompressorOptions{NoCompression: c.isNonCompressedTarball(depFilePath)})
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Compressing compiled package")
 	}
@@ -145,22 +155,22 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 	return uploadedBlobID, digest, nil
 }
 
-func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
+func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) (string, error) {
 	if pkg.BlobstoreID == "" && pkg.PackageGetSignedURL == "" {
-		return bosherr.Error(fmt.Sprintf("No blobstore reference for package '%s'", pkg.Name))
+		return "", bosherr.Error(fmt.Sprintf("No blobstore reference for package '%s'", pkg.Name))
 	}
 
 	depFilePath, err := c.blobstore.Get(pkg.Sha1, pkg.PackageGetSignedURL, pkg.BlobstoreID, pkg.BlobstoreHeaders)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
+		return "", bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}
 
 	err = c.atomicDecompress(depFilePath, targetDir)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Uncompressing package %s", pkg.Name)
+		return "", bosherr.WrapErrorf(err, "Uncompressing package %s", pkg.Name)
 	}
 
-	return nil
+	return depFilePath, nil
 }
 
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) error {
@@ -201,4 +211,37 @@ func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) 
 	}
 
 	return c.moveTmpDir(tmpInstallPath, finalDir)
+}
+
+func (c concreteCompiler) isNonCompressedTarball(path string) bool {
+	f, err := c.fs.OpenFile(path, os.O_RDONLY, 0644)
+	if err != nil {
+		// If we cannot open the file, we assume it is not compressed
+		return false
+	}
+	defer f.Close() //nolint:errcheck
+
+	// Read the first 512 bytes to check both compression headers and the TAR header.
+	// Ignore the error from reading a partial buffer, which is fine for short files.
+	buffer := make([]byte, 512)
+	_, _ = f.Read(buffer) //nolint:errcheck
+
+	// 1. Check for compression first.
+	if bytes.HasPrefix(buffer, gzipMagic) ||
+		bytes.HasPrefix(buffer, bzip2Magic) ||
+		bytes.HasPrefix(buffer, xzMagic) ||
+		bytes.HasPrefix(buffer, zstdMagic) {
+		return false
+	}
+
+	// 2. If NOT compressed, check for the TAR magic string at its specific offset.
+	// Ensure the buffer is long enough to contain the TAR header magic string.
+	if len(buffer) > ustarOffset+len(ustarMagic) {
+		magicBytes := buffer[ustarOffset : ustarOffset+len(ustarMagic)]
+		if bytes.Equal(magicBytes, ustarMagic) {
+			return true
+		}
+	}
+
+	return false
 }

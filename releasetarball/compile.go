@@ -77,6 +77,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 // Compile expects the compiler returned by NewCompiler and may not work with compilers constructed differently.
 func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string) (string, error) {
 	log.Printf("Reading BOSH Release Manifest from tarball %s", boshReleaseTarballPath)
+
 	m, err := Manifest(boshReleaseTarballPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse release manifest: %w", err)
@@ -220,9 +221,15 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 		return "", err
 	}
 	defer closeAndIgnoreErr(outputFile)
-	gw := gzip.NewWriter(outputFile)
-	defer closeAndIgnoreErr(gw)
-	tw := tar.NewWriter(gw)
+
+	var tw *tar.Writer
+	if m.NoCompression {
+		tw = tar.NewWriter(outputFile)
+	} else {
+		gw := gzip.NewWriter(outputFile)
+		defer closeAndIgnoreErr(gw)
+		tw = tar.NewWriter(gw)
+	}
 	defer closeAndIgnoreErr(tw)
 
 	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, compiledPackages, releaseManifestBuffer, blobsDirectory))
@@ -320,11 +327,21 @@ func walkTarballFiles(releaseFilePath string, file tarballWalkFunc) error {
 		return nil
 	}
 	defer closeAndIgnoreErr(f)
+
+	// Try to read as gzipped first, fall back to uncompressed if it fails
+	var r *tar.Reader
 	gr, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
-		return err
+		// Not gzipped, read as uncompressed tar
+		_, err = f.Seek(0, io.SeekStart)
+		if err != nil {
+			return err
+		}
+		r = tar.NewReader(f)
+	} else {
+		// Successfully opened as gzipped
+		r = tar.NewReader(gr)
 	}
-	r := tar.NewReader(gr)
 
 	found := 0
 	for {

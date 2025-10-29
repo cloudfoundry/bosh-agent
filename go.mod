@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.12
 	github.com/cloudfoundry/bosh-davcli v0.0.437
-	github.com/cloudfoundry/bosh-utils v0.0.555
+	github.com/cloudfoundry/bosh-utils v0.0.557
 	github.com/cloudfoundry/gosigar v1.3.103
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
@@ -86,3 +86,5 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 )
+
+replace github.com/cloudfoundry/bosh-cli/v7 => github.com/mdzhigarov/bosh-cli/v7 v7.0.0-20251024080109-e3ebf7efb600

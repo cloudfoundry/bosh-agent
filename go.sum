@@ -30,12 +30,10 @@ github.com/charlievieth/fs v0.0.3 h1:3lZQXTj4PbE81CVPwALSn+JoyCNXkZgORHN6h2XHGlg
 github.com/charlievieth/fs v0.0.3/go.mod h1:hD4sRzto1Hw8zCua76tNVKZxaeZZr1RiKftjAJQRLLo=
 github.com/cilium/ebpf v0.0.0-20200110133405-4032b1d8aae3/go.mod h1:MA5e5Lr8slmEg9bt0VpxxWqJlO4iwu3FBdHUzV7wQVg=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/cloudfoundry/bosh-cli/v7 v7.9.12 h1:Tg9WE/LlJqdwbrv/Ad2Y9UgflSVPHGLzekLvxHQiUF8=
-github.com/cloudfoundry/bosh-cli/v7 v7.9.12/go.mod h1:6wSm79g9343QBRk8pAlpeKo7A0LKch82eZvQTv61OTs=
 github.com/cloudfoundry/bosh-davcli v0.0.437 h1:kaELNEwuYSC9FVCFYVbsiXsFjeApXJpXpS/gMnmLZPg=
 github.com/cloudfoundry/bosh-davcli v0.0.437/go.mod h1:nnjEM70DI8uwWCkl+FeGP9pJKRWM6kLc4Xh9RdaaO7Q=
-github.com/cloudfoundry/bosh-utils v0.0.555 h1:tISTfz5Yb3El48lCtj/C663vyAlqVOdn1ByFdPfMIbM=
-github.com/cloudfoundry/bosh-utils v0.0.555/go.mod h1:pqiwKNIx0KMUafC4lXeuq0FEK2zTU3jqbGcBXzHp/DY=
+github.com/cloudfoundry/bosh-utils v0.0.557 h1:4T/6xHeUkNdX1k67JovVubY8te818sU7ACAdSQud73k=
+github.com/cloudfoundry/bosh-utils v0.0.557/go.mod h1:0WsuZZ11DRsAFvT/RNn3rCq18N3fpjzPLks6XL59WpQ=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 h1:oy59UYcspoP44ggE8DM3kjxl1+sTFd802bbZlBBhBMk=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.103 h1:1X69OSpRr8Nq9UziQjgpgL+hQv0sKW+44aJcfKUjzFw=
@@ -173,6 +171,8 @@ github.com/masterzen/winrm v0.0.0-20250927112105-5f8e6c707321 h1:AKIJL2PfBX2uie0
 github.com/masterzen/winrm v0.0.0-20250927112105-5f8e6c707321/go.mod h1:JajVhkiG2bYSNYYPYuWG7WZHr42CTjMTcCjfInRNCqc=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3 h1:Eaq36EIyJNp7b3qDhjV7jmDVq/yPeW2v4pTqzGbOGB4=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.3/go.mod h1:6KKUoQBZBW6PDXJtNfqeEjPXMj/ITTk+cWK9t9uS5+E=
+github.com/mdzhigarov/bosh-cli/v7 v7.0.0-20251024080109-e3ebf7efb600 h1:5XNtLK+frbkZfA3D7+EORWDhtD6lNR4CasWy6MxUo9I=
+github.com/mdzhigarov/bosh-cli/v7 v7.0.0-20251024080109-e3ebf7efb600/go.mod h1:W92VgOe+7HZ5llbCcich3zWS4Tx9ImX8G/7X/enqEIk=
 github.com/mfridman/tparse v0.18.0 h1:wh6dzOKaIwkUGyKgOntDW4liXSo37qg5AXbIhkMV3vE=
 github.com/mfridman/tparse v0.18.0/go.mod h1:gEvqZTuCgEhPbYk/2lS3Kcxg1GmTxxU7kTC8DvP0i/A=
 github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyuac5Z2hdY=
