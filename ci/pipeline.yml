@@ -101,7 +101,7 @@ resources:
       username: ((docker.username))
       password: ((docker.password))
 
-  - name: golang-registry-image
+  - name: golang-release-image
     type: registry-image
     source:
       repository: docker.io/bosh/golang-release
@@ -209,6 +209,7 @@ jobs:
   - name: bump-deps
     plan:
       - in_parallel:
+        - get: golang-release-image
         - get: weekly
           trigger: true
         - get: bosh-agent
@@ -216,10 +217,14 @@ jobs:
         - get: golang-release
       - task: bump-deps
         file: golang-release/ci/tasks/shared/bump-deps.yml
+        image: golang-release-image
+        tags: [ windows-nimbus ]
         input_mapping:
           input_repo: bosh-agent
         output_mapping:
           output_repo: bumped-bosh-agent
+        params:
+          GOPROXY: https://((broadcom_artifactory_mirrors.username)):((broadcom_artifactory_mirrors.password))@((broadcom_artifactory_mirrors.golang)),off
       - in_parallel:
         - task: test-unit
           file: bosh-agent-ci/ci/tasks/test-unit.yml
@@ -258,7 +263,7 @@ jobs:
             params:
               globs:
                 - "no-files-needed"
-          - get: golang-registry-image
+          - get: golang-release-image
             trigger: true
       - task: build-docker-args
         file: bosh-agent-ci/ci/docker/build-args.yml
@@ -288,8 +293,7 @@ jobs:
         trigger: true
       - task: test-unit
         file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
-        tags:
-          - windows-nimbus
+        tags: [ windows-nimbus ]
 
   - name: test-integration
     serial: true

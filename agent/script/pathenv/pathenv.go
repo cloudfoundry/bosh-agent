@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 // Package pathenv returns the OS specific PATH environment variable to use
 // when shelling out to user scripts (e.g pre-start, drain).
