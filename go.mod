@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.13
 	github.com/cloudfoundry/bosh-davcli v0.0.439
-	github.com/cloudfoundry/bosh-utils v0.0.560
+	github.com/cloudfoundry/bosh-utils v0.0.562
 	github.com/cloudfoundry/gosigar v1.3.106
 	github.com/containerd/cgroups v1.1.0
 	github.com/coreos/go-iptables v0.8.0
