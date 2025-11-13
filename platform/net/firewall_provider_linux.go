@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
-	"github.com/containerd/cgroups" // NOTE: linux only; see: https://github.com/containerd/cgroups/issues/19
+	cgroups "github.com/containerd/cgroups/v3"
+	"github.com/containerd/cgroups/v3/cgroup1"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -71,9 +72,9 @@ func SetupNatsFirewall(mbus string) error {
 }
 
 func SetupIptables(host, port string, addr_array []net.IP) error {
-	_, err := cgroups.V1()
+	_, err := cgroup1.Default()
 	if err != nil {
-		if errors.Is(err, cgroups.ErrMountPointNotExist) {
+		if errors.Is(err, cgroup1.ErrMountPointNotExist) {
 			return nil // v1cgroups are not mounted (warden stemcells)
 		}
 		return bosherr.WrapError(err, "Error retrieving cgroups mount point")
@@ -143,7 +144,7 @@ func SetupIptables(host, port string, addr_array []net.IP) error {
 	}
 
 	var isolationClassID = natsIsolationClassID
-	natsAPICgroup, err := cgroups.New(cgroups.SingleSubsystem(cgroups.V1, cgroups.NetCLS), cgroups.StaticPath("/nats-api-access"), &specs.LinuxResources{
+	natsAPICgroup, err := cgroup1.New(cgroup1.StaticPath("/nats-api-access"), &specs.LinuxResources{
 		Network: &specs.LinuxNetwork{
 			ClassID: &isolationClassID,
 		},
@@ -152,6 +153,6 @@ func SetupIptables(host, port string, addr_array []net.IP) error {
 		return bosherr.WrapError(err, "Error setting up cgroups for nats api access")
 	}
 
-	err = natsAPICgroup.AddProc(uint64(os.Getpid()), cgroups.NetCLS)
+	err = natsAPICgroup.AddProc(uint64(os.Getpid()), cgroup1.NetCLS)
 	return err
 }
