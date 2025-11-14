@@ -224,6 +224,7 @@ jobs:
         params:
           GOPROXY: ((repository_mirrors.goproxy))
           GOSUMDB: ((repository_mirrors.gosumdb))
+          GOOS_LIST: linux,windows
       - in_parallel:
         - task: test-unit
           file: bosh-agent-ci/ci/tasks/test-unit.yml
