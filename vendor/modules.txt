@@ -1,8 +1,8 @@
-# code.cloudfoundry.org/clock v1.54.0
+# code.cloudfoundry.org/clock v1.55.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.39.0
+# code.cloudfoundry.org/tlsconfig v0.40.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.1.0
@@ -83,12 +83,12 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.9.13
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.442
-## explicit; go 1.23.0
+# github.com/cloudfoundry/bosh-davcli v0.0.443
+## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.568
+# github.com/cloudfoundry/bosh-utils v0.0.569
 ## explicit; go 1.23.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -115,8 +115,8 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.159
-## explicit; go 1.23.0
+# github.com/cloudfoundry/socks5-proxy v0.2.160
+## explicit; go 1.24.0
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups/v3 v3.1.1
 ## explicit; go 1.22.0
@@ -175,7 +175,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d
+# github.com/google/pprof v0.0.0-20251114195745-4902fdda35c8
 ## explicit; go 1.24.0
 github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
@@ -360,7 +360,7 @@ go.yaml.in/yaml/v3
 # go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 ## explicit; go 1.18
 go4.org/netipx
-# golang.org/x/crypto v0.44.0
+# golang.org/x/crypto v0.45.0
 ## explicit; go 1.24.0
 golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
@@ -469,7 +469,7 @@ golang.org/x/tools/internal/versions
 # google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba
 ## explicit; go 1.24.0
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.76.0
+# google.golang.org/grpc v1.77.0
 ## explicit; go 1.24.0
 google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
