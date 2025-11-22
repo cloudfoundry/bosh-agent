@@ -7,10 +7,10 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.40.0
 	github.com/Microsoft/hcsshim v0.13.0
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.9.13
-	github.com/cloudfoundry/bosh-davcli v0.0.443
-	github.com/cloudfoundry/bosh-utils v0.0.569
-	github.com/cloudfoundry/gosigar v1.3.111
+	github.com/cloudfoundry/bosh-cli/v7 v7.9.14
+	github.com/cloudfoundry/bosh-davcli v0.0.445
+	github.com/cloudfoundry/bosh-utils v0.0.570
+	github.com/cloudfoundry/gosigar v1.3.112
 	github.com/containerd/cgroups/v3 v3.1.1
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -45,7 +45,7 @@ require (
 	github.com/bodgit/ntlmssp v0.0.0-20240506230425-31973bb52d9b // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.160 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.162 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
@@ -84,7 +84,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20251113190631-e25ba8c21ef6 // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251112162317-03ef243c208a // indirect
+	golang.org/x/telemetry v0.0.0-20251121192418-e4876590c019 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect

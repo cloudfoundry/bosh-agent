@@ -80,16 +80,16 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-cli/v7 v7.9.13
-## explicit; go 1.23.0
+# github.com/cloudfoundry/bosh-cli/v7 v7.9.14
+## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.443
+# github.com/cloudfoundry/bosh-davcli v0.0.445
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.569
-## explicit; go 1.23.0
+# github.com/cloudfoundry/bosh-utils v0.0.570
+## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
 github.com/cloudfoundry/bosh-utils/blobstore/fakes
@@ -110,12 +110,12 @@ github.com/cloudfoundry/bosh-utils/work
 # github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851
 ## explicit; go 1.21.0
 github.com/cloudfoundry/go-socks5
-# github.com/cloudfoundry/gosigar v1.3.111
+# github.com/cloudfoundry/gosigar v1.3.112
 ## explicit; go 1.23.0
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.160
+# github.com/cloudfoundry/socks5-proxy v0.2.162
 ## explicit; go 1.24.0
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups/v3 v3.1.1
@@ -403,7 +403,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/telemetry v0.0.0-20251112162317-03ef243c208a
+# golang.org/x/telemetry v0.0.0-20251121192418-e4876590c019
 ## explicit; go 1.24.0
 golang.org/x/telemetry/counter
 golang.org/x/telemetry/internal/counter
