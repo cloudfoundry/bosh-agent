@@ -183,13 +183,19 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 		return Heartbeat{}, bosherr.WrapError(err, "Getting job spec")
 	}
 
+	processes, err := a.jobSupervisor.Processes()
+	if err != nil {
+		return Heartbeat{}, bosherr.WrapError(err, "Getting processes")
+	}
+
 	hb := Heartbeat{
-		Deployment: spec.Deployment,
-		Job:        spec.JobSpec.Name,
-		Index:      spec.Index,
-		JobState:   status,
-		Vitals:     vitals,
-		NodeID:     spec.NodeID,
+		Deployment:    spec.Deployment,
+		Job:           spec.JobSpec.Name,
+		Index:         spec.Index,
+		JobState:      status,
+		Vitals:        vitals,
+		NodeID:        spec.NodeID,
+		ProcessLength: len(processes),
 	}
 
 	return hb, nil
