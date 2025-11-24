@@ -73,9 +73,14 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 
 	compilePath := path.Join(c.compileDirProvider.CompileDir(), pkg.Name)
 
-	err = c.fetchAndUncompress(pkg, compilePath)
+	srcPkgArchiveFile, err := c.fetchPackageSrcArchive(pkg)
 	if err != nil {
 		return "", nil, bosherr.WrapErrorf(err, "Fetching package %s", pkg.Name)
+	}
+
+	err = c.atomicDecompress(srcPkgArchiveFile, compilePath)
+	if err != nil {
+		return "", nil, bosherr.WrapErrorf(err, "Uncompressing package %s", pkg.Name)
 	}
 
 	defer func() {
@@ -113,7 +118,9 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 		}
 	}
 
-	tmpPackageTar, err := c.compressor.CompressFilesInDir(installPath, boshcmd.CompressorOptions{})
+	tmpPackageTar, err :=
+		c.compressor.CompressFilesInDir(installPath,
+			boshcmd.CompressorOptions{NoCompression: c.compressor.IsNonCompressedTarball(srcPkgArchiveFile)})
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Compressing compiled package")
 	}
@@ -145,22 +152,17 @@ func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobI
 	return uploadedBlobID, digest, nil
 }
 
-func (c concreteCompiler) fetchAndUncompress(pkg Package, targetDir string) error {
+func (c concreteCompiler) fetchPackageSrcArchive(pkg Package) (string, error) {
 	if pkg.BlobstoreID == "" && pkg.PackageGetSignedURL == "" {
-		return bosherr.Error(fmt.Sprintf("No blobstore reference for package '%s'", pkg.Name))
+		return "", bosherr.Error(fmt.Sprintf("No blobstore reference for package '%s'", pkg.Name))
 	}
 
 	depFilePath, err := c.blobstore.Get(pkg.Sha1, pkg.PackageGetSignedURL, pkg.BlobstoreID, pkg.BlobstoreHeaders)
 	if err != nil {
-		return bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
+		return "", bosherr.WrapErrorf(err, "Fetching package blob %s", pkg.BlobstoreID)
 	}
 
-	err = c.atomicDecompress(depFilePath, targetDir)
-	if err != nil {
-		return bosherr.WrapErrorf(err, "Uncompressing package %s", pkg.Name)
-	}
-
-	return nil
+	return depFilePath, nil
 }
 
 func (c concreteCompiler) atomicDecompress(archivePath string, finalDir string) error {
