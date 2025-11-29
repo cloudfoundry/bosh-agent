@@ -2,7 +2,7 @@
 ## explicit; go 1.24.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.40.0
+# code.cloudfoundry.org/tlsconfig v0.41.0
 ## explicit; go 1.24.0
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.1.0
@@ -83,12 +83,12 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.9.14
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.445
+# github.com/cloudfoundry/bosh-davcli v0.0.446
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.570
+# github.com/cloudfoundry/bosh-utils v0.0.572
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -118,7 +118,7 @@ github.com/cloudfoundry/gosigar/sys/windows
 # github.com/cloudfoundry/socks5-proxy v0.2.162
 ## explicit; go 1.24.0
 github.com/cloudfoundry/socks5-proxy
-# github.com/containerd/cgroups/v3 v3.1.1
+# github.com/containerd/cgroups/v3 v3.1.2
 ## explicit; go 1.22.0
 github.com/containerd/cgroups/v3
 github.com/containerd/cgroups/v3/cgroup1
@@ -273,8 +273,8 @@ github.com/nats-io/nats.go
 github.com/nats-io/nats.go/encoders/builtin
 github.com/nats-io/nats.go/internal/parser
 github.com/nats-io/nats.go/util
-# github.com/nats-io/nkeys v0.4.11
-## explicit; go 1.23.0
+# github.com/nats-io/nkeys v0.4.12
+## explicit; go 1.24.0
 github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 ## explicit
@@ -375,7 +375,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20251113190631-e25ba8c21ef6
+# golang.org/x/exp/typeparams v0.0.0-20251125195548-87e1e737ad39
 ## explicit; go 1.24.0
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.30.0
@@ -403,7 +403,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/telemetry v0.0.0-20251121192418-e4876590c019
+# golang.org/x/telemetry v0.0.0-20251128220624-abf20d0e57ec
 ## explicit; go 1.24.0
 golang.org/x/telemetry/counter
 golang.org/x/telemetry/internal/counter
@@ -466,7 +466,7 @@ golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
 # golang.org/x/tools/go/expect v0.1.1-deprecated
 ## explicit; go 1.23.0
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846
 ## explicit; go 1.24.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.77.0

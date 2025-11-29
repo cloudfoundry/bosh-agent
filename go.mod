@@ -4,14 +4,14 @@ go 1.24.0
 
 require (
 	code.cloudfoundry.org/clock v1.55.0
-	code.cloudfoundry.org/tlsconfig v0.40.0
+	code.cloudfoundry.org/tlsconfig v0.41.0
 	github.com/Microsoft/hcsshim v0.13.0
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.14
-	github.com/cloudfoundry/bosh-davcli v0.0.445
-	github.com/cloudfoundry/bosh-utils v0.0.570
+	github.com/cloudfoundry/bosh-davcli v0.0.446
+	github.com/cloudfoundry/bosh-utils v0.0.572
 	github.com/cloudfoundry/gosigar v1.3.112
-	github.com/containerd/cgroups/v3 v3.1.1
+	github.com/containerd/cgroups/v3 v3.1.2
 	github.com/coreos/go-iptables v0.8.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -71,7 +71,7 @@ require (
 	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
-	github.com/nats-io/nkeys v0.4.11 // indirect
+	github.com/nats-io/nkeys v0.4.12 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pivotal-cf/paraphernalia v0.0.0-20180203224945-a64ae2051c20 // indirect
@@ -81,13 +81,13 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20251113190631-e25ba8c21ef6 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20251125195548-87e1e737ad39 // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251121192418-e4876590c019 // indirect
+	golang.org/x/telemetry v0.0.0-20251128220624-abf20d0e57ec // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251111163417-95abcf5c77ba // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251124214823-79d6a2a48846 // indirect
 	google.golang.org/grpc v1.77.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
