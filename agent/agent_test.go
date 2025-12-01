@@ -18,6 +18,7 @@ import (
 	fakeas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec/fakes"
 	fakeagent "github.com/cloudfoundry/bosh-agent/v2/agent/fakes"
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
+	boshjobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor"
 	fakejobsuper "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/fakes"
 	fakembus "github.com/cloudfoundry/bosh-agent/v2/mbus/fakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
@@ -125,6 +126,11 @@ func init() { //nolint:funlen,gochecknoinits
 					}
 
 					jobSupervisor.StatusStatus = "fake-state"
+					jobSupervisor.ProcessesStatus = []boshjobsuper.Process{
+						{Name: "process1", State: "running"},
+						{Name: "process2", State: "running"},
+						{Name: "process3", State: "stopped"},
+					}
 
 					vitalService.GetReturns(boshvitals.Vitals{
 						Load: []string{"a", "b", "c"},
@@ -135,12 +141,13 @@ func init() { //nolint:funlen,gochecknoinits
 				expectedJobIndex := 1
 				expectedNodeID := "node-id"
 				expectedHb := agent.Heartbeat{
-					Deployment: "FakeDeployment",
-					Job:        &expectedJobName,
-					Index:      &expectedJobIndex,
-					JobState:   "fake-state",
-					NodeID:     expectedNodeID,
-					Vitals:     boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+					Deployment:    "FakeDeployment",
+					Job:           &expectedJobName,
+					Index:         &expectedJobIndex,
+					JobState:      "fake-state",
+					NodeID:        expectedNodeID,
+					Vitals:        boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+					ProcessLength: 3,
 				}
 
 				It("sends initial heartbeat", func() {
@@ -244,6 +251,19 @@ func init() { //nolint:funlen,gochecknoinits
 					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-vitals-service-error"))
+				})
+			})
+
+			Context("when the boshAgent fails to get processes for a heartbeat", func() {
+				BeforeEach(func() {
+					jobSupervisor.ProcessesError = errors.New("fake-processes-error")
+					handler.KeepOnRunning()
+				})
+
+				It("returns the error", func() {
+					err := boshAgent.Run()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-processes-error"))
 				})
 			})
 
