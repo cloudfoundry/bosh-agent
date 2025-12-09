@@ -8,13 +8,13 @@ import (
 // https://www.pivotaltracker.com/story/show/132265151
 
 type Heartbeat struct {
-	Deployment    string            `json:"deployment"`
-	Job           *string           `json:"job"`
-	Index         *int              `json:"index"`
-	JobState      string            `json:"job_state"`
-	Vitals        boshvitals.Vitals `json:"vitals"`
-	NodeID        string            `json:"node_id"`
-	ProcessLength int               `json:"process_length"`
+	Deployment        string            `json:"deployment"`
+	Job               *string           `json:"job"`
+	Index             *int              `json:"index"`
+	JobState          string            `json:"job_state"`
+	Vitals            boshvitals.Vitals `json:"vitals"`
+	NodeID            string            `json:"node_id"`
+	NumberOfProcesses int               `json:"number_of_processes"`
 }
 
 // Heartbeat payload example:

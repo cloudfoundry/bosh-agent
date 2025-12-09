@@ -189,13 +189,13 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 	}
 
 	hb := Heartbeat{
-		Deployment:    spec.Deployment,
-		Job:           spec.JobSpec.Name,
-		Index:         spec.Index,
-		JobState:      status,
-		Vitals:        vitals,
-		NodeID:        spec.NodeID,
-		ProcessLength: len(processes),
+		Deployment:        spec.Deployment,
+		Job:               spec.JobSpec.Name,
+		Index:             spec.Index,
+		JobState:          status,
+		Vitals:            vitals,
+		NodeID:            spec.NodeID,
+		NumberOfProcesses: len(processes),
 	}
 
 	return hb, nil
