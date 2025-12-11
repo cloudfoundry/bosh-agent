@@ -64,6 +64,10 @@ type CDROMSourceOptions struct {
 
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
+type CloudInitSourceOptions struct{}
+
+func (o CloudInitSourceOptions) sourceOptionsInterface() {}
+
 type InstanceMetadataSourceOptions struct {
 	URI          string
 	Headers      map[string]string
@@ -135,6 +139,12 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 				f.logger,
 			)
 
+		case CloudInitSourceOptions:
+			settingsSource = NewCloudInitSettingsSource(
+				f.platform,
+				f.logger,
+			)
+
 		case InstanceMetadataSourceOptions:
 			settingsSource = NewInstanceMetadataSettingsSource(
 				typedOpts.URI,
@@ -183,6 +193,10 @@ func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 
 			case optType == "CDROM":
 				var o CDROMSourceOptions
+				err, opts = mapstruc.Decode(m, &o), o
+
+			case optType == "CloudInit":
+				var o CloudInitSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o
 
 			default:
