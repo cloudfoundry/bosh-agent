@@ -29,9 +29,11 @@ func init() { //nolint:gochecknoinits
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
-					NodeID:            "node-id",
-					NumberOfProcesses: 3,
+					NodeID: "node-id",
 				}
+
+				num := 3
+				hb.NumberOfProcesses = &num
 
 				expectedJSON := `{"deployment":"FakeDeployment","job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{},"uptime":{}},"node_id":"node-id","number_of_processes":3}`
 
@@ -53,9 +55,11 @@ func init() { //nolint:gochecknoinits
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
-					NodeID:            "node-id",
-					NumberOfProcesses: 0,
+					NodeID: "node-id",
 				}
+
+				num := 0
+				hb.NumberOfProcesses = &num
 
 				expectedJSON := `{"deployment":"FakeDeployment","job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{},"uptime":{}},"node_id":"node-id","number_of_processes":0}`
 

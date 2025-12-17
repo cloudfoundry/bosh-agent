@@ -14,7 +14,7 @@ type Heartbeat struct {
 	JobState          string            `json:"job_state"`
 	Vitals            boshvitals.Vitals `json:"vitals"`
 	NodeID            string            `json:"node_id"`
-	NumberOfProcesses int               `json:"number_of_processes"`
+	NumberOfProcesses *int              `json:"number_of_processes"`
 }
 
 // Heartbeat payload example:

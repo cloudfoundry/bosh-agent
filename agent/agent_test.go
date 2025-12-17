@@ -141,14 +141,16 @@ func init() { //nolint:funlen,gochecknoinits
 				expectedJobIndex := 1
 				expectedNodeID := "node-id"
 				expectedHb := agent.Heartbeat{
-					Deployment:        "FakeDeployment",
-					Job:               &expectedJobName,
-					Index:             &expectedJobIndex,
-					JobState:          "fake-state",
-					NodeID:            expectedNodeID,
-					Vitals:            boshvitals.Vitals{Load: []string{"a", "b", "c"}},
-					NumberOfProcesses: 3,
+					Deployment: "FakeDeployment",
+					Job:        &expectedJobName,
+					Index:      &expectedJobIndex,
+					JobState:   "fake-state",
+					NodeID:     expectedNodeID,
+					Vitals:     boshvitals.Vitals{Load: []string{"a", "b", "c"}},
 				}
+
+				num := 3
+				expectedHb.NumberOfProcesses = &num
 
 				It("sends initial heartbeat", func() {
 					// Configure periodic heartbeat every 5 hours

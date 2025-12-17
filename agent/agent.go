@@ -188,6 +188,7 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 		return Heartbeat{}, bosherr.WrapError(err, "Getting processes")
 	}
 
+	num := len(processes)
 	hb := Heartbeat{
 		Deployment:        spec.Deployment,
 		Job:               spec.JobSpec.Name,
@@ -195,7 +196,7 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 		JobState:          status,
 		Vitals:            vitals,
 		NodeID:            spec.NodeID,
-		NumberOfProcesses: len(processes),
+		NumberOfProcesses: &num,
 	}
 
 	return hb, nil
