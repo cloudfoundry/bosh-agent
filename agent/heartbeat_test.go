@@ -16,6 +16,7 @@ func init() { //nolint:gochecknoinits
 			It("serializes heartbeat with all fields", func() {
 				name := "foo"
 				index := 0
+				numberOfProcesses := 3
 
 				hb := Heartbeat{
 					Deployment: "FakeDeployment",
@@ -29,11 +30,9 @@ func init() { //nolint:gochecknoinits
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
-					NodeID: "node-id",
+					NodeID:            "node-id",
+					NumberOfProcesses: &numberOfProcesses,
 				}
-
-				num := 3
-				hb.NumberOfProcesses = &num
 
 				expectedJSON := `{"deployment":"FakeDeployment","job":"foo","index":0,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{},"uptime":{}},"node_id":"node-id","number_of_processes":3}`
 
@@ -45,6 +44,8 @@ func init() { //nolint:gochecknoinits
 
 		Context("when job name, index are not available", func() {
 			It("serializes job name and index as nulls to indicate that there is no job assigned to this agent", func() {
+				numberOfProcesses := 0
+
 				hb := Heartbeat{
 					Deployment: "FakeDeployment",
 					JobState:   "running",
@@ -55,11 +56,9 @@ func init() { //nolint:gochecknoinits
 							"persistent": boshvitals.SpecificDiskVitals{},
 						},
 					},
-					NodeID: "node-id",
+					NodeID:            "node-id",
+					NumberOfProcesses: &numberOfProcesses,
 				}
-
-				num := 0
-				hb.NumberOfProcesses = &num
 
 				expectedJSON := `{"deployment":"FakeDeployment","job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{},"uptime":{}},"node_id":"node-id","number_of_processes":0}`
 
