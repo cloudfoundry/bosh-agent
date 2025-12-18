@@ -117,7 +117,7 @@ var _ = Describe("CloudInitSettingsSource", func() {
 		It("clears the guestinfo.userdata after reading it", func() {
 			cmdRunner.AddCmdResult("vmware-rpctool info-get guestinfo.userdata", fakes.FakeCmdResult{Stdout: encodedSettings})
 			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata ---", fakes.FakeCmdResult{Stdout: ""})
-			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata.encoding  ", fakes.FakeCmdResult{Stdout: ""})
+			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata.encoding ", fakes.FakeCmdResult{Stdout: ""})
 
 			_, err := source.Settings()
 			Expect(err).ToNot(HaveOccurred())
