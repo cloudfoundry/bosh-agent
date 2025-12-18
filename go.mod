@@ -4,12 +4,12 @@ go 1.24.0
 
 require (
 	code.cloudfoundry.org/clock v1.55.0
-	code.cloudfoundry.org/tlsconfig v0.41.0
+	code.cloudfoundry.org/tlsconfig v0.42.0
 	github.com/Microsoft/hcsshim v0.13.0
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.9.15
-	github.com/cloudfoundry/bosh-davcli v0.0.448
-	github.com/cloudfoundry/bosh-utils v0.0.576
+	github.com/cloudfoundry/bosh-davcli v0.0.449
+	github.com/cloudfoundry/bosh-utils v0.0.577
 	github.com/cloudfoundry/gosigar v1.3.112
 	github.com/containerd/cgroups/v3 v3.1.2
 	github.com/coreos/go-iptables v0.8.0
@@ -20,7 +20,7 @@ require (
 	github.com/masterzen/winrm v0.0.0-20250927112105-5f8e6c707321
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.1
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.47.0
+	github.com/nats-io/nats.go v1.48.0
 	github.com/onsi/ginkgo/v2 v2.27.3
 	github.com/onsi/gomega v1.38.3
 	github.com/opencontainers/runtime-spec v1.3.0
@@ -37,7 +37,7 @@ require (
 
 require (
 	github.com/Azure/go-ntlmssp v0.1.0 // indirect
-	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
@@ -84,7 +84,7 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20251209150349-8475f28825e9 // indirect
 	golang.org/x/mod v0.31.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/telemetry v0.0.0-20251208220230-2638a1023523 // indirect
+	golang.org/x/telemetry v0.0.0-20251218154919-7004b7402f6a // indirect
 	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251213004720-97cd9d5aeac2 // indirect
