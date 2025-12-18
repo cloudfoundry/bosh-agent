@@ -66,6 +66,27 @@ func init() { //nolint:gochecknoinits
 				Expect(err).ToNot(HaveOccurred())
 				Expect(string(hbBytes)).To(Equal(expectedJSON))
 			})
+
+			It("serializes NumberOfProcesses as null when not available", func() {
+				hb := Heartbeat{
+					Deployment: "FakeDeployment",
+					JobState:   "running",
+					Vitals: boshvitals.Vitals{
+						Disk: boshvitals.DiskVitals{
+							"system":     boshvitals.SpecificDiskVitals{},
+							"ephemeral":  boshvitals.SpecificDiskVitals{},
+							"persistent": boshvitals.SpecificDiskVitals{},
+						},
+					},
+					NodeID: "node-id",
+				}
+
+				expectedJSON := `{"deployment":"FakeDeployment","job":null,"index":null,"job_state":"running","vitals":{"cpu":{},"disk":{"ephemeral":{},"persistent":{},"system":{}},"mem":{},"swap":{},"uptime":{}},"node_id":"node-id","number_of_processes":null}`
+
+				hbBytes, err := json.Marshal(hb)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(hbBytes)).To(Equal(expectedJSON))
+			})
 		})
 	})
 }
