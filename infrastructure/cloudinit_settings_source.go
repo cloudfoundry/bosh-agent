@@ -42,7 +42,7 @@ func (s CloudInitSettingsSource) PublicSSHKeyForUsername(string) (string, error)
 func (s *CloudInitSettingsSource) Settings() (boshsettings.Settings, error) {
 	var settings boshsettings.Settings
 
-	// Try to get settings data from vmwware-rpctool first, then fallback to vmtoolsd
+	// Try to get settings data from vmware-rpctool first, then fallback to vmtoolsd
 	stdout, _, exitStatus, err := s.cmdRunner.RunCommand("vmware-rpctool", "info-get guestinfo.userdata")
 	if err != nil || exitStatus != 0 {
 		stdout, _, exitStatus, err = s.cmdRunner.RunCommand("vmtoolsd", "--cmd", "info-get guestinfo.userdata")
