@@ -257,14 +257,50 @@ func init() { //nolint:funlen,gochecknoinits
 
 			Context("when the boshAgent fails to get processes for a heartbeat", func() {
 				BeforeEach(func() {
+					jobName := "fake-job"
+					nodeID := "node-id"
+					jobIndex := 1
+					specService.Spec = boshas.V1ApplySpec{
+						Deployment: "FakeDeployment",
+						JobSpec:    boshas.JobSpec{Name: &jobName},
+						Index:      &jobIndex,
+						NodeID:     nodeID,
+					}
+
+					jobSupervisor.StatusStatus = "fake-state"
 					jobSupervisor.ProcessesError = errors.New("fake-processes-error")
+
+					vitalService.GetReturns(boshvitals.Vitals{
+						Load: []string{"a", "b", "c"},
+					}, nil)
+
 					handler.KeepOnRunning()
+					handler.SendErr = errors.New("stop")
 				})
 
-				It("returns the error", func() {
+				It("sends heartbeat with NumberOfProcesses as nil", func() {
 					err := boshAgent.Run()
 					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(ContainSubstring("fake-processes-error"))
+					Expect(err.Error()).To(ContainSubstring("stop"))
+					Expect(err.Error()).ToNot(ContainSubstring("fake-processes-error"))
+
+					expectedJobName := "fake-job"
+					expectedJobIndex := 1
+					expectedHb := agent.Heartbeat{
+						Deployment:        "FakeDeployment",
+						Job:               &expectedJobName,
+						Index:             &expectedJobIndex,
+						JobState:          "fake-state",
+						NodeID:            "node-id",
+						Vitals:            boshvitals.Vitals{Load: []string{"a", "b", "c"}},
+						NumberOfProcesses: nil,
+					}
+
+					Expect(handler.SendInputs()).To(ContainElement(fakembus.SendInput{
+						Target:  boshhandler.HealthMonitor,
+						Topic:   boshhandler.Heartbeat,
+						Message: expectedHb,
+					}))
 				})
 			})
 
