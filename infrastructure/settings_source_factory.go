@@ -64,9 +64,9 @@ type CDROMSourceOptions struct {
 
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
-type CloudInitSourceOptions struct{}
+type VsphereGuestInfoSourceOptions struct{}
 
-func (o CloudInitSourceOptions) sourceOptionsInterface() {}
+func (o VsphereGuestInfoSourceOptions) sourceOptionsInterface() {}
 
 type InstanceMetadataSourceOptions struct {
 	URI          string
@@ -139,8 +139,8 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 				f.logger,
 			)
 
-		case CloudInitSourceOptions:
-			settingsSource = NewCloudInitSettingsSource(
+		case VsphereGuestInfoSourceOptions:
+			settingsSource = NewVsphereGuestInfoSettingsSource(
 				f.platform,
 				f.logger,
 			)
@@ -195,8 +195,8 @@ func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 				var o CDROMSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o
 
-			case optType == "CloudInit":
-				var o CloudInitSourceOptions
+			case optType == "VsphereGuestInfo":
+				var o VsphereGuestInfoSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o
 
 			default:

@@ -18,11 +18,11 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
-var _ = Describe("CloudInitSettingsSource", func() {
+var _ = Describe("VsphereGuestInfoSettingsSource", func() {
 	var (
 		platform        *platformfakes.FakePlatform
 		cmdRunner       *fakes.FakeCmdRunner
-		source          *CloudInitSettingsSource
+		source          *VsphereGuestInfoSettingsSource
 		settings        boshsettings.Settings
 		encodedSettings string
 	)
@@ -32,11 +32,19 @@ var _ = Describe("CloudInitSettingsSource", func() {
 		cmdRunner = fakes.NewFakeCmdRunner()
 		platform.GetRunnerReturns(cmdRunner)
 		logger := logger.NewLogger(logger.LevelNone)
-		source = NewCloudInitSettingsSource(platform, logger)
+		source = NewVsphereGuestInfoSettingsSource(platform, logger)
 		settings = boshsettings.Settings{AgentID: "123"}
 		settingsBytes, err := json.Marshal(settings)
 		Expect(err).ToNot(HaveOccurred())
 		encodedSettings = base64.StdEncoding.EncodeToString(settingsBytes)
+	})
+
+	Describe("PublicSSHKeyForUsername", func() {
+		It("returns an empty string", func() {
+			publicKey, err := source.PublicSSHKeyForUsername("fake-username")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(publicKey).To(Equal(""))
+		})
 	})
 
 	Describe("Settings", func() {
