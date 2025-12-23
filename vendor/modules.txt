@@ -83,12 +83,12 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.9.15
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.449
+# github.com/cloudfoundry/bosh-davcli v0.0.450
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.577
+# github.com/cloudfoundry/bosh-utils v0.0.578
 ## explicit; go 1.24.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -115,7 +115,7 @@ github.com/cloudfoundry/go-socks5
 github.com/cloudfoundry/gosigar
 github.com/cloudfoundry/gosigar/fakes
 github.com/cloudfoundry/gosigar/sys/windows
-# github.com/cloudfoundry/socks5-proxy v0.2.162
+# github.com/cloudfoundry/socks5-proxy v0.2.163
 ## explicit; go 1.24.0
 github.com/cloudfoundry/socks5-proxy
 # github.com/containerd/cgroups/v3 v3.1.2
@@ -153,7 +153,7 @@ github.com/go-logr/logr/funcr
 # github.com/go-task/slim-sprig/v3 v3.0.0
 ## explicit; go 1.20
 github.com/go-task/slim-sprig/v3
-# github.com/godbus/dbus/v5 v5.2.0
+# github.com/godbus/dbus/v5 v5.2.1
 ## explicit; go 1.20
 github.com/godbus/dbus/v5
 # github.com/gofrs/uuid v4.4.0+incompatible
@@ -375,7 +375,7 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/salsa20/salsa
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
-# golang.org/x/exp/typeparams v0.0.0-20251209150349-8475f28825e9
+# golang.org/x/exp/typeparams v0.0.0-20251219203646-944ab1f22d93
 ## explicit; go 1.24.0
 golang.org/x/exp/typeparams
 # golang.org/x/mod v0.31.0
@@ -403,7 +403,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/telemetry v0.0.0-20251218154919-7004b7402f6a
+# golang.org/x/telemetry v0.0.0-20251222180846-3f2a21fb04ff
 ## explicit; go 1.24.0
 golang.org/x/telemetry/counter
 golang.org/x/telemetry/internal/counter
@@ -466,10 +466,10 @@ golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
 # golang.org/x/tools/go/expect v0.1.1-deprecated
 ## explicit; go 1.23.0
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20251213004720-97cd9d5aeac2
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20251222181119-0a764e51fe1b
 ## explicit; go 1.24.0
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.77.0
+# google.golang.org/grpc v1.78.0
 ## explicit; go 1.24.0
 google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
