@@ -185,9 +185,11 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 
 	var numberOfProcesses *int
 	processes, err := a.jobSupervisor.Processes()
-	if err == nil {
-		n := len(processes)
-		numberOfProcesses = &n
+	if err != nil {
+    	a.logger.Debug(agentLogTag, "Failed to get processes for heartbeat: %s", err.Error())
+	} else {
+   	 	n := len(processes)
+   	 	numberOfProcesses = &n
 	}
 	hb := Heartbeat{
 		Deployment:        spec.Deployment,
