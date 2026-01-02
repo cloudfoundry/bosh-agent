@@ -158,7 +158,7 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 		settingsSources = append(settingsSources, settingsSource)
 	}
 
-	return NewMultiSettingsSource(settingsSources...)
+	return NewMultiSettingsSource(f.logger, settingsSources...)
 }
 
 func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {

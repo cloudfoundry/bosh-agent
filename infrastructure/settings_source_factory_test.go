@@ -88,7 +88,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						logger,
 					)
 
-					multiSettingsSource, err := NewMultiSettingsSource(fileSettingsSource)
+					multiSettingsSource, err := NewMultiSettingsSource(logger, fileSettingsSource)
 					Expect(err).ToNot(HaveOccurred())
 
 					settingsSource, err := factory.New()
@@ -115,7 +115,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						logger,
 					)
 
-					multiSettingsSource, err := NewMultiSettingsSource(cdromSettingsSource)
+					multiSettingsSource, err := NewMultiSettingsSource(logger, cdromSettingsSource)
 					Expect(err).ToNot(HaveOccurred())
 
 					settingsSource, err := factory.New()
