@@ -79,7 +79,7 @@ func (s *VsphereGuestInfoSettingsSource) Settings() (boshsettings.Settings, erro
 		s.logger.Error("vsphere-guest-info-settings-source", "warning: error clearing guestinfo.userdata", "error", err)
 	}
 
-	_, _, _, err = s.vmWareRPC("info-set guestinfo.userdata.encoding ")
+	_, _, _, err = s.vmWareRPC("info-set guestinfo.userdata.encoding ''")
 	if err != nil {
 		s.logger.Error("vsphere-guest-info-settings-source", "warning: error clearing guestinfo.userdata.encoding", "error", err)
 	}

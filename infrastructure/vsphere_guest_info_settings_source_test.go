@@ -92,8 +92,8 @@ var _ = Describe("VsphereGuestInfoSettingsSource", func() {
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"vmtoolsd", "--cmd", "info-get guestinfo.userdata"}))
 			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata ---"}))
 			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"vmtoolsd", "--cmd", "info-set guestinfo.userdata ---"}))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata.encoding "}))
-			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"vmtoolsd", "--cmd", "info-set guestinfo.userdata.encoding "}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata.encoding ''"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"vmtoolsd", "--cmd", "info-set guestinfo.userdata.encoding ''"}))
 		})
 
 		It("returns an error if both tools fail", func() {
@@ -125,14 +125,14 @@ var _ = Describe("VsphereGuestInfoSettingsSource", func() {
 		It("clears the guestinfo.userdata after reading it", func() {
 			cmdRunner.AddCmdResult("vmware-rpctool info-get guestinfo.userdata", fakes.FakeCmdResult{Stdout: encodedSettings})
 			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata ---", fakes.FakeCmdResult{Stdout: ""})
-			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata.encoding ", fakes.FakeCmdResult{Stdout: ""})
+			cmdRunner.AddCmdResult("vmware-rpctool info-set guestinfo.userdata.encoding ''", fakes.FakeCmdResult{Stdout: ""})
 
 			_, err := source.Settings()
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(cmdRunner.RunCommands).To(HaveLen(3))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata ---"}))
-			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata.encoding "}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata.encoding ''"}))
 		})
 	})
 })
