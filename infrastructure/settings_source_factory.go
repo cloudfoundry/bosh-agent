@@ -64,6 +64,10 @@ type CDROMSourceOptions struct {
 
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
+type VsphereGuestInfoSourceOptions struct{}
+
+func (o VsphereGuestInfoSourceOptions) sourceOptionsInterface() {}
+
 type InstanceMetadataSourceOptions struct {
 	URI          string
 	Headers      map[string]string
@@ -135,6 +139,12 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 				f.logger,
 			)
 
+		case VsphereGuestInfoSourceOptions:
+			settingsSource = NewVsphereGuestInfoSettingsSource(
+				f.platform,
+				f.logger,
+			)
+
 		case InstanceMetadataSourceOptions:
 			settingsSource = NewInstanceMetadataSettingsSource(
 				typedOpts.URI,
@@ -148,7 +158,7 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 		settingsSources = append(settingsSources, settingsSource)
 	}
 
-	return NewMultiSettingsSource(settingsSources...)
+	return NewMultiSettingsSource(f.logger, settingsSources...)
 }
 
 func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
@@ -183,6 +193,10 @@ func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 
 			case optType == "CDROM":
 				var o CDROMSourceOptions
+				err, opts = mapstruc.Decode(m, &o), o
+
+			case optType == "VsphereGuestInfo":
+				var o VsphereGuestInfoSourceOptions
 				err, opts = mapstruc.Decode(m, &o), o
 
 			default:

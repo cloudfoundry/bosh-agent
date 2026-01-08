@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
@@ -10,16 +11,17 @@ type MultiSettingsSource struct {
 	sources                []boshsettings.Source
 	selectedSSHKeySource   boshsettings.Source
 	selectedSettingsSource boshsettings.Source
+	logger                 boshlog.Logger
 }
 
-func NewMultiSettingsSource(sources ...boshsettings.Source) (boshsettings.Source, error) {
+func NewMultiSettingsSource(logger boshlog.Logger, sources ...boshsettings.Source) (boshsettings.Source, error) {
 	var err error
 
 	if len(sources) == 0 {
 		err = bosherr.Error("MultiSettingsSource requires to have at least one source")
 	}
 
-	return &MultiSettingsSource{sources: sources}, err
+	return &MultiSettingsSource{sources: sources, logger: logger}, err
 }
 
 func (s *MultiSettingsSource) GetSources() []boshsettings.Source {
@@ -59,6 +61,7 @@ func (s *MultiSettingsSource) Settings() (boshsettings.Settings, error) {
 			s.selectedSettingsSource = source
 			return settings, nil
 		}
+		s.logger.Warn("multi-settings-source", "Failed to get settings from source: %v", err)
 	}
 
 	return boshsettings.Settings{},
