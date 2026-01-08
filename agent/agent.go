@@ -183,15 +183,23 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 		return Heartbeat{}, bosherr.WrapError(err, "Getting job spec")
 	}
 
-	hb := Heartbeat{
-		Deployment: spec.Deployment,
-		Job:        spec.JobSpec.Name,
-		Index:      spec.Index,
-		JobState:   status,
-		Vitals:     vitals,
-		NodeID:     spec.NodeID,
+	var numberOfProcesses *int
+	processes, err := a.jobSupervisor.Processes()
+	if err != nil {
+		a.logger.Debug(agentLogTag, "Failed to get processes for heartbeat: %s", err.Error())
+	} else {
+		n := len(processes)
+		numberOfProcesses = &n
 	}
-
+	hb := Heartbeat{
+		Deployment:        spec.Deployment,
+		Job:               spec.JobSpec.Name,
+		Index:             spec.Index,
+		JobState:          status,
+		Vitals:            vitals,
+		NodeID:            spec.NodeID,
+		NumberOfProcesses: numberOfProcesses,
+	}
 	return hb, nil
 }
 
