@@ -117,7 +117,7 @@ var _ = Describe("MultiSettingsSource", func() {
 				})
 
 				It("logs a warning for the first source", func() {
-					_, _ = source.Settings()
+					_, _ = source.Settings() //nolint:errcheck
 					Expect(logBuffer.String()).To(ContainSubstring("fake-settings-err-1"))
 				})
 			})
@@ -128,7 +128,7 @@ var _ = Describe("MultiSettingsSource", func() {
 				})
 
 				It("logs a warning for the first source", func() {
-					_, _ = source.Settings()
+					_, _ = source.Settings() //nolint:errcheck
 					Expect(logBuffer.String()).To(ContainSubstring("fake-settings-err-1"))
 				})
 
