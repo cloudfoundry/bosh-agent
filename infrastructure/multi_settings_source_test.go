@@ -1,6 +1,7 @@
 package infrastructure_test
 
 import (
+	"bytes"
 	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -9,16 +10,23 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure"
 	fakeinf "github.com/cloudfoundry/bosh-agent/v2/infrastructure/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
 var _ = Describe("MultiSettingsSource", func() {
 	var (
-		source boshsettings.Source
+		source    boshsettings.Source
+		logger    boshlog.Logger
+		logBuffer bytes.Buffer
 	)
+
+	BeforeEach(func() {
+		logger = boshlog.NewWriterLogger(boshlog.LevelWarn, &logBuffer)
+	})
 
 	Context("when there are no sources", func() {
 		It("returns an error when there are no sources", func() {
-			_, err := infrastructure.NewMultiSettingsSource([]boshsettings.Source{}...)
+			_, err := infrastructure.NewMultiSettingsSource(logger, []boshsettings.Source{}...)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("MultiSettingsSource requires to have at least one source"))
 		})
@@ -50,7 +58,7 @@ var _ = Describe("MultiSettingsSource", func() {
 
 		JustBeforeEach(func() {
 			var err error
-			source, err = infrastructure.NewMultiSettingsSource(source1, source2)
+			source, err = infrastructure.NewMultiSettingsSource(logger, source1, source2)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -107,11 +115,21 @@ var _ = Describe("MultiSettingsSource", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-settings-err-2"))
 				})
+
+				It("logs a warning for the first source", func() {
+					_, _ = source.Settings() //nolint:errcheck
+					Expect(logBuffer.String()).To(ContainSubstring("fake-settings-err-1"))
+				})
 			})
 
 			Context("when the second source returns settings", func() {
 				BeforeEach(func() {
 					source2.SettingsErr = nil
+				})
+
+				It("logs a warning for the first source", func() {
+					_, _ = source.Settings() //nolint:errcheck
+					Expect(logBuffer.String()).To(ContainSubstring("fake-settings-err-1"))
 				})
 
 				It("returns settings from the second source", func() {

@@ -1,6 +1,7 @@
 package infrastructure_test
 
 import (
+	"encoding/json"
 	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -88,7 +89,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						logger,
 					)
 
-					multiSettingsSource, err := NewMultiSettingsSource(fileSettingsSource)
+					multiSettingsSource, err := NewMultiSettingsSource(logger, fileSettingsSource)
 					Expect(err).ToNot(HaveOccurred())
 
 					settingsSource, err := factory.New()
@@ -115,7 +116,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 						logger,
 					)
 
-					multiSettingsSource, err := NewMultiSettingsSource(cdromSettingsSource)
+					multiSettingsSource, err := NewMultiSettingsSource(logger, cdromSettingsSource)
 					Expect(err).ToNot(HaveOccurred())
 
 					settingsSource, err := factory.New()
@@ -123,6 +124,104 @@ var _ = Describe("SettingsSourceFactory", func() {
 					Expect(settingsSource).To(Equal(multiSettingsSource))
 				})
 			})
+
+			Context("when using VsphereGuestInfo source", func() {
+				BeforeEach(func() {
+					options = SettingsOptions{
+						Sources: []SourceOptions{
+							VsphereGuestInfoSourceOptions{},
+						},
+					}
+				})
+
+				It("returns a settings source that uses the VsphereGuestInfo to fetch settings", func() {
+					vsphereGuestInfoSettingsSource := NewVsphereGuestInfoSettingsSource(platform, logger)
+
+					multiSettingsSource, err := NewMultiSettingsSource(logger, vsphereGuestInfoSettingsSource)
+					Expect(err).ToNot(HaveOccurred())
+
+					settingsSource, err := factory.New()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(settingsSource).To(Equal(multiSettingsSource))
+				})
+			})
+		})
+	})
+
+	Describe("UnmarshalJSON", func() {
+		var (
+			sourceOptionsSlice SourceOptionsSlice
+		)
+		BeforeEach(func() {
+			sourceOptionsSlice = SourceOptionsSlice{}
+		})
+
+		It("unmarshals HTTP source options", func() {
+			jsonStr := `[{"Type": "HTTP", "URI": "http://example.com"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(HTTPSourceOptions{URI: "http://example.com"}))
+		})
+
+		It("unmarshals InstanceMetadata source options", func() {
+			jsonStr := `[{"Type": "InstanceMetadata", "URI": "http://metadata.google.internal"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(InstanceMetadataSourceOptions{URI: "http://metadata.google.internal"}))
+		})
+
+		It("unmarshals ConfigDrive source options", func() {
+			jsonStr := `[{"Type": "ConfigDrive", "DiskPaths": ["/dev/vdb"]}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(ConfigDriveSourceOptions{DiskPaths: []string{"/dev/vdb"}}))
+		})
+
+		It("unmarshals File source options", func() {
+			jsonStr := `[{"Type": "File", "SettingsPath": "/tmp/settings.json"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(FileSourceOptions{SettingsPath: "/tmp/settings.json"}))
+		})
+
+		It("unmarshals CDROM source options", func() {
+			jsonStr := `[{"Type": "CDROM", "FileName": "env"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(CDROMSourceOptions{FileName: "env"}))
+		})
+
+		It("unmarshals VsphereGuestInfo source options", func() {
+			jsonStr := `[{"Type": "VsphereGuestInfo"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(VsphereGuestInfoSourceOptions{}))
+		})
+
+		It("returns error when Type is missing", func() {
+			jsonStr := `[{"URI": "http://example.com"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Missing source type"))
+		})
+
+		It("returns error when Type is unknown", func() {
+			jsonStr := `[{"Type": "Unknown"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Unknown source type 'Unknown'"))
+		})
+
+		It("returns error when JSON is invalid", func() {
+			jsonStr := `invalid-json`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
