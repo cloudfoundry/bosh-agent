@@ -622,9 +622,10 @@ func (t *TestEnvironment) StopAgent() error {
 
 func (t *TestEnvironment) StartAgent() error {
 	if t.isSystemdSystem() {
-		// For systemd, run start synchronously. Unlike runit's sv, systemctl start
-		// blocks until the service is started, so we don't need nohup/&.
-		_, err := t.RunCommand("sudo systemctl start bosh-agent")
+		// For systemd, use restart to ensure a fresh start even if already running.
+		// This is important for tests that need a fresh agent state (e.g., firewall tests
+		// that delete the nftables table and need the agent to recreate it on startup).
+		_, err := t.RunCommand("sudo systemctl restart bosh-agent")
 		return err
 	}
 	_, err := t.RunCommand("nohup sudo sv start agent &")
