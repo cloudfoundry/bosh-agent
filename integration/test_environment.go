@@ -227,6 +227,22 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	// Create /var/log/audit for auditd (required on Noble/systemd-based systems)
+	_, err = t.RunCommand("sudo mkdir -p /var/log/audit")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chmod 750 /var/log/audit")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chown root:root /var/log/audit")
+	if err != nil {
+		return err
+	}
+
 	_, err = t.RunCommand("sudo mkdir -p /var/opt")
 	if err != nil {
 		return err
