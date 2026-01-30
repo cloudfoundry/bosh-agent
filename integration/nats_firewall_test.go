@@ -17,6 +17,15 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// restore original settings of bosh from initial deploy of this VM.
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
+
+			// Truncate log file to ensure we wait for fresh logs from this test run.
+			// This is especially important on first run when pipeline setup logs are still present.
+			err = testEnvironment.CleanupLogFile()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Delete any existing firewall table from previous runs to ensure clean state.
+			// The agent will recreate it on startup.
+			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
 		})
 
 		It("sets up the outgoing nats firewall using nftables", func() {
@@ -106,6 +115,13 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// restore original settings of bosh from initial deploy of this VM.
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
+
+			// Truncate log file to ensure we wait for fresh logs from this test run.
+			err = testEnvironment.CleanupLogFile()
+			Expect(err).ToNot(HaveOccurred())
+
+			// Delete any existing firewall table from previous runs to ensure clean state.
+			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
 		})
 
 		It("sets up the outgoing nats firewall for ipv6 using nftables", func() {
