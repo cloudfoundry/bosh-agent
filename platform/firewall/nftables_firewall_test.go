@@ -28,6 +28,7 @@ var _ = Describe("NftablesFirewall", func() {
 
 		// Default successful returns
 		fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
+		fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(true)
 		fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
 			Version: firewall.CgroupV2,
 			Path:    "/system.slice/bosh-agent.service",
@@ -173,6 +174,7 @@ var _ = Describe("NftablesFirewall", func() {
 		Context("when cgroup version is v2", func() {
 			BeforeEach(func() {
 				fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
+				fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(true)
 				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
 					Version: firewall.CgroupV2,
 					Path:    "/system.slice/bosh-agent.service",
@@ -278,6 +280,44 @@ var _ = Describe("NftablesFirewall", func() {
 					}
 				}
 				Expect(foundRootPath).To(BeTrue(), "Expected root cgroup path in rule expressions")
+			})
+		})
+
+		Context("when cgroup version is v2 but socket matching is not functional (hybrid cgroup)", func() {
+			BeforeEach(func() {
+				fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
+				fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(false) // Hybrid cgroup
+				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
+					Version: firewall.CgroupV2,
+					Path:    "/system.slice/bosh-agent.service",
+				}, nil)
+				var err error
+				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("creates rule with UID matching instead of cgroup socket matching", func() {
+				err := mgr.SetupAgentRules("", false)
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				rule := fakeConn.AddRuleArgsForCall(0)
+
+				// Verify the rule uses Meta expression with SKUID (not Socket cgroupv2)
+				var hasMetaSKUID bool
+				var hasSocketExpr bool
+				for _, e := range rule.Exprs {
+					if metaExpr, ok := e.(*expr.Meta); ok {
+						if metaExpr.Key == expr.MetaKeySKUID {
+							hasMetaSKUID = true
+						}
+					}
+					if _, ok := e.(*expr.Socket); ok {
+						hasSocketExpr = true
+					}
+				}
+				Expect(hasMetaSKUID).To(BeTrue(), "Expected Meta SKUID expression for UID-based matching")
+				Expect(hasSocketExpr).To(BeFalse(), "Should NOT have Socket expression on hybrid cgroup")
 			})
 		})
 

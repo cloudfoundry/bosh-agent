@@ -34,6 +34,16 @@ type FakeCgroupResolver struct {
 		result1 firewall.ProcessCgroup
 		result2 error
 	}
+	IsCgroupV2SocketMatchFunctionalStub        func() bool
+	isCgroupV2SocketMatchFunctionalMutex       sync.RWMutex
+	isCgroupV2SocketMatchFunctionalArgsForCall []struct {
+	}
+	isCgroupV2SocketMatchFunctionalReturns struct {
+		result1 bool
+	}
+	isCgroupV2SocketMatchFunctionalReturnsOnCall map[int]struct {
+		result1 bool
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -157,6 +167,59 @@ func (fake *FakeCgroupResolver) GetProcessCgroupReturnsOnCall(i int, result1 fir
 		result1 firewall.ProcessCgroup
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeCgroupResolver) IsCgroupV2SocketMatchFunctional() bool {
+	fake.isCgroupV2SocketMatchFunctionalMutex.Lock()
+	ret, specificReturn := fake.isCgroupV2SocketMatchFunctionalReturnsOnCall[len(fake.isCgroupV2SocketMatchFunctionalArgsForCall)]
+	fake.isCgroupV2SocketMatchFunctionalArgsForCall = append(fake.isCgroupV2SocketMatchFunctionalArgsForCall, struct {
+	}{})
+	stub := fake.IsCgroupV2SocketMatchFunctionalStub
+	fakeReturns := fake.isCgroupV2SocketMatchFunctionalReturns
+	fake.recordInvocation("IsCgroupV2SocketMatchFunctional", []interface{}{})
+	fake.isCgroupV2SocketMatchFunctionalMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeCgroupResolver) IsCgroupV2SocketMatchFunctionalCallCount() int {
+	fake.isCgroupV2SocketMatchFunctionalMutex.RLock()
+	defer fake.isCgroupV2SocketMatchFunctionalMutex.RUnlock()
+	return len(fake.isCgroupV2SocketMatchFunctionalArgsForCall)
+}
+
+func (fake *FakeCgroupResolver) IsCgroupV2SocketMatchFunctionalCalls(stub func() bool) {
+	fake.isCgroupV2SocketMatchFunctionalMutex.Lock()
+	defer fake.isCgroupV2SocketMatchFunctionalMutex.Unlock()
+	fake.IsCgroupV2SocketMatchFunctionalStub = stub
+}
+
+func (fake *FakeCgroupResolver) IsCgroupV2SocketMatchFunctionalReturns(result1 bool) {
+	fake.isCgroupV2SocketMatchFunctionalMutex.Lock()
+	defer fake.isCgroupV2SocketMatchFunctionalMutex.Unlock()
+	fake.IsCgroupV2SocketMatchFunctionalStub = nil
+	fake.isCgroupV2SocketMatchFunctionalReturns = struct {
+		result1 bool
+	}{result1}
+}
+
+func (fake *FakeCgroupResolver) IsCgroupV2SocketMatchFunctionalReturnsOnCall(i int, result1 bool) {
+	fake.isCgroupV2SocketMatchFunctionalMutex.Lock()
+	defer fake.isCgroupV2SocketMatchFunctionalMutex.Unlock()
+	fake.IsCgroupV2SocketMatchFunctionalStub = nil
+	if fake.isCgroupV2SocketMatchFunctionalReturnsOnCall == nil {
+		fake.isCgroupV2SocketMatchFunctionalReturnsOnCall = make(map[int]struct {
+			result1 bool
+		})
+	}
+	fake.isCgroupV2SocketMatchFunctionalReturnsOnCall[i] = struct {
+		result1 bool
+	}{result1}
 }
 
 func (fake *FakeCgroupResolver) Invocations() map[string][][]interface{} {

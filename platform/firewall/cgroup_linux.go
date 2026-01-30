@@ -23,6 +23,31 @@ func DetectCgroupVersion() (CgroupVersion, error) {
 	return CgroupV1, nil
 }
 
+// IsCgroupV2SocketMatchFunctional returns true if nftables "socket cgroupv2"
+// matching will work. This requires a pure cgroup v2 system with controllers
+// enabled. On hybrid cgroup systems (cgroup v2 mounted but with no controllers
+// enabled), the socket-to-cgroup association doesn't work for nftables matching.
+//
+// Hybrid cgroup is detected by checking if /sys/fs/cgroup/cgroup.controllers
+// exists and is empty (no controllers delegated to cgroup v2).
+func IsCgroupV2SocketMatchFunctional() bool {
+	// First check if we're even on cgroup v2
+	if cgroups.Mode() != cgroups.Unified {
+		return false
+	}
+
+	// Check if cgroup v2 has controllers enabled
+	// On hybrid systems, this file exists but is empty
+	controllers, err := os.ReadFile("/sys/fs/cgroup/cgroup.controllers")
+	if err != nil {
+		// File doesn't exist or can't be read - assume not functional
+		return false
+	}
+
+	// If empty, cgroup v2 is mounted but has no controllers - socket matching won't work
+	return len(strings.TrimSpace(string(controllers))) > 0
+}
+
 // GetProcessCgroup gets the cgroup identity for a process by reading /proc/<pid>/cgroup
 func GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error) {
 	cgroupFile := fmt.Sprintf("/proc/%d/cgroup", pid)

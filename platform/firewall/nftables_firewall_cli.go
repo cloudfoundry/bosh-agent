@@ -24,6 +24,10 @@ type NftablesFirewallCLI struct {
 	logger         boshlog.Logger
 	logTag         string
 
+	// useCgroupV2SocketMatch indicates whether nftables "socket cgroupv2" matching
+	// will work. On hybrid cgroup systems this is false, and we fall back to UID matching.
+	useCgroupV2SocketMatch bool
+
 	// State stored during SetupAgentRules for use in BeforeConnect
 	enableNATSFirewall bool
 	agentCgroup        ProcessCgroup
@@ -49,7 +53,16 @@ func NewNftablesFirewallCLIWithDeps(cgroupResolver CgroupResolver, logger boshlo
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	f.logger.Info(f.logTag, "Initialized with cgroup version %d (using CLI)", f.cgroupVersion)
+	// Check if cgroup v2 socket matching is functional
+	// On hybrid cgroup systems, cgroup v2 is mounted but has no controllers,
+	// so nftables "socket cgroupv2" matching doesn't work
+	f.useCgroupV2SocketMatch = cgroupResolver.IsCgroupV2SocketMatchFunctional()
+
+	if f.cgroupVersion == CgroupV2 && !f.useCgroupV2SocketMatch {
+		f.logger.Info(f.logTag, "Initialized with cgroup version %d (using CLI, UID-based matching - hybrid cgroup detected)", f.cgroupVersion)
+	} else {
+		f.logger.Info(f.logTag, "Initialized with cgroup version %d (using CLI)", f.cgroupVersion)
+	}
 
 	return f, nil
 }
@@ -201,14 +214,22 @@ func (f *NftablesFirewallCLI) Cleanup() error {
 
 // addMonitRuleCLI adds a rule allowing the specified cgroup to access monit
 func (f *NftablesFirewallCLI) addMonitRuleCLI(cgroup ProcessCgroup) error {
-	// Build rule: <cgroup match> ip daddr 127.0.0.1 tcp dport 2822 accept
+	// Build rule: <process match> ip daddr 127.0.0.1 tcp dport 2822 accept
 	var rule string
 	if f.cgroupVersion == CgroupV2 {
-		// Cgroup v2: match on cgroup path
-		// Use the path without leading slash for nft socket cgroupv2 matching
-		cgroupPath := strings.TrimPrefix(cgroup.Path, "/")
-		rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr 127.0.0.1 tcp dport %d accept",
-			cgroupPath, MonitPort)
+		if f.useCgroupV2SocketMatch {
+			// Cgroup v2 with functional socket matching: match on cgroup path
+			// Use the path without leading slash for nft socket cgroupv2 matching
+			cgroupPath := strings.TrimPrefix(cgroup.Path, "/")
+			rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr 127.0.0.1 tcp dport %d accept",
+				cgroupPath, MonitPort)
+		} else {
+			// Hybrid cgroup system: cgroup v2 socket matching doesn't work
+			// Fall back to UID-based matching (allow root processes)
+			// This is less secure but works on all systems
+			f.logger.Debug(f.logTag, "Using UID-based matching (cgroup v2 socket match not functional)")
+			rule = fmt.Sprintf("meta skuid 0 ip daddr 127.0.0.1 tcp dport %d accept", MonitPort)
+		}
 	} else {
 		// Cgroup v1: match on classid
 		classID := cgroup.ClassID
@@ -228,10 +249,16 @@ func (f *NftablesFirewallCLI) addNATSAllowRuleCLI(addr net.IP, port int) error {
 	ipStr := addr.String()
 
 	if f.cgroupVersion == CgroupV2 {
-		// Use the path without leading slash for nft socket cgroupv2 matching
-		cgroupPath := strings.TrimPrefix(f.agentCgroup.Path, "/")
-		rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr %s tcp dport %d accept",
-			cgroupPath, ipStr, port)
+		if f.useCgroupV2SocketMatch {
+			// Cgroup v2 with functional socket matching: match on cgroup path
+			cgroupPath := strings.TrimPrefix(f.agentCgroup.Path, "/")
+			rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr %s tcp dport %d accept",
+				cgroupPath, ipStr, port)
+		} else {
+			// Hybrid cgroup system: fall back to UID-based matching
+			f.logger.Debug(f.logTag, "Using UID-based matching for NATS (cgroup v2 socket match not functional)")
+			rule = fmt.Sprintf("meta skuid 0 ip daddr %s tcp dport %d accept", ipStr, port)
+		}
 	} else {
 		classID := f.agentCgroup.ClassID
 		if classID == 0 {

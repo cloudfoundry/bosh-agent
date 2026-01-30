@@ -52,6 +52,11 @@ type NftablesConn interface {
 type CgroupResolver interface {
 	DetectVersion() (CgroupVersion, error)
 	GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error)
+	// IsCgroupV2SocketMatchFunctional returns true if nftables "socket cgroupv2"
+	// matching will work. On hybrid cgroup systems (cgroup v2 mounted but with no
+	// controllers enabled), this returns false because the socket-to-cgroup
+	// association doesn't work.
+	IsCgroupV2SocketMatchFunctional() bool
 }
 
 // realNftablesConn wraps the actual nftables.Conn
@@ -94,6 +99,10 @@ func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (P
 	return GetProcessCgroup(pid, version)
 }
 
+func (r *realCgroupResolver) IsCgroupV2SocketMatchFunctional() bool {
+	return IsCgroupV2SocketMatchFunctional()
+}
+
 // NftablesFirewall implements Manager and NatsFirewallHook using nftables via netlink
 type NftablesFirewall struct {
 	conn           NftablesConn
@@ -104,6 +113,10 @@ type NftablesFirewall struct {
 	table          *nftables.Table
 	monitChain     *nftables.Chain
 	natsChain      *nftables.Chain
+
+	// useCgroupV2SocketMatch indicates whether nftables "socket cgroupv2" matching
+	// will work. On hybrid cgroup systems this is false, and we fall back to UID matching.
+	useCgroupV2SocketMatch bool
 
 	// State stored during SetupAgentRules for use in BeforeConnect
 	enableNATSFirewall bool
@@ -140,7 +153,16 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
+	// Check if cgroup v2 socket matching is functional
+	// On hybrid cgroup systems, cgroup v2 is mounted but has no controllers,
+	// so nftables "socket cgroupv2" matching doesn't work
+	f.useCgroupV2SocketMatch = cgroupResolver.IsCgroupV2SocketMatchFunctional()
+
+	if f.cgroupVersion == CgroupV2 && !f.useCgroupV2SocketMatch {
+		f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - hybrid cgroup detected)", f.cgroupVersion)
+	} else {
+		f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
+	}
 
 	return f, nil
 }
@@ -405,18 +427,37 @@ func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
 
 func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) []expr.Any {
 	if f.cgroupVersion == CgroupV2 {
-		// Cgroup v2: match on cgroup path using socket expression
-		// This matches: socket cgroupv2 level 2 "<path>"
+		if f.useCgroupV2SocketMatch {
+			// Cgroup v2 with functional socket matching: match on cgroup path
+			// This matches: socket cgroupv2 level 2 "<path>"
+			return []expr.Any{
+				&expr.Socket{
+					Key:      expr.SocketKeyCgroupv2,
+					Level:    2,
+					Register: 1,
+				},
+				&expr.Cmp{
+					Op:       expr.CmpOpEq,
+					Register: 1,
+					Data:     []byte(cgroup.Path + "\x00"),
+				},
+			}
+		}
+		// Hybrid cgroup system: cgroup v2 socket matching doesn't work
+		// Fall back to UID-based matching (allow root processes)
+		// This matches: meta skuid 0
+		f.logger.Debug(f.logTag, "Using UID-based matching (cgroup v2 socket match not functional)")
+		uidBytes := make([]byte, 4)
+		binary.NativeEndian.PutUint32(uidBytes, 0) // UID 0 = root
 		return []expr.Any{
-			&expr.Socket{
-				Key:      expr.SocketKeyCgroupv2,
-				Level:    2,
+			&expr.Meta{
+				Key:      expr.MetaKeySKUID,
 				Register: 1,
 			},
 			&expr.Cmp{
 				Op:       expr.CmpOpEq,
 				Register: 1,
-				Data:     []byte(cgroup.Path + "\x00"),
+				Data:     uidBytes,
 			},
 		}
 	}
