@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -32,8 +34,42 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// The agent creates an empty nats_access chain in SetupAgentRules, then populates it
 			// in BeforeConnect when connecting to NATS. Poll until rules appear.
 			var output string
+			startTime := time.Now()
+			debugDumped := false
 			Eventually(func() string {
 				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
+
+				// After 30 seconds, dump debug info if NATS rules still missing
+				if !debugDumped && time.Since(startTime) > 30*time.Second && !strings.Contains(output, "tcp dport 4222") {
+					debugDumped = true
+					GinkgoWriter.Println("=== DEBUG: NATS rules not appearing after 30s ===")
+
+					GinkgoWriter.Println("--- nftables table state ---")
+					GinkgoWriter.Println(output)
+
+					GinkgoWriter.Println("--- systemctl status bosh-agent ---")
+					status, _ := testEnvironment.RunCommand("sudo systemctl status bosh-agent") //nolint:errcheck
+					GinkgoWriter.Println(status)
+
+					GinkgoWriter.Println("--- agent cgroup (/proc/PID/cgroup) ---")
+					cgroup, _ := testEnvironment.RunCommand("sudo sh -c 'pgrep -f bosh-agent$ | head -1 | xargs -I{} cat /proc/{}/cgroup'") //nolint:errcheck
+					GinkgoWriter.Println(cgroup)
+
+					GinkgoWriter.Println("--- agent journal logs (last 100 lines) ---")
+					logs, _ := testEnvironment.RunCommand("sudo journalctl -u bosh-agent --no-pager -n 100") //nolint:errcheck
+					GinkgoWriter.Println(logs)
+
+					GinkgoWriter.Println("--- settings.json mbus URL ---")
+					mbus, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/settings.json | grep -o '\"mbus\":\"[^\"]*\"'") //nolint:errcheck
+					GinkgoWriter.Println(mbus)
+
+					GinkgoWriter.Println("--- /var/vcap/bosh/ directory ---")
+					dir, _ := testEnvironment.RunCommand("ls -la /var/vcap/bosh/") //nolint:errcheck
+					GinkgoWriter.Println(dir)
+
+					GinkgoWriter.Println("=== END DEBUG ===")
+				}
+
 				return output
 			}, 300).Should(MatchRegexp("(?s)nats_access.*tcp dport"))
 
