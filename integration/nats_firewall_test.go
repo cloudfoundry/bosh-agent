@@ -10,7 +10,7 @@ import (
 	"github.com/onsi/gomega/format"
 )
 
-var _ = Describe("nats firewall", func() {
+var _ = Describe("nats firewall", Ordered, func() {
 
 	Context("nftables ipv4", func() {
 		BeforeEach(func() {
