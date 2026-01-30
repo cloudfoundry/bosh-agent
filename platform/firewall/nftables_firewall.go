@@ -25,21 +25,94 @@ const (
 	MonitClassID uint32 = 0xb0540001 // 2958295041
 	NATSClassID  uint32 = 0xb0540002 // 2958295042
 
-	tableName = "bosh_agent"
-	chainName = "agent_exceptions"
+	TableName = "bosh_agent"
+	ChainName = "agent_exceptions"
 
-	monitPort = 2822
+	MonitPort = 2822
 )
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
+// NftablesConn abstracts the nftables connection for testing
+//
+//counterfeiter:generate . NftablesConn
+type NftablesConn interface {
+	AddTable(t *nftables.Table) *nftables.Table
+	AddChain(c *nftables.Chain) *nftables.Chain
+	AddRule(r *nftables.Rule) *nftables.Rule
+	DelTable(t *nftables.Table)
+	Flush() error
+}
+
+// CgroupResolver abstracts cgroup detection for testing
+//
+//counterfeiter:generate . CgroupResolver
+type CgroupResolver interface {
+	DetectVersion() (CgroupVersion, error)
+	GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error)
+}
+
+// OSReader abstracts OS file reading for testing
+//
+//counterfeiter:generate . OSReader
+type OSReader interface {
+	ReadOperatingSystem() (string, error)
+}
+
+// realNftablesConn wraps the actual nftables.Conn
+type realNftablesConn struct {
+	conn *nftables.Conn
+}
+
+func (r *realNftablesConn) AddTable(t *nftables.Table) *nftables.Table {
+	return r.conn.AddTable(t)
+}
+
+func (r *realNftablesConn) AddChain(c *nftables.Chain) *nftables.Chain {
+	return r.conn.AddChain(c)
+}
+
+func (r *realNftablesConn) AddRule(rule *nftables.Rule) *nftables.Rule {
+	return r.conn.AddRule(rule)
+}
+
+func (r *realNftablesConn) DelTable(t *nftables.Table) {
+	r.conn.DelTable(t)
+}
+
+func (r *realNftablesConn) Flush() error {
+	return r.conn.Flush()
+}
+
+// realCgroupResolver implements CgroupResolver using actual system calls
+type realCgroupResolver struct{}
+
+func (r *realCgroupResolver) DetectVersion() (CgroupVersion, error) {
+	return DetectCgroupVersion()
+}
+
+func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error) {
+	return GetProcessCgroup(pid, version)
+}
+
+// realOSReader implements OSReader using actual file reads
+type realOSReader struct{}
+
+func (r *realOSReader) ReadOperatingSystem() (string, error) {
+	return ReadOperatingSystem()
+}
 
 // NftablesFirewall implements Manager using nftables via netlink
 type NftablesFirewall struct {
-	conn          *nftables.Conn
-	cgroupVersion CgroupVersion
-	osVersion     string
-	logger        boshlog.Logger
-	logTag        string
-	table         *nftables.Table
-	chain         *nftables.Chain
+	conn           NftablesConn
+	cgroupResolver CgroupResolver
+	osReader       OSReader
+	cgroupVersion  CgroupVersion
+	osVersion      string
+	logger         boshlog.Logger
+	logTag         string
+	table          *nftables.Table
+	chain          *nftables.Chain
 }
 
 // NewNftablesFirewall creates a new nftables-based firewall manager
@@ -49,20 +122,33 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 		return nil, bosherr.WrapError(err, "Creating nftables connection")
 	}
 
+	return NewNftablesFirewallWithDeps(
+		&realNftablesConn{conn: conn},
+		&realCgroupResolver{},
+		&realOSReader{},
+		logger,
+	)
+}
+
+// NewNftablesFirewallWithDeps creates a firewall manager with injected dependencies (for testing)
+func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolver, osReader OSReader, logger boshlog.Logger) (Manager, error) {
 	f := &NftablesFirewall{
-		conn:   conn,
-		logger: logger,
-		logTag: "NftablesFirewall",
+		conn:           conn,
+		cgroupResolver: cgroupResolver,
+		osReader:       osReader,
+		logger:         logger,
+		logTag:         "NftablesFirewall",
 	}
 
 	// Detect cgroup version at construction time
-	f.cgroupVersion, err = DetectCgroupVersion()
+	var err error
+	f.cgroupVersion, err = cgroupResolver.DetectVersion()
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
 	// Read OS version
-	f.osVersion, err = ReadOperatingSystem()
+	f.osVersion, err = osReader.ReadOperatingSystem()
 	if err != nil {
 		f.logger.Warn(f.logTag, "Could not read operating system: %s", err)
 		f.osVersion = "unknown"
@@ -89,7 +175,7 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string) error {
 	}
 
 	// Get agent's own cgroup path/classid
-	agentCgroup, err := GetProcessCgroup(os.Getpid(), f.cgroupVersion)
+	agentCgroup, err := f.cgroupResolver.GetProcessCgroup(os.Getpid(), f.cgroupVersion)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting agent cgroup")
 	}
@@ -136,7 +222,7 @@ func (f *NftablesFirewall) AllowService(service Service, callerPID int) error {
 	}
 
 	// Get caller's cgroup
-	callerCgroup, err := GetProcessCgroup(callerPID, f.cgroupVersion)
+	callerCgroup, err := f.cgroupResolver.GetProcessCgroup(callerPID, f.cgroupVersion)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting caller cgroup")
 	}
@@ -182,7 +268,7 @@ func (f *NftablesFirewall) needsNATSFirewall() bool {
 func (f *NftablesFirewall) ensureTable() error {
 	f.table = &nftables.Table{
 		Family: nftables.TableFamilyINet,
-		Name:   tableName,
+		Name:   TableName,
 	}
 	f.conn.AddTable(f.table)
 	return nil
@@ -193,7 +279,7 @@ func (f *NftablesFirewall) ensureChain() error {
 	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
 
 	f.chain = &nftables.Chain{
-		Name:     chainName,
+		Name:     ChainName,
 		Table:    f.table,
 		Type:     nftables.ChainTypeFilter,
 		Hooknum:  nftables.ChainHookOutput,
@@ -208,7 +294,7 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 	// Build rule: <cgroup match> + dst 127.0.0.1 + dport 2822 -> accept
 	exprs := f.buildCgroupMatchExprs(cgroup)
 	exprs = append(exprs, f.buildLoopbackDestExprs()...)
-	exprs = append(exprs, f.buildTCPDestPortExprs(monitPort)...)
+	exprs = append(exprs, f.buildTCPDestPortExprs(MonitPort)...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
 
 	f.conn.AddRule(&nftables.Rule{
