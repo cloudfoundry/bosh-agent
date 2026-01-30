@@ -772,6 +772,10 @@ func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupFirewall(mbusURL string) error {
+	return nil
+}
+
 func (p WindowsPlatform) Shutdown() error {
 	return nil
 }

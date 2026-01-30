@@ -13,6 +13,7 @@ import (
 	boshapp "github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	boshfirewall "github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 )
 
 const mainLogTag = "main"
@@ -81,6 +82,9 @@ func main() {
 		case "compile":
 			compileTarball(cmd, os.Args[2:])
 			return
+		case "firewall-allow":
+			handleFirewallAllow(os.Args[2:])
+			return
 		}
 	}
 	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
@@ -102,4 +106,36 @@ func newSignalableLogger(logger logger.Logger) logger.Logger {
 	signal.Notify(c, syscall.SIGSEGV)
 	signalableLogger, _ := agentlogger.NewSignalableLogger(logger, c)
 	return signalableLogger
+}
+
+// handleFirewallAllow handles the "bosh-agent firewall-allow <service>" CLI command.
+// This is called by processes (like monit) that need firewall access to local services.
+func handleFirewallAllow(args []string) {
+	if len(args) < 1 {
+		fmt.Fprintf(os.Stderr, "Usage: bosh-agent firewall-allow <service>\n")
+		fmt.Fprintf(os.Stderr, "Allowed services: %v\n", boshfirewall.AllowedServices)
+		os.Exit(1)
+	}
+
+	service := boshfirewall.Service(args[0])
+
+	// Create minimal logger for CLI command
+	log := logger.NewLogger(logger.LevelError)
+
+	// Create firewall manager
+	firewallMgr, err := boshfirewall.NewNftablesFirewall(log)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error creating firewall manager: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Get parent PID (the process that called us)
+	callerPID := os.Getppid()
+
+	if err := firewallMgr.AllowService(service, callerPID); err != nil {
+		fmt.Fprintf(os.Stderr, "Error allowing service: %s\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Firewall exception added for service: %s (caller PID: %d)\n", service, callerPID)
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	boshfirewall "github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -237,6 +238,24 @@ func (p linux) GetAuditLogger() AuditLogger {
 
 func (p linux) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
 	return p.netManager.SetupNetworking(networks, mbus, nil)
+}
+
+func (p linux) SetupFirewall(mbusURL string) error {
+	firewallManager, err := boshfirewall.NewNftablesFirewall(p.logger)
+	if err != nil {
+		// Log warning but don't fail - firewall may not be available on all systems
+		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
+		return nil
+	}
+
+	err = firewallManager.SetupAgentRules(mbusURL)
+	if err != nil {
+		// Log warning but don't fail agent startup - old stemcells may not have base firewall
+		p.logger.Warn(logTag, "Failed to setup firewall rules: %s", err)
+		return nil
+	}
+
+	return nil
 }
 
 func (p linux) GetConfiguredNetworkInterfaces() ([]string, error) {

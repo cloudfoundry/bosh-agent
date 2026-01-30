@@ -509,6 +509,17 @@ type FakePlatform struct {
 	setupEphemeralDiskWithPathReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupFirewallStub        func(string) error
+	setupFirewallMutex       sync.RWMutex
+	setupFirewallArgsForCall []struct {
+		arg1 string
+	}
+	setupFirewallReturns struct {
+		result1 error
+	}
+	setupFirewallReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupHomeDirStub        func() error
 	setupHomeDirMutex       sync.RWMutex
 	setupHomeDirArgsForCall []struct {
@@ -3256,6 +3267,67 @@ func (fake *FakePlatform) SetupEphemeralDiskWithPathReturnsOnCall(i int, result1
 		})
 	}
 	fake.setupEphemeralDiskWithPathReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupFirewall(arg1 string) error {
+	fake.setupFirewallMutex.Lock()
+	ret, specificReturn := fake.setupFirewallReturnsOnCall[len(fake.setupFirewallArgsForCall)]
+	fake.setupFirewallArgsForCall = append(fake.setupFirewallArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.SetupFirewallStub
+	fakeReturns := fake.setupFirewallReturns
+	fake.recordInvocation("SetupFirewall", []interface{}{arg1})
+	fake.setupFirewallMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupFirewallCallCount() int {
+	fake.setupFirewallMutex.RLock()
+	defer fake.setupFirewallMutex.RUnlock()
+	return len(fake.setupFirewallArgsForCall)
+}
+
+func (fake *FakePlatform) SetupFirewallCalls(stub func(string) error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = stub
+}
+
+func (fake *FakePlatform) SetupFirewallArgsForCall(i int) string {
+	fake.setupFirewallMutex.RLock()
+	defer fake.setupFirewallMutex.RUnlock()
+	argsForCall := fake.setupFirewallArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupFirewallReturns(result1 error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = nil
+	fake.setupFirewallReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupFirewallReturnsOnCall(i int, result1 error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = nil
+	if fake.setupFirewallReturnsOnCall == nil {
+		fake.setupFirewallReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupFirewallReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
