@@ -194,7 +194,7 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bo
 	}
 	f.agentCgroup = agentCgroup
 
-	f.logger.Debug(f.logTag, "Agent cgroup: version=%d path=%s classid=%d",
+	f.logger.Info(f.logTag, "Agent cgroup: version=%d path='%s' classid=%d",
 		agentCgroup.Version, agentCgroup.Path, agentCgroup.ClassID)
 
 	// Create monit chain and add monit rule
@@ -225,6 +225,7 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bo
 // BeforeConnect implements NatsFirewallHook. It resolves the NATS URL and updates
 // firewall rules before each connection/reconnection attempt.
 func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
+	f.logger.Info(f.logTag, "BeforeConnect called: enableNATSFirewall=%v, mbusURL=%s", f.enableNATSFirewall, mbusURL)
 	if !f.enableNATSFirewall {
 		return nil
 	}
@@ -233,7 +234,7 @@ func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
 	host, port, err := parseNATSURL(mbusURL)
 	if err != nil {
 		// Not an error for https URLs or empty URLs
-		f.logger.Debug(f.logTag, "Skipping NATS firewall: %s", err)
+		f.logger.Info(f.logTag, "Skipping NATS firewall: %s", err)
 		return nil
 	}
 
