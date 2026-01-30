@@ -36,9 +36,11 @@ type Manager interface {
 	// mbusURL is the NATS URL for setting up NATS firewall rules (Jammy only).
 	SetupAgentRules(mbusURL string) error
 
-	// AllowService opens firewall for the calling process to access a service.
+	// AllowService opens firewall for the calling process's cgroup to access a service.
 	// Returns error if service is not in AllowedServices.
-	// Called by external processes via "bosh-agent firewall-allow <service>".
+	// Called by BOSH-deployed jobs via "bosh-agent firewall-allow <service>" when they
+	// need to interact with local services directly (e.g., monit API for controlled failover).
+	// On Jammy, the legacy permit_monit_access helper wraps this for backward compatibility.
 	AllowService(service Service, callerPID int) error
 
 	// Cleanup removes all agent-managed firewall rules.

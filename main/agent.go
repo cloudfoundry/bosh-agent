@@ -109,7 +109,10 @@ func newSignalableLogger(logger logger.Logger) logger.Logger {
 }
 
 // handleFirewallAllow handles the "bosh-agent firewall-allow <service>" CLI command.
-// This is called by processes (like monit) that need firewall access to local services.
+// This is called by BOSH-deployed jobs that need to interact with local services directly.
+// For example, jobs call "bosh-agent firewall-allow monit" to gain access to the monit API
+// for controlled failover scenarios where the job needs to monitor or control process lifecycle.
+// On Jammy, the legacy permit_monit_access helper wraps this command for backward compatibility.
 func handleFirewallAllow(args []string) {
 	if len(args) < 1 {
 		fmt.Fprintf(os.Stderr, "Usage: bosh-agent firewall-allow <service>\n")
