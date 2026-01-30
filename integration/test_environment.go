@@ -611,8 +611,10 @@ func (t *TestEnvironment) isSystemdSystem() bool {
 
 func (t *TestEnvironment) StopAgent() error {
 	if t.isSystemdSystem() {
-		_, err := t.RunCommand("nohup sudo systemctl stop bosh-agent &")
-		return err
+		// For systemd, we can run stop synchronously (it returns when stopped).
+		// Note: We ignore errors since the agent might not be running.
+		_, _ = t.RunCommand("sudo systemctl stop bosh-agent")
+		return nil
 	}
 	_, err := t.RunCommand("nohup sudo sv stop agent &")
 	return err
@@ -620,7 +622,9 @@ func (t *TestEnvironment) StopAgent() error {
 
 func (t *TestEnvironment) StartAgent() error {
 	if t.isSystemdSystem() {
-		_, err := t.RunCommand("nohup sudo systemctl start bosh-agent &")
+		// For systemd, run start synchronously. Unlike runit's sv, systemctl start
+		// blocks until the service is started, so we don't need nohup/&.
+		_, err := t.RunCommand("sudo systemctl start bosh-agent")
 		return err
 	}
 	_, err := t.RunCommand("nohup sudo sv start agent &")
