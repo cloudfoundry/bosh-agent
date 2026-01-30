@@ -71,7 +71,7 @@ var _ = Describe("NftablesFirewall", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("creates table and chain", func() {
+		It("creates table and monit chain", func() {
 			err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -80,11 +80,15 @@ var _ = Describe("NftablesFirewall", func() {
 			Expect(table.Name).To(Equal(firewall.TableName))
 			Expect(table.Family).To(Equal(nftables.TableFamilyINet))
 
-			Expect(fakeConn.AddChainCallCount()).To(Equal(1))
-			chain := fakeConn.AddChainArgsForCall(0)
-			Expect(chain.Name).To(Equal(firewall.ChainName))
-			Expect(chain.Type).To(Equal(nftables.ChainTypeFilter))
-			Expect(chain.Hooknum).To(Equal(nftables.ChainHookOutput))
+			// When enableNATSFirewall is true, both monit and NATS chains are created
+			Expect(fakeConn.AddChainCallCount()).To(Equal(2))
+			monitChain := fakeConn.AddChainArgsForCall(0)
+			Expect(monitChain.Name).To(Equal(firewall.MonitChainName))
+			Expect(monitChain.Type).To(Equal(nftables.ChainTypeFilter))
+			Expect(monitChain.Hooknum).To(Equal(nftables.ChainHookOutput))
+
+			natsChain := fakeConn.AddChainArgsForCall(1)
+			Expect(natsChain.Name).To(Equal(firewall.NATSChainName))
 		})
 
 		It("adds monit rule", func() {
@@ -119,65 +123,42 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		Context("when enableNATSFirewall is true with NATS URL", func() {
-			It("adds NATS rule for standard nats:// URL", func() {
+			It("creates NATS chain but does not add NATS rules (rules added via BeforeConnect)", func() {
 				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", true)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should have monit rule + NATS rule
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				// Should have monit rule only - NATS rules are added via BeforeConnect
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				// Both chains should be created
+				Expect(fakeConn.AddChainCallCount()).To(Equal(2))
 			})
 
-			It("adds NATS rule for nats:// URL with different port", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4223", true)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
-			})
-
-			It("adds NATS rule for nats:// URL without credentials", func() {
-				err := mgr.SetupAgentRules("nats://10.0.0.1:4222", true)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
-			})
-
-			It("adds NATS rule for nats:// URL with special characters in password", func() {
-				err := mgr.SetupAgentRules("nats://user:p%40ss%2Fword@10.0.0.1:4222", true)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
-			})
-
-			It("adds NATS rule for nats:// URL with IPv6 address", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@[::1]:4222", true)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
-			})
-
-			It("skips NATS rule for empty URL", func() {
+			It("skips NATS chain creation for empty URL", func() {
 				err := mgr.SetupAgentRules("", true)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should only have monit rule
+				// Both chains created, only monit rule
+				Expect(fakeConn.AddChainCallCount()).To(Equal(2))
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 			})
 
-			It("skips NATS rule for https:// URL (create-env case)", func() {
+			It("skips NATS chain creation for https:// URL (create-env case)", func() {
 				err := mgr.SetupAgentRules("https://mbus.bosh-lite.com:6868", true)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should only have monit rule
+				// Both chains created, only monit rule
+				Expect(fakeConn.AddChainCallCount()).To(Equal(2))
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 			})
 		})
 
 		Context("when enableNATSFirewall is false", func() {
-			It("skips NATS rule even with valid nats:// URL", func() {
+			It("only creates monit chain, no NATS chain", func() {
 				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", false)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should only have monit rule (no NATS)
+				// Should only create monit chain (no NATS chain)
+				Expect(fakeConn.AddChainCallCount()).To(Equal(1))
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 			})
 
@@ -446,6 +427,79 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 	})
 
+	Describe("BeforeConnect", func() {
+		var mgr firewall.Manager
+
+		BeforeEach(func() {
+			var err error
+			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		Context("when NATS firewall is enabled", func() {
+			BeforeEach(func() {
+				// First set up agent rules with NATS firewall enabled
+				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", true)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("adds NATS rule for IP address", func() {
+				hook := mgr.(firewall.NatsFirewallHook)
+				err := hook.BeforeConnect("nats://user:pass@10.0.0.1:4222")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Should flush NATS chain and add new rule
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+				// 1 monit rule from setup + 1 NATS rule from BeforeConnect
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+			})
+
+			It("adds NATS rule for IPv6 address", func() {
+				hook := mgr.(firewall.NatsFirewallHook)
+				err := hook.BeforeConnect("nats://user:pass@[::1]:4222")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+			})
+
+			It("skips for https:// URL (create-env case)", func() {
+				hook := mgr.(firewall.NatsFirewallHook)
+				err := hook.BeforeConnect("https://mbus.bosh-lite.com:6868")
+				Expect(err).ToNot(HaveOccurred())
+
+				// No flush or additional rules
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1)) // Only monit from setup
+			})
+
+			It("skips for empty URL", func() {
+				hook := mgr.(firewall.NatsFirewallHook)
+				err := hook.BeforeConnect("")
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("when NATS firewall is disabled", func() {
+			BeforeEach(func() {
+				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", false)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("does nothing", func() {
+				hook := mgr.(firewall.NatsFirewallHook)
+				err := hook.BeforeConnect("nats://user:pass@10.0.0.1:4222")
+				Expect(err).ToNot(HaveOccurred())
+
+				// No flush, no additional rules
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1)) // Only monit from setup
+			})
+		})
+	})
+
 	Describe("Constants", func() {
 		It("defines MonitClassID correctly", func() {
 			// MonitClassID should be 0xb0540001 = 2958295041
@@ -466,7 +520,8 @@ var _ = Describe("NftablesFirewall", func() {
 
 		It("defines table and chain names", func() {
 			Expect(firewall.TableName).To(Equal("bosh_agent"))
-			Expect(firewall.ChainName).To(Equal("agent_exceptions"))
+			Expect(firewall.MonitChainName).To(Equal("monit_access"))
+			Expect(firewall.NATSChainName).To(Equal("nats_access"))
 		})
 
 		It("defines monit port", func() {

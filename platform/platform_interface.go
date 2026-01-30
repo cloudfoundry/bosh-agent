@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -104,6 +105,11 @@ type Platform interface {
 	GetMonitCredentials() (username, password string, err error)
 
 	GetCertManager() cert.Manager
+
+	// GetNatsFirewallHook returns the firewall hook for NATS connection management.
+	// Returns nil if firewall is not available (e.g., Windows, dummy platform).
+	// The hook should be called before each NATS connect/reconnect to update firewall rules.
+	GetNatsFirewallHook() firewall.NatsFirewallHook
 
 	GetHostPublicKey() (string, error)
 

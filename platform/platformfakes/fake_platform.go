@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
@@ -269,6 +270,16 @@ type FakePlatform struct {
 		result1 string
 		result2 string
 		result3 error
+	}
+	GetNatsFirewallHookStub        func() firewall.NatsFirewallHook
+	getNatsFirewallHookMutex       sync.RWMutex
+	getNatsFirewallHookArgsForCall []struct {
+	}
+	getNatsFirewallHookReturns struct {
+		result1 firewall.NatsFirewallHook
+	}
+	getNatsFirewallHookReturnsOnCall map[int]struct {
+		result1 firewall.NatsFirewallHook
 	}
 	GetPersistentDiskSettingsPathStub        func(bool) string
 	getPersistentDiskSettingsPathMutex       sync.RWMutex
@@ -2020,6 +2031,59 @@ func (fake *FakePlatform) GetMonitCredentialsReturnsOnCall(i int, result1 string
 		result2 string
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *FakePlatform) GetNatsFirewallHook() firewall.NatsFirewallHook {
+	fake.getNatsFirewallHookMutex.Lock()
+	ret, specificReturn := fake.getNatsFirewallHookReturnsOnCall[len(fake.getNatsFirewallHookArgsForCall)]
+	fake.getNatsFirewallHookArgsForCall = append(fake.getNatsFirewallHookArgsForCall, struct {
+	}{})
+	stub := fake.GetNatsFirewallHookStub
+	fakeReturns := fake.getNatsFirewallHookReturns
+	fake.recordInvocation("GetNatsFirewallHook", []interface{}{})
+	fake.getNatsFirewallHookMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookCallCount() int {
+	fake.getNatsFirewallHookMutex.RLock()
+	defer fake.getNatsFirewallHookMutex.RUnlock()
+	return len(fake.getNatsFirewallHookArgsForCall)
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookCalls(stub func() firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = stub
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookReturns(result1 firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = nil
+	fake.getNatsFirewallHookReturns = struct {
+		result1 firewall.NatsFirewallHook
+	}{result1}
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookReturnsOnCall(i int, result1 firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = nil
+	if fake.getNatsFirewallHookReturnsOnCall == nil {
+		fake.getNatsFirewallHookReturnsOnCall = make(map[int]struct {
+			result1 firewall.NatsFirewallHook
+		})
+	}
+	fake.getNatsFirewallHookReturnsOnCall[i] = struct {
+		result1 firewall.NatsFirewallHook
+	}{result1}
 }
 
 func (fake *FakePlatform) GetPersistentDiskSettingsPath(arg1 bool) string {

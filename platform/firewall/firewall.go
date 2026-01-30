@@ -33,8 +33,8 @@ type ProcessCgroup struct {
 type Manager interface {
 	// SetupAgentRules sets up the agent's own firewall exceptions during bootstrap.
 	// Called once during agent bootstrap after networking is configured.
-	// mbusURL is the NATS URL for setting up NATS firewall rules.
-	// enableNATSFirewall controls whether NATS rules are created (Jammy: true, Noble: false).
+	// mbusURL is passed for configuration but NATS rules are set up later via BeforeConnect hook.
+	// enableNATSFirewall controls whether NATS rules will be created (Jammy: true, Noble: false).
 	SetupAgentRules(mbusURL string, enableNATSFirewall bool) error
 
 	// AllowService opens firewall for the calling process's cgroup to access a service.
@@ -47,6 +47,21 @@ type Manager interface {
 	// Cleanup removes all agent-managed firewall rules.
 	// Called during agent shutdown (optional).
 	Cleanup() error
+}
+
+// NatsFirewallHook is called before each NATS connection/reconnection attempt.
+// Implementations should resolve DNS and update firewall rules atomically.
+// This interface is implemented by Manager implementations that support NATS firewall.
+//
+//counterfeiter:generate . NatsFirewallHook
+type NatsFirewallHook interface {
+	// BeforeConnect resolves the NATS URL and updates firewall rules.
+	// Called before initial connect and before each reconnection attempt.
+	// This allows DNS to be re-resolved on reconnect, supporting HA failover
+	// where the director may have moved to a different IP.
+	// Returns nil on success or if NATS firewall is disabled.
+	// Errors are logged but should not prevent connection attempts.
+	BeforeConnect(mbusURL string) error
 }
 
 // IsAllowedService checks if a service is in the allowed list

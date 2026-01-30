@@ -119,6 +119,7 @@ type linux struct {
 	auditLogger            AuditLogger
 	logsTarProvider        boshlogstarprovider.LogsTarProvider
 	serviceManager         servicemanager.ServiceManager
+	firewallManager        boshfirewall.Manager // stores firewall manager for GetNatsFirewallHook
 }
 
 func NewLinuxPlatform(
@@ -245,13 +246,16 @@ func (p linux) SetupNetworking(networks boshsettings.Networks, mbus string) (err
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 
-func (p linux) SetupFirewall(mbusURL string) error {
+func (p *linux) SetupFirewall(mbusURL string) error {
 	firewallManager, err := boshfirewall.NewNftablesFirewall(p.logger)
 	if err != nil {
 		// Log warning but don't fail - firewall may not be available on all systems
 		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
 		return nil
 	}
+
+	// Store for GetNatsFirewallHook
+	p.firewallManager = firewallManager
 
 	err = firewallManager.SetupAgentRules(mbusURL, p.options.EnableNATSFirewall)
 	if err != nil {
@@ -269,6 +273,18 @@ func (p linux) GetConfiguredNetworkInterfaces() ([]string, error) {
 
 func (p linux) GetCertManager() boshcert.Manager {
 	return p.certManager
+}
+
+func (p linux) GetNatsFirewallHook() boshfirewall.NatsFirewallHook {
+	if p.firewallManager == nil {
+		return nil
+	}
+	// The firewall manager implements NatsFirewallHook
+	hook, ok := p.firewallManager.(boshfirewall.NatsFirewallHook)
+	if !ok {
+		return nil
+	}
+	return hook
 }
 
 func (p linux) GetHostPublicKey() (string, error) {

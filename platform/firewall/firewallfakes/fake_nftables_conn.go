@@ -57,6 +57,11 @@ type FakeNftablesConn struct {
 	flushReturnsOnCall map[int]struct {
 		result1 error
 	}
+	FlushChainStub        func(*nftables.Chain)
+	flushChainMutex       sync.RWMutex
+	flushChainArgsForCall []struct {
+		arg1 *nftables.Chain
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -327,6 +332,38 @@ func (fake *FakeNftablesConn) FlushReturnsOnCall(i int, result1 error) {
 	fake.flushReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeNftablesConn) FlushChain(arg1 *nftables.Chain) {
+	fake.flushChainMutex.Lock()
+	fake.flushChainArgsForCall = append(fake.flushChainArgsForCall, struct {
+		arg1 *nftables.Chain
+	}{arg1})
+	stub := fake.FlushChainStub
+	fake.recordInvocation("FlushChain", []interface{}{arg1})
+	fake.flushChainMutex.Unlock()
+	if stub != nil {
+		fake.FlushChainStub(arg1)
+	}
+}
+
+func (fake *FakeNftablesConn) FlushChainCallCount() int {
+	fake.flushChainMutex.RLock()
+	defer fake.flushChainMutex.RUnlock()
+	return len(fake.flushChainArgsForCall)
+}
+
+func (fake *FakeNftablesConn) FlushChainCalls(stub func(*nftables.Chain)) {
+	fake.flushChainMutex.Lock()
+	defer fake.flushChainMutex.Unlock()
+	fake.FlushChainStub = stub
+}
+
+func (fake *FakeNftablesConn) FlushChainArgsForCall(i int) *nftables.Chain {
+	fake.flushChainMutex.RLock()
+	defer fake.flushChainMutex.RUnlock()
+	argsForCall := fake.flushChainArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeNftablesConn) Invocations() map[string][][]interface{} {

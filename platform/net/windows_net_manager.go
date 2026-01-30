@@ -131,9 +131,7 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbu
 	if err := net.setupNetworkInterfaces(networks); err != nil {
 		return bosherr.WrapError(err, "setting up network interfaces")
 	}
-	if err := net.setupFirewall(mbus); err != nil {
-		return bosherr.WrapError(err, "Setting up Nats Firewall")
-	}
+	// NATS firewall is now managed via platform.SetupFirewall() and mbus BeforeConnect() hook
 	if LockFileExistsForDNS(net.fs, net.dirProvider) {
 		return nil
 	}
@@ -158,14 +156,7 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbu
 
 	return nil
 }
-func (net WindowsNetManager) setupFirewall(mbus string) error {
-	if mbus == "" {
-		net.logger.Info("NetworkSetup", "Skipping adding Firewall for outgoing nats. Mbus url is empty")
-		return nil
-	}
-	net.logger.Info("NetworkSetup", "Adding Firewall")
-	return SetupNatsFirewall(mbus)
-}
+
 func (net WindowsNetManager) ComputeNetworkConfig(networks boshsettings.Networks) (
 	[]StaticInterfaceConfiguration,
 	[]DHCPInterfaceConfiguration,

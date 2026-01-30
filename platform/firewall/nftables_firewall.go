@@ -25,8 +25,9 @@ const (
 	MonitClassID uint32 = 0xb0540001 // 2958295041
 	NATSClassID  uint32 = 0xb0540002 // 2958295042
 
-	TableName = "bosh_agent"
-	ChainName = "agent_exceptions"
+	TableName      = "bosh_agent"
+	MonitChainName = "monit_access"
+	NATSChainName  = "nats_access"
 
 	MonitPort = 2822
 )
@@ -41,6 +42,7 @@ type NftablesConn interface {
 	AddChain(c *nftables.Chain) *nftables.Chain
 	AddRule(r *nftables.Rule) *nftables.Rule
 	DelTable(t *nftables.Table)
+	FlushChain(c *nftables.Chain)
 	Flush() error
 }
 
@@ -73,6 +75,10 @@ func (r *realNftablesConn) DelTable(t *nftables.Table) {
 	r.conn.DelTable(t)
 }
 
+func (r *realNftablesConn) FlushChain(c *nftables.Chain) {
+	r.conn.FlushChain(c)
+}
+
 func (r *realNftablesConn) Flush() error {
 	return r.conn.Flush()
 }
@@ -88,7 +94,7 @@ func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (P
 	return GetProcessCgroup(pid, version)
 }
 
-// NftablesFirewall implements Manager using nftables via netlink
+// NftablesFirewall implements Manager and NatsFirewallHook using nftables via netlink
 type NftablesFirewall struct {
 	conn           NftablesConn
 	cgroupResolver CgroupResolver
@@ -96,7 +102,12 @@ type NftablesFirewall struct {
 	logger         boshlog.Logger
 	logTag         string
 	table          *nftables.Table
-	chain          *nftables.Chain
+	monitChain     *nftables.Chain
+	natsChain      *nftables.Chain
+
+	// State stored during SetupAgentRules for use in BeforeConnect
+	enableNATSFirewall bool
+	agentCgroup        ProcessCgroup
 }
 
 // NewNftablesFirewall creates a new nftables-based firewall manager
@@ -134,38 +145,42 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 	return f, nil
 }
 
-// SetupAgentRules sets up the agent's own firewall exceptions during bootstrap
+// SetupAgentRules sets up the agent's own firewall exceptions during bootstrap.
+// Monit rules are set up immediately. NATS rules are set up later via BeforeConnect hook.
 func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bool) error {
 	f.logger.Info(f.logTag, "Setting up agent firewall rules (enableNATSFirewall=%v)", enableNATSFirewall)
+
+	// Store for later use in BeforeConnect
+	f.enableNATSFirewall = enableNATSFirewall
 
 	// Create or get our table
 	if err := f.ensureTable(); err != nil {
 		return bosherr.WrapError(err, "Creating nftables table")
 	}
 
-	// Create our chain with priority -1 (runs before base rules at priority 0)
-	if err := f.ensureChain(); err != nil {
-		return bosherr.WrapError(err, "Creating nftables chain")
-	}
-
-	// Get agent's own cgroup path/classid
+	// Get agent's own cgroup path/classid (cache for later use)
 	agentCgroup, err := f.cgroupResolver.GetProcessCgroup(os.Getpid(), f.cgroupVersion)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting agent cgroup")
 	}
+	f.agentCgroup = agentCgroup
 
 	f.logger.Debug(f.logTag, "Agent cgroup: version=%d path=%s classid=%d",
 		agentCgroup.Version, agentCgroup.Path, agentCgroup.ClassID)
 
-	// Add rule: agent can access monit
+	// Create monit chain and add monit rule
+	if err := f.ensureMonitChain(); err != nil {
+		return bosherr.WrapError(err, "Creating monit chain")
+	}
+
 	if err := f.addMonitRule(agentCgroup); err != nil {
 		return bosherr.WrapError(err, "Adding agent monit rule")
 	}
 
-	// Add NATS rules only if enabled (Jammy: true, Noble: false)
-	if enableNATSFirewall && mbusURL != "" {
-		if err := f.addNATSRules(agentCgroup, mbusURL); err != nil {
-			return bosherr.WrapError(err, "Adding agent NATS rules")
+	// Create NATS chain (empty for now - BeforeConnect will populate it)
+	if enableNATSFirewall {
+		if err := f.ensureNATSChain(); err != nil {
+			return bosherr.WrapError(err, "Creating NATS chain")
 		}
 	}
 
@@ -174,7 +189,65 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bo
 		return bosherr.WrapError(err, "Flushing nftables rules")
 	}
 
-	f.logger.Info(f.logTag, "Successfully set up firewall rules")
+	f.logger.Info(f.logTag, "Successfully set up monit firewall rules")
+	return nil
+}
+
+// BeforeConnect implements NatsFirewallHook. It resolves the NATS URL and updates
+// firewall rules before each connection/reconnection attempt.
+func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
+	if !f.enableNATSFirewall {
+		return nil
+	}
+
+	// Parse URL to get host and port
+	host, port, err := parseNATSURL(mbusURL)
+	if err != nil {
+		// Not an error for https URLs or empty URLs
+		f.logger.Debug(f.logTag, "Skipping NATS firewall: %s", err)
+		return nil
+	}
+
+	// Resolve host to IP addresses (or use directly if already an IP)
+	var addrs []net.IP
+	if ip := net.ParseIP(host); ip != nil {
+		// Already an IP address, no DNS needed
+		addrs = []net.IP{ip}
+	} else {
+		// Hostname - try DNS resolution
+		addrs, err = net.LookupIP(host)
+		if err != nil {
+			// DNS failed - log warning but don't fail
+			f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", host, err)
+			return nil
+		}
+	}
+
+	f.logger.Debug(f.logTag, "Updating NATS firewall rules for %s:%d (resolved to %v)", host, port, addrs)
+
+	// Ensure NATS chain exists
+	if f.natsChain == nil {
+		if err := f.ensureNATSChain(); err != nil {
+			return bosherr.WrapError(err, "Creating NATS chain")
+		}
+	}
+
+	// Flush NATS chain (removes old rules)
+	f.conn.FlushChain(f.natsChain)
+
+	// Add rules for each resolved IP
+	for _, addr := range addrs {
+		if err := f.addNATSRule(addr, port); err != nil {
+			return bosherr.WrapError(err, "Adding NATS rule")
+		}
+	}
+
+	// Commit
+	if err := f.conn.Flush(); err != nil {
+		return bosherr.WrapError(err, "Flushing nftables rules")
+	}
+
+	f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", host, port)
 	return nil
 }
 
@@ -191,7 +264,7 @@ func (f *NftablesFirewall) AllowService(service Service, callerPID int) error {
 	if err := f.ensureTable(); err != nil {
 		return bosherr.WrapError(err, "Ensuring nftables table")
 	}
-	if err := f.ensureChain(); err != nil {
+	if err := f.ensureMonitChain(); err != nil {
 		return bosherr.WrapError(err, "Ensuring nftables chain")
 	}
 
@@ -242,19 +315,35 @@ func (f *NftablesFirewall) ensureTable() error {
 	return nil
 }
 
-func (f *NftablesFirewall) ensureChain() error {
+func (f *NftablesFirewall) ensureMonitChain() error {
 	// Priority -1 ensures our ACCEPT rules run before base DROP rules (priority 0)
 	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
 
-	f.chain = &nftables.Chain{
-		Name:     ChainName,
+	f.monitChain = &nftables.Chain{
+		Name:     MonitChainName,
 		Table:    f.table,
 		Type:     nftables.ChainTypeFilter,
 		Hooknum:  nftables.ChainHookOutput,
 		Priority: &priority,
 		Policy:   policyPtr(nftables.ChainPolicyAccept),
 	}
-	f.conn.AddChain(f.chain)
+	f.conn.AddChain(f.monitChain)
+	return nil
+}
+
+func (f *NftablesFirewall) ensureNATSChain() error {
+	// Priority -1 ensures our ACCEPT rules run before base DROP rules (priority 0)
+	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
+
+	f.natsChain = &nftables.Chain{
+		Name:     NATSChainName,
+		Table:    f.table,
+		Type:     nftables.ChainTypeFilter,
+		Hooknum:  nftables.ChainHookOutput,
+		Priority: &priority,
+		Policy:   policyPtr(nftables.ChainPolicyAccept),
+	}
+	f.conn.AddChain(f.natsChain)
 	return nil
 }
 
@@ -267,42 +356,26 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 
 	f.conn.AddRule(&nftables.Rule{
 		Table: f.table,
-		Chain: f.chain,
+		Chain: f.monitChain,
 		Exprs: exprs,
 	})
 
 	return nil
 }
 
-func (f *NftablesFirewall) addNATSRules(cgroup ProcessCgroup, mbusURL string) error {
-	// Parse NATS URL to get host and port
-	host, port, err := parseNATSURL(mbusURL)
-	if err != nil {
-		// Not an error for https URLs or empty URLs
-		f.logger.Debug(f.logTag, "Skipping NATS firewall: %s", err)
-		return nil
-	}
+func (f *NftablesFirewall) addNATSRule(addr net.IP, port int) error {
+	// Build rule: <cgroup match> + dst <addr> + dport <port> -> accept
+	exprs := f.buildCgroupMatchExprs(f.agentCgroup)
+	exprs = append(exprs, f.buildDestIPExprs(addr)...)
+	exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
+	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
 
-	// Resolve host to IP addresses
-	addrs, err := net.LookupIP(host)
-	if err != nil {
-		return bosherr.WrapError(err, fmt.Sprintf("Resolving NATS host: %s", host))
-	}
+	f.conn.AddRule(&nftables.Rule{
+		Table: f.table,
+		Chain: f.natsChain,
+		Exprs: exprs,
+	})
 
-	for _, addr := range addrs {
-		exprs := f.buildCgroupMatchExprs(cgroup)
-		exprs = append(exprs, f.buildDestIPExprs(addr)...)
-		exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
-		exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
-
-		f.conn.AddRule(&nftables.Rule{
-			Table: f.table,
-			Chain: f.chain,
-			Exprs: exprs,
-		})
-	}
-
-	f.logger.Info(f.logTag, "Added NATS firewall rules for %s:%d", host, port)
 	return nil
 }
 
