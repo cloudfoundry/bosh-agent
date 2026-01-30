@@ -259,9 +259,24 @@ func (p *linux) SetupFirewall(mbusURL string) error {
 
 	err = firewallManager.SetupAgentRules(mbusURL, p.options.EnableNATSFirewall)
 	if err != nil {
-		// Log warning but don't fail agent startup - old stemcells may not have base firewall
-		p.logger.Warn(logTag, "Failed to setup firewall rules: %s", err)
-		return nil
+		// Netlink-based nftables can fail in nested containers with EOVERFLOW.
+		// Fall back to CLI-based implementation which uses the nft command directly.
+		p.logger.Warn(logTag, "Netlink firewall failed, trying CLI fallback: %s", err)
+
+		firewallManager, err = boshfirewall.NewNftablesFirewallCLI(p.logger)
+		if err != nil {
+			p.logger.Warn(logTag, "Failed to create CLI firewall manager: %s", err)
+			return nil
+		}
+
+		p.firewallManager = firewallManager
+
+		err = firewallManager.SetupAgentRules(mbusURL, p.options.EnableNATSFirewall)
+		if err != nil {
+			// Log warning but don't fail agent startup - old stemcells may not have base firewall
+			p.logger.Warn(logTag, "Failed to setup firewall rules (CLI): %s", err)
+			return nil
+		}
 	}
 
 	return nil
