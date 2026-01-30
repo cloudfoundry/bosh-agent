@@ -235,10 +235,15 @@ func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
 	// Flush NATS chain (removes old rules)
 	f.conn.FlushChain(f.natsChain)
 
-	// Add rules for each resolved IP
+	// Add rules for each resolved IP:
+	// 1. ACCEPT rule for agent's cgroup (allows agent to connect)
+	// 2. DROP rule for everyone else (blocks malicious workloads)
 	for _, addr := range addrs {
-		if err := f.addNATSRule(addr, port); err != nil {
-			return bosherr.WrapError(err, "Adding NATS rule")
+		if err := f.addNATSAllowRule(addr, port); err != nil {
+			return bosherr.WrapError(err, "Adding NATS allow rule")
+		}
+		if err := f.addNATSBlockRule(addr, port); err != nil {
+			return bosherr.WrapError(err, "Adding NATS block rule")
 		}
 	}
 
@@ -363,12 +368,31 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 	return nil
 }
 
-func (f *NftablesFirewall) addNATSRule(addr net.IP, port int) error {
+func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) error {
 	// Build rule: <cgroup match> + dst <addr> + dport <port> -> accept
+	// This allows the agent (in its cgroup) to connect to the director's NATS
 	exprs := f.buildCgroupMatchExprs(f.agentCgroup)
 	exprs = append(exprs, f.buildDestIPExprs(addr)...)
 	exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
+
+	f.conn.AddRule(&nftables.Rule{
+		Table: f.table,
+		Chain: f.natsChain,
+		Exprs: exprs,
+	})
+
+	return nil
+}
+
+func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
+	// Build rule: dst <addr> + dport <port> -> drop
+	// This blocks everyone else (not in agent's cgroup) from connecting to director's NATS.
+	// This rule must come AFTER the allow rule so the agent's cgroup is matched first.
+	// Note: No cgroup match means this applies to all processes.
+	exprs := f.buildDestIPExprs(addr)
+	exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
+	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictDrop})
 
 	f.conn.AddRule(&nftables.Rule{
 		Table: f.table,

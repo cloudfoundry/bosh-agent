@@ -448,10 +448,10 @@ var _ = Describe("NftablesFirewall", func() {
 				err := hook.BeforeConnect("nats://user:pass@10.0.0.1:4222")
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should flush NATS chain and add new rule
+				// Should flush NATS chain and add new rules
 				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
-				// 1 monit rule from setup + 1 NATS rule from BeforeConnect
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				// 1 monit rule from setup + 2 NATS rules (ACCEPT + DROP) from BeforeConnect
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 			})
 
 			It("adds NATS rule for IPv6 address", func() {
@@ -460,7 +460,8 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				// 1 monit rule from setup + 2 NATS rules (ACCEPT + DROP) from BeforeConnect
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 			})
 
 			It("skips for https:// URL (create-env case)", func() {
