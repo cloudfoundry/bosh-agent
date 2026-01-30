@@ -22,32 +22,36 @@ var _ = Describe("nats firewall", Ordered, func() {
 		It("sets up the outgoing nats firewall using nftables", func() {
 			format.MaxLength = 0
 
-			// Wait for the agent to start and set up firewall rules
+			// Wait for the agent to start, connect to NATS, and set up firewall rules.
+			// The agent logs "Updated NATS firewall rules" after BeforeConnect populates the nats_access chain.
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
-			}, 300).Should(ContainSubstring("NftablesFirewall"))
+			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			// Check nftables for the bosh_agent table and chains
-			output, err := testEnvironment.RunCommand("sudo nft list table inet bosh_agent")
-			Expect(err).To(BeNil())
+			// Wait for NATS rules to be populated in nftables.
+			// The agent creates an empty nats_access chain in SetupAgentRules, then populates it
+			// in BeforeConnect when connecting to NATS. Use Eventually to wait for the rules.
+			var output string
+			Eventually(func() string {
+				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
+				return output
+			}, 30).Should(MatchRegexp("(?s)nats_access.*tcp dport"))
 
 			// Verify table structure - should have both monit_access and nats_access chains
 			Expect(output).To(ContainSubstring("table inet bosh_agent"))
 			Expect(output).To(ContainSubstring("chain monit_access"))
 			Expect(output).To(ContainSubstring("chain nats_access"))
 
-			// Verify monit rules - should match either:
-			// - socket cgroupv2 classid (pure cgroup v2)
-			// - meta cgroup (hybrid cgroup v1+v2 systems)
+			// Verify monit rules - should match one of:
+			// - socket cgroupv2 level N "path" (pure cgroup v2 with systemd, e.g., Noble)
+			// - socket cgroupv2 ... classid (pure cgroup v2 with runc-style cgroups)
+			// - meta cgroup (hybrid cgroup v1+v2 systems, e.g., Jammy on incus)
 			Expect(output).To(SatisfyAny(
+				MatchRegexp(`socket cgroupv2 level \d+ ".*".*tcp dport 2822.*accept`),
 				MatchRegexp("tcp dport 2822.*socket cgroupv2.*classid.*accept"),
 				MatchRegexp("meta cgroup.*tcp dport 2822.*accept"),
 			))
-
-			// Verify NATS rules - the NATS chain should have rules for the director's NATS port
-			// Use (?s) flag for multiline matching since chain definition spans multiple lines
-			Expect(output).To(MatchRegexp("(?s)nats_access.*tcp dport"))
 
 			// Get BOSH director hostname from BOSH_ENVIRONMENT (may be a full URL)
 			boshEnvURL := os.Getenv("BOSH_ENVIRONMENT")
