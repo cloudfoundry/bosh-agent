@@ -205,8 +205,10 @@ func (f *NftablesFirewallCLI) addMonitRuleCLI(cgroup ProcessCgroup) error {
 	var rule string
 	if f.cgroupVersion == CgroupV2 {
 		// Cgroup v2: match on cgroup path
-		rule = fmt.Sprintf("socket cgroupv2 level 2 \"%s\" ip daddr 127.0.0.1 tcp dport %d accept",
-			cgroup.Path, MonitPort)
+		// Use the path without leading slash for nft socket cgroupv2 matching
+		cgroupPath := strings.TrimPrefix(cgroup.Path, "/")
+		rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr 127.0.0.1 tcp dport %d accept",
+			cgroupPath, MonitPort)
 	} else {
 		// Cgroup v1: match on classid
 		classID := cgroup.ClassID
@@ -226,8 +228,10 @@ func (f *NftablesFirewallCLI) addNATSAllowRuleCLI(addr net.IP, port int) error {
 	ipStr := addr.String()
 
 	if f.cgroupVersion == CgroupV2 {
-		rule = fmt.Sprintf("socket cgroupv2 level 2 \"%s\" ip daddr %s tcp dport %d accept",
-			f.agentCgroup.Path, ipStr, port)
+		// Use the path without leading slash for nft socket cgroupv2 matching
+		cgroupPath := strings.TrimPrefix(f.agentCgroup.Path, "/")
+		rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr %s tcp dport %d accept",
+			cgroupPath, ipStr, port)
 	} else {
 		classID := f.agentCgroup.ClassID
 		if classID == 0 {
