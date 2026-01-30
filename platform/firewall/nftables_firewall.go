@@ -30,6 +30,13 @@ const (
 	NATSChainName  = "nats_access"
 
 	MonitPort = 2822
+
+	// AllowMark is the packet mark used to signal to the base bosh_firewall table
+	// that this packet has been allowed by the agent. The base firewall checks for
+	// this mark and skips the DROP rule when it's set. This enables cross-table
+	// coordination since nftables evaluates each table's chains independently.
+	// Mark value: 0xb054 ("BOSH" leet-ified)
+	AllowMark uint32 = 0xb054
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -375,10 +382,15 @@ func (f *NftablesFirewall) ensureNATSChain() error {
 }
 
 func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
-	// Build rule: <cgroup match> + dst 127.0.0.1 + dport 2822 -> accept
+	// Build rule: <cgroup match> + dst 127.0.0.1 + dport 2822 -> set mark + accept
+	// The mark signals to the base bosh_firewall table (in a separate table) that
+	// this packet was allowed by the agent and should NOT be dropped.
+	// This is necessary because nftables evaluates each table independently -
+	// an ACCEPT in one table doesn't prevent other tables from also evaluating.
 	exprs := f.buildCgroupMatchExprs(cgroup)
 	exprs = append(exprs, f.buildLoopbackDestExprs()...)
 	exprs = append(exprs, f.buildTCPDestPortExprs(MonitPort)...)
+	exprs = append(exprs, f.buildSetMarkExprs()...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
 
 	f.conn.AddRule(&nftables.Rule{
@@ -595,6 +607,27 @@ func (f *NftablesFirewall) buildTCPDestPortExprs(port int) []expr.Any {
 			Op:       expr.CmpOpEq,
 			Register: 1,
 			Data:     portBytes,
+		},
+	}
+}
+
+func (f *NftablesFirewall) buildSetMarkExprs() []expr.Any {
+	// Set packet mark to AllowMark (0xb054)
+	// This mark is checked by the base bosh_firewall table to skip DROP rules
+	markBytes := make([]byte, 4)
+	binary.NativeEndian.PutUint32(markBytes, AllowMark)
+
+	return []expr.Any{
+		// Load mark value into register
+		&expr.Immediate{
+			Register: 1,
+			Data:     markBytes,
+		},
+		// Set packet mark from register
+		&expr.Meta{
+			Key:            expr.MetaKeyMARK,
+			SourceRegister: true,
+			Register:       1,
 		},
 	}
 }

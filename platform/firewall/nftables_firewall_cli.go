@@ -214,21 +214,25 @@ func (f *NftablesFirewallCLI) Cleanup() error {
 
 // addMonitRuleCLI adds a rule allowing the specified cgroup to access monit
 func (f *NftablesFirewallCLI) addMonitRuleCLI(cgroup ProcessCgroup) error {
-	// Build rule: <process match> ip daddr 127.0.0.1 tcp dport 2822 accept
+	// Build rule: <process match> ip daddr 127.0.0.1 tcp dport 2822 -> set mark + accept
+	// The mark (0xb054) signals to the base bosh_firewall table that this packet was
+	// allowed by the agent and should NOT be dropped. This is necessary because nftables
+	// evaluates each table independently - an ACCEPT in one table doesn't prevent other
+	// tables from also evaluating.
 	var rule string
 	if f.cgroupVersion == CgroupV2 {
 		if f.useCgroupV2SocketMatch {
 			// Cgroup v2 with functional socket matching: match on cgroup path
 			// Use the path without leading slash for nft socket cgroupv2 matching
 			cgroupPath := strings.TrimPrefix(cgroup.Path, "/")
-			rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr 127.0.0.1 tcp dport %d accept",
-				cgroupPath, MonitPort)
+			rule = fmt.Sprintf("socket cgroupv2 level 1 \"%s\" ip daddr 127.0.0.1 tcp dport %d meta mark set 0x%x accept",
+				cgroupPath, MonitPort, AllowMark)
 		} else {
 			// Hybrid cgroup system: cgroup v2 socket matching doesn't work
 			// Fall back to UID-based matching (allow root processes)
 			// This is less secure but works on all systems
 			f.logger.Debug(f.logTag, "Using UID-based matching (cgroup v2 socket match not functional)")
-			rule = fmt.Sprintf("meta skuid 0 ip daddr 127.0.0.1 tcp dport %d accept", MonitPort)
+			rule = fmt.Sprintf("meta skuid 0 ip daddr 127.0.0.1 tcp dport %d meta mark set 0x%x accept", MonitPort, AllowMark)
 		}
 	} else {
 		// Cgroup v1: match on classid
@@ -236,8 +240,8 @@ func (f *NftablesFirewallCLI) addMonitRuleCLI(cgroup ProcessCgroup) error {
 		if classID == 0 {
 			classID = MonitClassID
 		}
-		rule = fmt.Sprintf("meta cgroup %d ip daddr 127.0.0.1 tcp dport %d accept",
-			classID, MonitPort)
+		rule = fmt.Sprintf("meta cgroup %d ip daddr 127.0.0.1 tcp dport %d meta mark set 0x%x accept",
+			classID, MonitPort, AllowMark)
 	}
 
 	return f.runNft("add", "rule", "inet", TableName, MonitChainName, rule)
