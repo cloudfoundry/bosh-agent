@@ -30,10 +30,11 @@ type FakeManager struct {
 	cleanupReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupAgentRulesStub        func(string) error
+	SetupAgentRulesStub        func(string, bool) error
 	setupAgentRulesMutex       sync.RWMutex
 	setupAgentRulesArgsForCall []struct {
 		arg1 string
+		arg2 bool
 	}
 	setupAgentRulesReturns struct {
 		result1 error
@@ -160,18 +161,19 @@ func (fake *FakeManager) CleanupReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeManager) SetupAgentRules(arg1 string) error {
+func (fake *FakeManager) SetupAgentRules(arg1 string, arg2 bool) error {
 	fake.setupAgentRulesMutex.Lock()
 	ret, specificReturn := fake.setupAgentRulesReturnsOnCall[len(fake.setupAgentRulesArgsForCall)]
 	fake.setupAgentRulesArgsForCall = append(fake.setupAgentRulesArgsForCall, struct {
 		arg1 string
-	}{arg1})
+		arg2 bool
+	}{arg1, arg2})
 	stub := fake.SetupAgentRulesStub
 	fakeReturns := fake.setupAgentRulesReturns
-	fake.recordInvocation("SetupAgentRules", []interface{}{arg1})
+	fake.recordInvocation("SetupAgentRules", []interface{}{arg1, arg2})
 	fake.setupAgentRulesMutex.Unlock()
 	if stub != nil {
-		return stub(arg1)
+		return stub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1
@@ -185,17 +187,17 @@ func (fake *FakeManager) SetupAgentRulesCallCount() int {
 	return len(fake.setupAgentRulesArgsForCall)
 }
 
-func (fake *FakeManager) SetupAgentRulesCalls(stub func(string) error) {
+func (fake *FakeManager) SetupAgentRulesCalls(stub func(string, bool) error) {
 	fake.setupAgentRulesMutex.Lock()
 	defer fake.setupAgentRulesMutex.Unlock()
 	fake.SetupAgentRulesStub = stub
 }
 
-func (fake *FakeManager) SetupAgentRulesArgsForCall(i int) string {
+func (fake *FakeManager) SetupAgentRulesArgsForCall(i int) (string, bool) {
 	fake.setupAgentRulesMutex.RLock()
 	defer fake.setupAgentRulesMutex.RUnlock()
 	argsForCall := fake.setupAgentRulesArgsForCall[i]
-	return argsForCall.arg1
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeManager) SetupAgentRulesReturns(result1 error) {

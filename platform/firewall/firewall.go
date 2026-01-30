@@ -33,8 +33,9 @@ type ProcessCgroup struct {
 type Manager interface {
 	// SetupAgentRules sets up the agent's own firewall exceptions during bootstrap.
 	// Called once during agent bootstrap after networking is configured.
-	// mbusURL is the NATS URL for setting up NATS firewall rules (Jammy only).
-	SetupAgentRules(mbusURL string) error
+	// mbusURL is the NATS URL for setting up NATS firewall rules.
+	// enableNATSFirewall controls whether NATS rules are created (Jammy: true, Noble: false).
+	SetupAgentRules(mbusURL string, enableNATSFirewall bool) error
 
 	// AllowService opens firewall for the calling process's cgroup to access a service.
 	// Returns error if service is not in AllowedServices.

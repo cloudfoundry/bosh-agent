@@ -90,6 +90,11 @@ type LinuxOptions struct {
 	// example: "pattern": "^(disk-.+)$", "replacement": "google-${1}",
 	DiskIDTransformPattern     string
 	DiskIDTransformReplacement string
+
+	// When set to true, NATS firewall rules will be set up.
+	// Jammy stemcells should set this to true (uses static NATS credentials).
+	// Noble stemcells should leave this false (uses ephemeral NATS credentials).
+	EnableNATSFirewall bool
 }
 
 type linux struct {
@@ -248,7 +253,7 @@ func (p linux) SetupFirewall(mbusURL string) error {
 		return nil
 	}
 
-	err = firewallManager.SetupAgentRules(mbusURL)
+	err = firewallManager.SetupAgentRules(mbusURL, p.options.EnableNATSFirewall)
 	if err != nil {
 		// Log warning but don't fail agent startup - old stemcells may not have base firewall
 		p.logger.Warn(logTag, "Failed to setup firewall rules: %s", err)

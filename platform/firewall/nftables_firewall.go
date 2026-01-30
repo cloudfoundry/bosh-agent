@@ -52,13 +52,6 @@ type CgroupResolver interface {
 	GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error)
 }
 
-// OSReader abstracts OS file reading for testing
-//
-//counterfeiter:generate . OSReader
-type OSReader interface {
-	ReadOperatingSystem() (string, error)
-}
-
 // realNftablesConn wraps the actual nftables.Conn
 type realNftablesConn struct {
 	conn *nftables.Conn
@@ -95,20 +88,11 @@ func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (P
 	return GetProcessCgroup(pid, version)
 }
 
-// realOSReader implements OSReader using actual file reads
-type realOSReader struct{}
-
-func (r *realOSReader) ReadOperatingSystem() (string, error) {
-	return ReadOperatingSystem()
-}
-
 // NftablesFirewall implements Manager using nftables via netlink
 type NftablesFirewall struct {
 	conn           NftablesConn
 	cgroupResolver CgroupResolver
-	osReader       OSReader
 	cgroupVersion  CgroupVersion
-	osVersion      string
 	logger         boshlog.Logger
 	logTag         string
 	table          *nftables.Table
@@ -125,17 +109,15 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 	return NewNftablesFirewallWithDeps(
 		&realNftablesConn{conn: conn},
 		&realCgroupResolver{},
-		&realOSReader{},
 		logger,
 	)
 }
 
 // NewNftablesFirewallWithDeps creates a firewall manager with injected dependencies (for testing)
-func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolver, osReader OSReader, logger boshlog.Logger) (Manager, error) {
+func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolver, logger boshlog.Logger) (Manager, error) {
 	f := &NftablesFirewall{
 		conn:           conn,
 		cgroupResolver: cgroupResolver,
-		osReader:       osReader,
 		logger:         logger,
 		logTag:         "NftablesFirewall",
 	}
@@ -147,22 +129,14 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	// Read OS version
-	f.osVersion, err = osReader.ReadOperatingSystem()
-	if err != nil {
-		f.logger.Warn(f.logTag, "Could not read operating system: %s", err)
-		f.osVersion = "unknown"
-	}
-
-	f.logger.Info(f.logTag, "Initialized with cgroup version %d, OS: %s",
-		f.cgroupVersion, f.osVersion)
+	f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
 
 	return f, nil
 }
 
 // SetupAgentRules sets up the agent's own firewall exceptions during bootstrap
-func (f *NftablesFirewall) SetupAgentRules(mbusURL string) error {
-	f.logger.Info(f.logTag, "Setting up agent firewall rules")
+func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bool) error {
+	f.logger.Info(f.logTag, "Setting up agent firewall rules (enableNATSFirewall=%v)", enableNATSFirewall)
 
 	// Create or get our table
 	if err := f.ensureTable(); err != nil {
@@ -188,8 +162,8 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string) error {
 		return bosherr.WrapError(err, "Adding agent monit rule")
 	}
 
-	// Add NATS rules only for Jammy (regardless of cgroup version)
-	if f.needsNATSFirewall() && mbusURL != "" {
+	// Add NATS rules only if enabled (Jammy: true, Noble: false)
+	if enableNATSFirewall && mbusURL != "" {
 		if err := f.addNATSRules(agentCgroup, mbusURL); err != nil {
 			return bosherr.WrapError(err, "Adding agent NATS rules")
 		}
@@ -257,12 +231,6 @@ func (f *NftablesFirewall) Cleanup() error {
 	}
 
 	return f.conn.Flush()
-}
-
-// needsNATSFirewall returns true if this OS needs NATS firewall protection
-func (f *NftablesFirewall) needsNATSFirewall() bool {
-	// Only Jammy needs NATS firewall (Noble has ephemeral credentials)
-	return strings.Contains(f.osVersion, "jammy")
 }
 
 func (f *NftablesFirewall) ensureTable() error {

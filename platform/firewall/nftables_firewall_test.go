@@ -18,14 +18,12 @@ var _ = Describe("NftablesFirewall", func() {
 	var (
 		fakeConn           *firewallfakes.FakeNftablesConn
 		fakeCgroupResolver *firewallfakes.FakeCgroupResolver
-		fakeOSReader       *firewallfakes.FakeOSReader
 		logger             boshlog.Logger
 	)
 
 	BeforeEach(func() {
 		fakeConn = new(firewallfakes.FakeNftablesConn)
 		fakeCgroupResolver = new(firewallfakes.FakeCgroupResolver)
-		fakeOSReader = new(firewallfakes.FakeOSReader)
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 
 		// Default successful returns
@@ -34,7 +32,6 @@ var _ = Describe("NftablesFirewall", func() {
 			Version: firewall.CgroupV2,
 			Path:    "/system.slice/bosh-agent.service",
 		}, nil)
-		fakeOSReader.ReadOperatingSystemReturns("ubuntu-jammy", nil)
 		fakeConn.FlushReturns(nil)
 	})
 
@@ -42,7 +39,7 @@ var _ = Describe("NftablesFirewall", func() {
 		It("creates a firewall manager with cgroup v2", func() {
 			fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
 
-			mgr, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			mgr, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mgr).ToNot(BeNil())
 			Expect(fakeCgroupResolver.DetectVersionCallCount()).To(Equal(1))
@@ -51,7 +48,7 @@ var _ = Describe("NftablesFirewall", func() {
 		It("creates a firewall manager with cgroup v1", func() {
 			fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV1, nil)
 
-			mgr, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			mgr, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(mgr).ToNot(BeNil())
 		})
@@ -59,17 +56,9 @@ var _ = Describe("NftablesFirewall", func() {
 		It("returns error when cgroup detection fails", func() {
 			fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV1, errors.New("cgroup detection failed"))
 
-			_, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			_, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Detecting cgroup version"))
-		})
-
-		It("continues when OS detection fails (uses 'unknown')", func() {
-			fakeOSReader.ReadOperatingSystemReturns("", errors.New("file not found"))
-
-			mgr, err := firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(mgr).ToNot(BeNil())
 		})
 	})
 
@@ -78,12 +67,12 @@ var _ = Describe("NftablesFirewall", func() {
 
 		BeforeEach(func() {
 			var err error
-			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("creates table and chain", func() {
-			err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222")
+			err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", true)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeConn.AddTableCallCount()).To(Equal(1))
@@ -99,7 +88,7 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		It("adds monit rule", func() {
-			err := mgr.SetupAgentRules("")
+			err := mgr.SetupAgentRules("", false)
 			Expect(err).ToNot(HaveOccurred())
 
 			// At least one rule should be added (monit rule)
@@ -107,7 +96,7 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		It("flushes rules after adding", func() {
-			err := mgr.SetupAgentRules("")
+			err := mgr.SetupAgentRules("", false)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(fakeConn.FlushCallCount()).To(Equal(1))
@@ -116,7 +105,7 @@ var _ = Describe("NftablesFirewall", func() {
 		It("returns error when flush fails", func() {
 			fakeConn.FlushReturns(errors.New("flush failed"))
 
-			err := mgr.SetupAgentRules("")
+			err := mgr.SetupAgentRules("", false)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Flushing nftables rules"))
 		})
@@ -124,21 +113,14 @@ var _ = Describe("NftablesFirewall", func() {
 		It("returns error when getting process cgroup fails", func() {
 			fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{}, errors.New("cgroup error"))
 
-			err := mgr.SetupAgentRules("")
+			err := mgr.SetupAgentRules("", false)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Getting agent cgroup"))
 		})
 
-		Context("when running on Jammy with NATS URL", func() {
-			BeforeEach(func() {
-				fakeOSReader.ReadOperatingSystemReturns("ubuntu-jammy", nil)
-				var err error
-				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
+		Context("when enableNATSFirewall is true with NATS URL", func() {
 			It("adds NATS rule for standard nats:// URL", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222")
+				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should have monit rule + NATS rule
@@ -146,35 +128,35 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("adds NATS rule for nats:// URL with different port", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4223")
+				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4223", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
 			})
 
 			It("adds NATS rule for nats:// URL without credentials", func() {
-				err := mgr.SetupAgentRules("nats://10.0.0.1:4222")
+				err := mgr.SetupAgentRules("nats://10.0.0.1:4222", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
 			})
 
 			It("adds NATS rule for nats:// URL with special characters in password", func() {
-				err := mgr.SetupAgentRules("nats://user:p%40ss%2Fword@10.0.0.1:4222")
+				err := mgr.SetupAgentRules("nats://user:p%40ss%2Fword@10.0.0.1:4222", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
 			})
 
 			It("adds NATS rule for nats:// URL with IPv6 address", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@[::1]:4222")
+				err := mgr.SetupAgentRules("nats://user:pass@[::1]:4222", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
 			})
 
 			It("skips NATS rule for empty URL", func() {
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should only have monit rule
@@ -182,7 +164,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("skips NATS rule for https:// URL (create-env case)", func() {
-				err := mgr.SetupAgentRules("https://mbus.bosh-lite.com:6868")
+				err := mgr.SetupAgentRules("https://mbus.bosh-lite.com:6868", true)
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should only have monit rule
@@ -190,24 +172,17 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 		})
 
-		Context("when running on Noble", func() {
-			BeforeEach(func() {
-				fakeOSReader.ReadOperatingSystemReturns("ubuntu-noble", nil)
-				var err error
-				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
+		Context("when enableNATSFirewall is false", func() {
 			It("skips NATS rule even with valid nats:// URL", func() {
-				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222")
+				err := mgr.SetupAgentRules("nats://user:pass@10.0.0.1:4222", false)
 				Expect(err).ToNot(HaveOccurred())
 
-				// Should only have monit rule (no NATS on Noble)
+				// Should only have monit rule (no NATS)
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 			})
 
 			It("adds monit rule", func() {
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -222,12 +197,12 @@ var _ = Describe("NftablesFirewall", func() {
 					Path:    "/system.slice/bosh-agent.service",
 				}, nil)
 				var err error
-				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("creates rule with cgroup v2 path in expressions", func() {
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -259,7 +234,7 @@ var _ = Describe("NftablesFirewall", func() {
 					Path:    nestedPath,
 				}, nil)
 
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -284,7 +259,7 @@ var _ = Describe("NftablesFirewall", func() {
 					Path:    deeplyNestedPath,
 				}, nil)
 
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -307,7 +282,7 @@ var _ = Describe("NftablesFirewall", func() {
 					Path:    "/",
 				}, nil)
 
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -334,12 +309,12 @@ var _ = Describe("NftablesFirewall", func() {
 					ClassID: firewall.MonitClassID,
 				}, nil)
 				var err error
-				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+				mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("creates rule with cgroup v1 classid in expressions", func() {
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -364,7 +339,7 @@ var _ = Describe("NftablesFirewall", func() {
 					ClassID: firewall.MonitClassID,
 				}, nil)
 
-				err := mgr.SetupAgentRules("")
+				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -389,7 +364,7 @@ var _ = Describe("NftablesFirewall", func() {
 
 		BeforeEach(func() {
 			var err error
-			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -444,13 +419,13 @@ var _ = Describe("NftablesFirewall", func() {
 
 		BeforeEach(func() {
 			var err error
-			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, fakeOSReader, logger)
+			mgr, err = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeCgroupResolver, logger)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("deletes table and flushes after SetupAgentRules", func() {
 			// First set up rules to create the table
-			err := mgr.SetupAgentRules("")
+			err := mgr.SetupAgentRules("", false)
 			Expect(err).ToNot(HaveOccurred())
 
 			// Now cleanup
