@@ -88,7 +88,9 @@ var _ = Describe("SystemMounts", func() {
 				It("does not change mounts and permissions", func() {
 					waitForAgentAndExpectMounts := func() {
 						Eventually(func() bool {
-							return testEnvironment.LogFileContains("sv start monit")
+							// Accept both runit (sv start monit) and systemd (systemctl start monit) log patterns
+							return testEnvironment.LogFileContains("'sv start monit'") ||
+								testEnvironment.LogFileContains("'systemctl start monit'")
 						}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
 						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'") //nolint:errcheck

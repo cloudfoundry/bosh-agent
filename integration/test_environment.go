@@ -602,12 +602,27 @@ func (t *TestEnvironment) RestartAgent() error {
 	return t.StartAgent()
 }
 
+// isSystemdSystem returns true if the remote system uses systemd (e.g., Noble)
+// rather than runit (e.g., Jammy). Noble stemcells use systemd for service management.
+func (t *TestEnvironment) isSystemdSystem() bool {
+	_, err := t.RunCommand("grep -qi noble /etc/lsb-release")
+	return err == nil
+}
+
 func (t *TestEnvironment) StopAgent() error {
+	if t.isSystemdSystem() {
+		_, err := t.RunCommand("nohup sudo systemctl stop bosh-agent &")
+		return err
+	}
 	_, err := t.RunCommand("nohup sudo sv stop agent &")
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
+	if t.isSystemdSystem() {
+		_, err := t.RunCommand("nohup sudo systemctl start bosh-agent &")
+		return err
+	}
 	_, err := t.RunCommand("nohup sudo sv start agent &")
 	return err
 }
