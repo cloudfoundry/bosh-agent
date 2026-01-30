@@ -63,7 +63,12 @@ pushd "${bosh_agent_dir}"
 popd
 
 echo -e "\n Installing agent..."
-${ssh_command} "sudo sv stop agent" >/dev/null 2>&1
+# Stop agent using appropriate service manager (systemd for Noble, runit for Jammy)
+if ${ssh_command} "grep -qi noble /etc/lsb-release" 2>/dev/null; then
+    ${ssh_command} "sudo systemctl stop bosh-agent" >/dev/null 2>&1 || true
+else
+    ${ssh_command} "sudo sv stop agent" >/dev/null 2>&1 || true
+fi
 copy_to_remote_host "${bosh_agent_dir}/out/bosh-agent" /var/vcap/bosh/bin/bosh-agent
 
 echo -e "\n Shutting down rsyslog..."
