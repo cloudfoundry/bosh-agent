@@ -18,11 +18,6 @@ var _ = Describe("nats firewall", Ordered, func() {
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
 
-			// Truncate log file to ensure we wait for fresh logs from this test run.
-			// This is especially important on first run when pipeline setup logs are still present.
-			err = testEnvironment.CleanupLogFile()
-			Expect(err).ToNot(HaveOccurred())
-
 			// Delete any existing firewall table from previous runs to ensure clean state.
 			// The agent will recreate it on startup.
 			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
@@ -32,20 +27,15 @@ var _ = Describe("nats firewall", Ordered, func() {
 			format.MaxLength = 0
 
 			// Wait for the agent to start, connect to NATS, and set up firewall rules.
-			// The agent logs "Updated NATS firewall rules" after BeforeConnect populates the nats_access chain.
-			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
-				return logs
-			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
-
-			// Wait for NATS rules to be populated in nftables.
+			// We check for NATS rules in nftables rather than logs because logging behavior
+			// differs between runit (Jammy) and systemd (Noble) environments.
 			// The agent creates an empty nats_access chain in SetupAgentRules, then populates it
-			// in BeforeConnect when connecting to NATS. Use Eventually to wait for the rules.
+			// in BeforeConnect when connecting to NATS. Poll until rules appear.
 			var output string
 			Eventually(func() string {
 				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
 				return output
-			}, 30).Should(MatchRegexp("(?s)nats_access.*tcp dport"))
+			}, 300).Should(MatchRegexp("(?s)nats_access.*tcp dport"))
 
 			// Verify table structure - should have both monit_access and nats_access chains
 			Expect(output).To(ContainSubstring("table inet bosh_agent"))
@@ -55,11 +45,13 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// Verify monit rules - should match one of:
 			// - socket cgroupv2 level N "path" (pure cgroup v2 with systemd, e.g., Noble)
 			// - socket cgroupv2 ... classid (pure cgroup v2 with runc-style cgroups)
-			// - meta cgroup (hybrid cgroup v1+v2 systems, e.g., Jammy on incus)
+			// - meta cgroup (cgroup v1 systems)
+			// - meta skuid 0 (hybrid cgroup v1+v2 systems using UID-based matching)
 			Expect(output).To(SatisfyAny(
 				MatchRegexp(`socket cgroupv2 level \d+ ".*".*tcp dport 2822.*accept`),
 				MatchRegexp("tcp dport 2822.*socket cgroupv2.*classid.*accept"),
 				MatchRegexp("meta cgroup.*tcp dport 2822.*accept"),
+				MatchRegexp("meta skuid 0.*tcp dport 2822.*accept"),
 			))
 
 			// Get BOSH director hostname from BOSH_ENVIRONMENT (may be a full URL)
@@ -116,10 +108,6 @@ var _ = Describe("nats firewall", Ordered, func() {
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
 
-			// Truncate log file to ensure we wait for fresh logs from this test run.
-			err = testEnvironment.CleanupLogFile()
-			Expect(err).ToNot(HaveOccurred())
-
 			// Delete any existing firewall table from previous runs to ensure clean state.
 			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
 		})
@@ -127,16 +115,14 @@ var _ = Describe("nats firewall", Ordered, func() {
 		It("sets up the outgoing nats firewall for ipv6 using nftables", func() {
 			format.MaxLength = 0
 
-			// Wait for the agent to start and set up firewall rules
+			// Wait for the agent to start and set up firewall rules.
+			// We check for the table directly rather than logs because logging behavior
+			// differs between runit (Jammy) and systemd (Noble) environments.
+			var output string
 			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
-				return logs
-			}, 300).Should(ContainSubstring("NftablesFirewall"))
-
-			// Check nftables for the bosh_agent table
-			// nftables with inet family handles both IPv4 and IPv6
-			output, err := testEnvironment.RunCommand("sudo nft list table inet bosh_agent")
-			Expect(err).To(BeNil())
+				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
+				return output
+			}, 300).Should(ContainSubstring("chain monit_access"))
 
 			// Verify table structure - inet family supports both IPv4 and IPv6
 			Expect(output).To(ContainSubstring("table inet bosh_agent"))
