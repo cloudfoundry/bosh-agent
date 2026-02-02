@@ -665,5 +665,9 @@ func parseNATSURL(mbusURL string) (string, int, error) {
 		return "", 0, fmt.Errorf("parsing port: %w", err)
 	}
 
+	if port < 1 || port > 65535 {
+		return "", 0, fmt.Errorf("port %d out of valid range (1-65535)", port)
+	}
+
 	return host, port, nil
 }
