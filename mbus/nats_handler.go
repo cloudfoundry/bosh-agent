@@ -167,7 +167,11 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 			h.logger.Debug(natsHandlerLogTag, "Reconnected to %v", c.ConnectedAddr())
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
-			h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", c.LastError().Error())
+			if err := c.LastError(); err != nil {
+				h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", err.Error())
+			} else {
+				h.logger.Debug(natsHandlerLogTag, "Connection Closed")
+			}
 		}),
 		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
 			h.logger.Debug(natsHandlerLogTag, err.Error())

@@ -14,7 +14,7 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 	return &noopFirewall{}, nil
 }
 
-func (f *noopFirewall) SetupAgentRules(mbusURL string) error {
+func (f *noopFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bool) error {
 	return nil
 }
 
