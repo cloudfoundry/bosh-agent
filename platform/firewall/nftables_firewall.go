@@ -39,11 +39,9 @@ const (
 	AllowMark uint32 = 0xb054
 )
 
-//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
-
 // NftablesConn abstracts the nftables connection for testing
 //
-//counterfeiter:generate . NftablesConn
+//counterfeiter:generate -header ./linux_header.txt . NftablesConn
 type NftablesConn interface {
 	AddTable(t *nftables.Table) *nftables.Table
 	AddChain(c *nftables.Chain) *nftables.Chain
@@ -55,7 +53,7 @@ type NftablesConn interface {
 
 // CgroupResolver abstracts cgroup detection for testing
 //
-//counterfeiter:generate . CgroupResolver
+//counterfeiter:generate -header ./linux_header.txt . CgroupResolver
 type CgroupResolver interface {
 	DetectVersion() (CgroupVersion, error)
 	GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error)
