@@ -470,20 +470,6 @@ func (fake *FakeManager) GetUtilReturnsOnCall(i int, result1 disk.Util) {
 func (fake *FakeManager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getEphemeralDevicePartitionerMutex.RLock()
-	defer fake.getEphemeralDevicePartitionerMutex.RUnlock()
-	fake.getFormatterMutex.RLock()
-	defer fake.getFormatterMutex.RUnlock()
-	fake.getMounterMutex.RLock()
-	defer fake.getMounterMutex.RUnlock()
-	fake.getMountsSearcherMutex.RLock()
-	defer fake.getMountsSearcherMutex.RUnlock()
-	fake.getPersistentDevicePartitionerMutex.RLock()
-	defer fake.getPersistentDevicePartitionerMutex.RUnlock()
-	fake.getRootDevicePartitionerMutex.RLock()
-	defer fake.getRootDevicePartitionerMutex.RUnlock()
-	fake.getUtilMutex.RLock()
-	defer fake.getUtilMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

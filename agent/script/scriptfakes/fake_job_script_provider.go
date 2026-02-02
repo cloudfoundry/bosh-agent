@@ -245,12 +245,6 @@ func (fake *FakeJobScriptProvider) NewScriptReturnsOnCall(i int, result1 script.
 func (fake *FakeJobScriptProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.newDrainScriptMutex.RLock()
-	defer fake.newDrainScriptMutex.RUnlock()
-	fake.newParallelScriptMutex.RLock()
-	defer fake.newParallelScriptMutex.RUnlock()
-	fake.newScriptMutex.RLock()
-	defer fake.newScriptMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

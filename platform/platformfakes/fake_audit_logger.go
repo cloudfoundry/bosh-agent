@@ -117,12 +117,6 @@ func (fake *FakeAuditLogger) StartLoggingCalls(stub func()) {
 func (fake *FakeAuditLogger) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.debugMutex.RLock()
-	defer fake.debugMutex.RUnlock()
-	fake.errMutex.RLock()
-	defer fake.errMutex.RUnlock()
-	fake.startLoggingMutex.RLock()
-	defer fake.startLoggingMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

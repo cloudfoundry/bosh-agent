@@ -397,16 +397,6 @@ func (fake *FakeWindowsDiskPartitioner) PartitionDiskReturnsOnCall(i int, result
 func (fake *FakeWindowsDiskPartitioner) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.assignDriveLetterMutex.RLock()
-	defer fake.assignDriveLetterMutex.RUnlock()
-	fake.getCountOnDiskMutex.RLock()
-	defer fake.getCountOnDiskMutex.RUnlock()
-	fake.getFreeSpaceOnDiskMutex.RLock()
-	defer fake.getFreeSpaceOnDiskMutex.RUnlock()
-	fake.initializeDiskMutex.RLock()
-	defer fake.initializeDiskMutex.RUnlock()
-	fake.partitionDiskMutex.RLock()
-	defer fake.partitionDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

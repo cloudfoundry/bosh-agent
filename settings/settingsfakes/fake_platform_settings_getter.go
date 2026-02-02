@@ -4,8 +4,8 @@ package settingsfakes
 import (
 	"sync"
 
+	"github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
-	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 )
 
 type FakePlatformSettingsGetter struct {
@@ -20,9 +20,10 @@ type FakePlatformSettingsGetter struct {
 	getAgentSettingsPathReturnsOnCall map[int]struct {
 		result1 string
 	}
-	GetDefaultNetworkStub        func() (settings.Network, error)
+	GetDefaultNetworkStub        func(ip.IPProtocol) (settings.Network, error)
 	getDefaultNetworkMutex       sync.RWMutex
 	getDefaultNetworkArgsForCall []struct {
+		arg1 ip.IPProtocol
 	}
 	getDefaultNetworkReturns struct {
 		result1 settings.Network
@@ -129,17 +130,18 @@ func (fake *FakePlatformSettingsGetter) GetAgentSettingsPathReturnsOnCall(i int,
 	}{result1}
 }
 
-func (fake *FakePlatformSettingsGetter) GetDefaultNetwork(ipProtocol boship.IPProtocol) (settings.Network, error) {
+func (fake *FakePlatformSettingsGetter) GetDefaultNetwork(arg1 ip.IPProtocol) (settings.Network, error) {
 	fake.getDefaultNetworkMutex.Lock()
 	ret, specificReturn := fake.getDefaultNetworkReturnsOnCall[len(fake.getDefaultNetworkArgsForCall)]
 	fake.getDefaultNetworkArgsForCall = append(fake.getDefaultNetworkArgsForCall, struct {
-	}{})
+		arg1 ip.IPProtocol
+	}{arg1})
 	stub := fake.GetDefaultNetworkStub
 	fakeReturns := fake.getDefaultNetworkReturns
-	fake.recordInvocation("GetDefaultNetwork", []interface{}{})
+	fake.recordInvocation("GetDefaultNetwork", []interface{}{arg1})
 	fake.getDefaultNetworkMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -153,10 +155,17 @@ func (fake *FakePlatformSettingsGetter) GetDefaultNetworkCallCount() int {
 	return len(fake.getDefaultNetworkArgsForCall)
 }
 
-func (fake *FakePlatformSettingsGetter) GetDefaultNetworkCalls(stub func() (settings.Network, error)) {
+func (fake *FakePlatformSettingsGetter) GetDefaultNetworkCalls(stub func(ip.IPProtocol) (settings.Network, error)) {
 	fake.getDefaultNetworkMutex.Lock()
 	defer fake.getDefaultNetworkMutex.Unlock()
 	fake.GetDefaultNetworkStub = stub
+}
+
+func (fake *FakePlatformSettingsGetter) GetDefaultNetworkArgsForCall(i int) ip.IPProtocol {
+	fake.getDefaultNetworkMutex.RLock()
+	defer fake.getDefaultNetworkMutex.RUnlock()
+	argsForCall := fake.getDefaultNetworkArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakePlatformSettingsGetter) GetDefaultNetworkReturns(result1 settings.Network, result2 error) {
@@ -363,16 +372,6 @@ func (fake *FakePlatformSettingsGetter) SetupBoshSettingsDiskReturnsOnCall(i int
 func (fake *FakePlatformSettingsGetter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getAgentSettingsPathMutex.RLock()
-	defer fake.getAgentSettingsPathMutex.RUnlock()
-	fake.getDefaultNetworkMutex.RLock()
-	defer fake.getDefaultNetworkMutex.RUnlock()
-	fake.getPersistentDiskSettingsPathMutex.RLock()
-	defer fake.getPersistentDiskSettingsPathMutex.RUnlock()
-	fake.getUpdateSettingsPathMutex.RLock()
-	defer fake.getUpdateSettingsPathMutex.RUnlock()
-	fake.setupBoshSettingsDiskMutex.RLock()
-	defer fake.setupBoshSettingsDiskMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -87,8 +87,6 @@ func (fake *FakeManager) UpdateCertificatesReturnsOnCall(i int, result1 error) {
 func (fake *FakeManager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.updateCertificatesMutex.RLock()
-	defer fake.updateCertificatesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

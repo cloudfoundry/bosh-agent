@@ -89,8 +89,6 @@ func (fake *FakeWindowsDiskFormatter) FormatReturnsOnCall(i int, result1 error) 
 func (fake *FakeWindowsDiskFormatter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.formatMutex.RLock()
-	defer fake.formatMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -106,8 +106,6 @@ func (fake *Compiler) CompileReturnsOnCall(i int, result1 string, result2 crypto
 func (fake *Compiler) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.compileMutex.RLock()
-	defer fake.compileMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

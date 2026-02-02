@@ -178,10 +178,6 @@ func (fake *FakeHTTPBlobProvider) UploadReturnsOnCall(i int, result1 crypto.Mult
 func (fake *FakeHTTPBlobProvider) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getMutex.RLock()
-	defer fake.getMutex.RUnlock()
-	fake.uploadMutex.RLock()
-	defer fake.uploadMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
