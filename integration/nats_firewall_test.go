@@ -22,7 +22,7 @@ var _ = Describe("nats firewall", Ordered, func() {
 
 			// Delete any existing firewall table from previous runs to ensure clean state.
 			// The agent will recreate it on startup.
-			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
+			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent") //nolint:errcheck
 		})
 
 		It("sets up the outgoing nats firewall using nftables", func() {
@@ -92,7 +92,8 @@ var _ = Describe("nats firewall", Ordered, func() {
 
 			// Get BOSH director hostname from BOSH_ENVIRONMENT (may be a full URL)
 			boshEnvURL := os.Getenv("BOSH_ENVIRONMENT")
-			parsedURL, _ := url.Parse(boshEnvURL)
+			parsedURL, err := url.Parse(boshEnvURL)
+			Expect(err).NotTo(HaveOccurred())
 			boshEnv := parsedURL.Hostname()
 			if boshEnv == "" {
 				boshEnv = boshEnvURL // fallback if not a URL
@@ -145,7 +146,7 @@ var _ = Describe("nats firewall", Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete any existing firewall table from previous runs to ensure clean state.
-			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent")
+			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent") //nolint:errcheck
 		})
 
 		It("sets up the outgoing nats firewall for ipv6 using nftables", func() {

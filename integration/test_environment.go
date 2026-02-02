@@ -629,7 +629,7 @@ func (t *TestEnvironment) StopAgent() error {
 	if t.isSystemdSystem() {
 		// For systemd, we can run stop synchronously (it returns when stopped).
 		// Note: We ignore errors since the agent might not be running.
-		_, _ = t.RunCommand("sudo systemctl stop bosh-agent")
+		_, _ = t.RunCommand("sudo systemctl stop bosh-agent") //nolint:errcheck
 		return nil
 	}
 	_, err := t.RunCommand("nohup sudo sv stop agent &")
