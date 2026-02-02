@@ -83,8 +83,6 @@ func (fake *FakeMACAddressDetector) DetectMacAddressesReturnsOnCall(i int, resul
 func (fake *FakeMACAddressDetector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.detectMacAddressesMutex.RLock()
-	defer fake.detectMacAddressesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

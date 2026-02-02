@@ -546,22 +546,6 @@ func (fake *FakeOpenIscsi) StopReturnsOnCall(i int, result1 error) {
 func (fake *FakeOpenIscsi) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.discoveryMutex.RLock()
-	defer fake.discoveryMutex.RUnlock()
-	fake.isLoggedinMutex.RLock()
-	defer fake.isLoggedinMutex.RUnlock()
-	fake.loginMutex.RLock()
-	defer fake.loginMutex.RUnlock()
-	fake.logoutMutex.RLock()
-	defer fake.logoutMutex.RUnlock()
-	fake.restartMutex.RLock()
-	defer fake.restartMutex.RUnlock()
-	fake.setupMutex.RLock()
-	defer fake.setupMutex.RUnlock()
-	fake.startMutex.RLock()
-	defer fake.startMutex.RUnlock()
-	fake.stopMutex.RLock()
-	defer fake.stopMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

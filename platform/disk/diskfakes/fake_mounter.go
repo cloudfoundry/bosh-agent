@@ -773,26 +773,6 @@ func (fake *FakeMounter) UnmountReturnsOnCall(i int, result1 bool, result2 error
 func (fake *FakeMounter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.isMountPointMutex.RLock()
-	defer fake.isMountPointMutex.RUnlock()
-	fake.isMountedMutex.RLock()
-	defer fake.isMountedMutex.RUnlock()
-	fake.mountMutex.RLock()
-	defer fake.mountMutex.RUnlock()
-	fake.mountFilesystemMutex.RLock()
-	defer fake.mountFilesystemMutex.RUnlock()
-	fake.mountTmpfsMutex.RLock()
-	defer fake.mountTmpfsMutex.RUnlock()
-	fake.remountMutex.RLock()
-	defer fake.remountMutex.RUnlock()
-	fake.remountAsReadonlyMutex.RLock()
-	defer fake.remountAsReadonlyMutex.RUnlock()
-	fake.remountInPlaceMutex.RLock()
-	defer fake.remountInPlaceMutex.RUnlock()
-	fake.swapOnMutex.RLock()
-	defer fake.swapOnMutex.RUnlock()
-	fake.unmountMutex.RLock()
-	defer fake.unmountMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

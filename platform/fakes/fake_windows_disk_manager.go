@@ -268,14 +268,6 @@ func (fake *FakeWindowsDiskManager) GetProtectorReturnsOnCall(i int, result1 dis
 func (fake *FakeWindowsDiskManager) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getFormatterMutex.RLock()
-	defer fake.getFormatterMutex.RUnlock()
-	fake.getLinkerMutex.RLock()
-	defer fake.getLinkerMutex.RUnlock()
-	fake.getPartitionerMutex.RLock()
-	defer fake.getPartitionerMutex.RUnlock()
-	fake.getProtectorMutex.RLock()
-	defer fake.getProtectorMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

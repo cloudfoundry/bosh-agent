@@ -397,16 +397,6 @@ func (fake *FakeBlobManagerInterface) WriteReturnsOnCall(i int, result1 error) {
 func (fake *FakeBlobManagerInterface) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.blobExistsMutex.RLock()
-	defer fake.blobExistsMutex.RUnlock()
-	fake.deleteMutex.RLock()
-	defer fake.deleteMutex.RUnlock()
-	fake.fetchMutex.RLock()
-	defer fake.fetchMutex.RUnlock()
-	fake.getPathMutex.RLock()
-	defer fake.getPathMutex.RUnlock()
-	fake.writeMutex.RLock()
-	defer fake.writeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

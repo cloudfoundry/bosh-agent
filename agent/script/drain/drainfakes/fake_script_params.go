@@ -403,18 +403,6 @@ func (fake *FakeScriptParams) UpdatedPackagesReturnsOnCall(i int, result1 []stri
 func (fake *FakeScriptParams) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.hashChangeMutex.RLock()
-	defer fake.hashChangeMutex.RUnlock()
-	fake.jobChangeMutex.RLock()
-	defer fake.jobChangeMutex.RUnlock()
-	fake.jobNextStateMutex.RLock()
-	defer fake.jobNextStateMutex.RUnlock()
-	fake.jobStateMutex.RLock()
-	defer fake.jobStateMutex.RUnlock()
-	fake.toStatusParamsMutex.RLock()
-	defer fake.toStatusParamsMutex.RUnlock()
-	fake.updatedPackagesMutex.RLock()
-	defer fake.updatedPackagesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -388,16 +388,6 @@ func (fake *FakeApplier) PrepareReturnsOnCall(i int, result1 error) {
 func (fake *FakeApplier) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.applyMutex.RLock()
-	defer fake.applyMutex.RUnlock()
-	fake.configureMutex.RLock()
-	defer fake.configureMutex.RUnlock()
-	fake.deleteSourceBlobsMutex.RLock()
-	defer fake.deleteSourceBlobsMutex.RUnlock()
-	fake.keepOnlyMutex.RLock()
-	defer fake.keepOnlyMutex.RUnlock()
-	fake.prepareMutex.RLock()
-	defer fake.prepareMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

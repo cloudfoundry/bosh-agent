@@ -43,8 +43,6 @@ func (fake *FakeKiller) KillAgentCalls(stub func()) {
 func (fake *FakeKiller) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.killAgentMutex.RLock()
-	defer fake.killAgentMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

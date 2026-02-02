@@ -94,8 +94,6 @@ func (fake *FakeDetector) DetectReturnsOnCall(i int, result1 bool, result2 error
 func (fake *FakeDetector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.detectMutex.RLock()
-	defer fake.detectMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

@@ -147,10 +147,6 @@ func (fake *FakeRequestRetryable) ResponseReturnsOnCall(i int, result1 *http.Res
 func (fake *FakeRequestRetryable) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.attemptMutex.RLock()
-	defer fake.attemptMutex.RUnlock()
-	fake.responseMutex.RLock()
-	defer fake.responseMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

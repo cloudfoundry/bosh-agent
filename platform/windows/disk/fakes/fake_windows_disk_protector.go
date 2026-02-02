@@ -150,10 +150,6 @@ func (fake *FakeWindowsDiskProtector) ProtectPathReturnsOnCall(i int, result1 er
 func (fake *FakeWindowsDiskProtector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.commandExistsMutex.RLock()
-	defer fake.commandExistsMutex.RUnlock()
-	fake.protectPathMutex.RLock()
-	defer fake.protectPathMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

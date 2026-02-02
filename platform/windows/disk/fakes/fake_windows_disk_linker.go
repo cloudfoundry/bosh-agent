@@ -166,10 +166,6 @@ func (fake *FakeWindowsDiskLinker) LinkTargetReturnsOnCall(i int, result1 string
 func (fake *FakeWindowsDiskLinker) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.linkMutex.RLock()
-	defer fake.linkMutex.RUnlock()
-	fake.linkTargetMutex.RLock()
-	defer fake.linkTargetMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
