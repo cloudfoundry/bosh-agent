@@ -57,11 +57,6 @@ type NftablesConn interface {
 type CgroupResolver interface {
 	DetectVersion() (CgroupVersion, error)
 	GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error)
-	// IsCgroupV2SocketMatchFunctional returns true if nftables "socket cgroupv2"
-	// matching will work. On hybrid cgroup systems (cgroup v2 mounted but with no
-	// controllers enabled), this returns false because the socket-to-cgroup
-	// association doesn't work.
-	IsCgroupV2SocketMatchFunctional() bool
 	// GetCgroupID returns the cgroup inode ID for the given cgroup path.
 	// This is used for nftables "socket cgroupv2" matching, which compares
 	// against the cgroup inode ID (not the path string).
@@ -108,10 +103,6 @@ func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (P
 	return GetProcessCgroup(pid, version)
 }
 
-func (r *realCgroupResolver) IsCgroupV2SocketMatchFunctional() bool {
-	return IsCgroupV2SocketMatchFunctional()
-}
-
 func (r *realCgroupResolver) GetCgroupID(cgroupPath string) (uint64, error) {
 	return GetCgroupID(cgroupPath)
 }
@@ -126,10 +117,6 @@ type NftablesFirewall struct {
 	table          *nftables.Table
 	monitChain     *nftables.Chain
 	natsChain      *nftables.Chain
-
-	// useCgroupV2SocketMatch indicates whether nftables "socket cgroupv2" matching
-	// will work. On hybrid cgroup systems this is false, and we fall back to UID matching.
-	useCgroupV2SocketMatch bool
 
 	// State stored during SetupAgentRules for use in BeforeConnect
 	enableNATSFirewall bool
@@ -166,20 +153,7 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	// Check if cgroup v2 socket matching is functional
-	// On hybrid cgroup systems (cgroup v2 mounted but with cgroup v1 controllers),
-	// socket cgroupv2 matching doesn't work, so we fall back to UID matching.
-	f.useCgroupV2SocketMatch = cgroupResolver.IsCgroupV2SocketMatchFunctional()
-
-	if f.cgroupVersion == CgroupV2 {
-		if f.useCgroupV2SocketMatch {
-			f.logger.Info(f.logTag, "Initialized with cgroup version %d (using socket cgroupv2 matching)", f.cgroupVersion)
-		} else {
-			f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - hybrid cgroup system)", f.cgroupVersion)
-		}
-	} else {
-		f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
-	}
+	f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
 
 	return f, nil
 }
@@ -456,50 +430,31 @@ func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
 
 func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) ([]expr.Any, error) {
 	if f.cgroupVersion == CgroupV2 {
-		if f.useCgroupV2SocketMatch {
-			// Cgroup v2 with functional socket matching: match on cgroup ID
-			// The nftables "socket cgroupv2" matching compares against the cgroup
-			// inode ID (8 bytes), NOT the path string. The nft CLI translates
-			// the path to an inode ID at rule add time.
-			cgroupID, err := f.cgroupResolver.GetCgroupID(cgroup.Path)
-			if err != nil {
-				return nil, fmt.Errorf("getting cgroup ID for %s: %w", cgroup.Path, err)
-			}
-
-			f.logger.Debug(f.logTag, "Using cgroup v2 socket matching with cgroup ID %d for path %s", cgroupID, cgroup.Path)
-
-			// The cgroup ID is an 8-byte value (uint64) in native byte order
-			cgroupIDBytes := make([]byte, 8)
-			binary.NativeEndian.PutUint64(cgroupIDBytes, cgroupID)
-
-			return []expr.Any{
-				&expr.Socket{
-					Key:      expr.SocketKeyCgroupv2,
-					Level:    2,
-					Register: 1,
-				},
-				&expr.Cmp{
-					Op:       expr.CmpOpEq,
-					Register: 1,
-					Data:     cgroupIDBytes,
-				},
-			}, nil
+		// Cgroup v2: match on cgroup ID using socket cgroupv2
+		// The nftables "socket cgroupv2" matching compares against the cgroup
+		// inode ID (8 bytes), NOT the path string. The nft CLI translates
+		// the path to an inode ID at rule add time.
+		cgroupID, err := f.cgroupResolver.GetCgroupID(cgroup.Path)
+		if err != nil {
+			return nil, fmt.Errorf("getting cgroup ID for %s: %w", cgroup.Path, err)
 		}
-		// Hybrid cgroup system or cgroup ID lookup failed: cgroup v2 socket matching doesn't work
-		// Fall back to UID-based matching (allow root processes)
-		// This matches: meta skuid 0
-		f.logger.Debug(f.logTag, "Using UID-based matching (cgroup v2 socket match not functional)")
-		uidBytes := make([]byte, 4)
-		binary.NativeEndian.PutUint32(uidBytes, 0) // UID 0 = root
+
+		f.logger.Debug(f.logTag, "Using cgroup v2 socket matching with cgroup ID %d for path %s", cgroupID, cgroup.Path)
+
+		// The cgroup ID is an 8-byte value (uint64) in native byte order
+		cgroupIDBytes := make([]byte, 8)
+		binary.NativeEndian.PutUint64(cgroupIDBytes, cgroupID)
+
 		return []expr.Any{
-			&expr.Meta{
-				Key:      expr.MetaKeySKUID,
+			&expr.Socket{
+				Key:      expr.SocketKeyCgroupv2,
+				Level:    2,
 				Register: 1,
 			},
 			&expr.Cmp{
 				Op:       expr.CmpOpEq,
 				Register: 1,
-				Data:     uidBytes,
+				Data:     cgroupIDBytes,
 			},
 		}, nil
 	}

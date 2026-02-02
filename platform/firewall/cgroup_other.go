@@ -9,11 +9,6 @@ func DetectCgroupVersion() (CgroupVersion, error) {
 	return CgroupV1, fmt.Errorf("cgroup detection not supported on this platform")
 }
 
-// IsCgroupV2SocketMatchFunctional is not supported on non-Linux platforms
-func IsCgroupV2SocketMatchFunctional() bool {
-	return false
-}
-
 // GetProcessCgroup is not supported on non-Linux platforms
 func GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error) {
 	return ProcessCgroup{}, fmt.Errorf("cgroup not supported on this platform")
@@ -22,4 +17,9 @@ func GetProcessCgroup(pid int, version CgroupVersion) (ProcessCgroup, error) {
 // ReadOperatingSystem is not supported on non-Linux platforms
 func ReadOperatingSystem() (string, error) {
 	return "", fmt.Errorf("operating system detection not supported on this platform")
+}
+
+// GetCgroupID is not supported on non-Linux platforms
+func GetCgroupID(cgroupPath string) (uint64, error) {
+	return 0, fmt.Errorf("cgroup not supported on this platform")
 }
