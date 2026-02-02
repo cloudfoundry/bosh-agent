@@ -158,13 +158,16 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	// Check if cgroup v2 socket matching is functional
-	// On hybrid cgroup systems, cgroup v2 is mounted but has no controllers,
-	// so nftables "socket cgroupv2" matching doesn't work
-	f.useCgroupV2SocketMatch = cgroupResolver.IsCgroupV2SocketMatchFunctional()
+	// Always use UID-based matching for cgroup v2 systems.
+	// The google/nftables Go library has a bug with "socket cgroupv2" expression encoding
+	// that causes "netlink receive: value too large for defined data type" errors.
+	// The nft CLI works correctly, but the Go netlink implementation is broken.
+	// Until the library is fixed, we fall back to UID-based matching (meta skuid 0)
+	// which allows root processes to access protected services.
+	f.useCgroupV2SocketMatch = false
 
-	if f.cgroupVersion == CgroupV2 && !f.useCgroupV2SocketMatch {
-		f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - hybrid cgroup detected)", f.cgroupVersion)
+	if f.cgroupVersion == CgroupV2 {
+		f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - Go nftables library limitation)", f.cgroupVersion)
 	} else {
 		f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
 	}

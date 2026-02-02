@@ -172,9 +172,12 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		Context("when cgroup version is v2", func() {
+			// NOTE: Due to a bug in the google/nftables Go library with "socket cgroupv2"
+			// expression encoding, cgroup v2 systems always use UID-based matching.
+			// See the nftables_firewall.go comment for details.
 			BeforeEach(func() {
 				fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
-				fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(true)
+				fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(true) // Even when true, we don't use it
 				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
 					Version: firewall.CgroupV2,
 					Path:    "/system.slice/bosh-agent.service",
@@ -184,106 +187,37 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("creates rule with cgroup v2 path in expressions", func() {
+			It("creates rule with UID matching (due to Go nftables library limitation)", func() {
 				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 				rule := fakeConn.AddRuleArgsForCall(0)
 
-				// Verify the rule contains a Socket expression for cgroupv2
+				// Verify the rule uses Meta expression with SKUID (not Socket cgroupv2)
+				// because the Go nftables library has a bug with socket cgroupv2 encoding
+				var hasMetaSKUID bool
 				var hasSocketExpr bool
-				var hasCgroupPath bool
 				for _, e := range rule.Exprs {
-					if socketExpr, ok := e.(*expr.Socket); ok {
-						Expect(socketExpr.Key).To(Equal(expr.SocketKeyCgroupv2))
+					if metaExpr, ok := e.(*expr.Meta); ok {
+						if metaExpr.Key == expr.MetaKeySKUID {
+							hasMetaSKUID = true
+						}
+					}
+					if _, ok := e.(*expr.Socket); ok {
 						hasSocketExpr = true
 					}
-					if cmpExpr, ok := e.(*expr.Cmp); ok {
-						// Check if the cgroup path is in the comparison data
-						if string(cmpExpr.Data) == "/system.slice/bosh-agent.service\x00" {
-							hasCgroupPath = true
-						}
-					}
 				}
-				Expect(hasSocketExpr).To(BeTrue(), "Expected Socket expression for cgroupv2")
-				Expect(hasCgroupPath).To(BeTrue(), "Expected cgroup path in Cmp expression")
-			})
-
-			It("creates rule with nested container cgroup path", func() {
-				nestedPath := "/docker/abc123def456/system.slice/bosh-agent.service"
-				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
-					Version: firewall.CgroupV2,
-					Path:    nestedPath,
-				}, nil)
-
-				err := mgr.SetupAgentRules("", false)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
-				rule := fakeConn.AddRuleArgsForCall(0)
-
-				// Verify the nested cgroup path is in the rule
-				var foundNestedPath bool
-				for _, e := range rule.Exprs {
-					if cmpExpr, ok := e.(*expr.Cmp); ok {
-						if string(cmpExpr.Data) == nestedPath+"\x00" {
-							foundNestedPath = true
-						}
-					}
-				}
-				Expect(foundNestedPath).To(BeTrue(), "Expected nested cgroup path '%s' in rule expressions", nestedPath)
-			})
-
-			It("creates rule with deeply nested cgroup path (multiple container levels)", func() {
-				deeplyNestedPath := "/docker/outer123/docker/inner456/system.slice/bosh-agent.service"
-				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
-					Version: firewall.CgroupV2,
-					Path:    deeplyNestedPath,
-				}, nil)
-
-				err := mgr.SetupAgentRules("", false)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
-				rule := fakeConn.AddRuleArgsForCall(0)
-
-				var foundPath bool
-				for _, e := range rule.Exprs {
-					if cmpExpr, ok := e.(*expr.Cmp); ok {
-						if string(cmpExpr.Data) == deeplyNestedPath+"\x00" {
-							foundPath = true
-						}
-					}
-				}
-				Expect(foundPath).To(BeTrue(), "Expected deeply nested cgroup path in rule expressions")
-			})
-
-			It("creates rule with root cgroup path", func() {
-				fakeCgroupResolver.GetProcessCgroupReturns(firewall.ProcessCgroup{
-					Version: firewall.CgroupV2,
-					Path:    "/",
-				}, nil)
-
-				err := mgr.SetupAgentRules("", false)
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
-				rule := fakeConn.AddRuleArgsForCall(0)
-
-				var foundRootPath bool
-				for _, e := range rule.Exprs {
-					if cmpExpr, ok := e.(*expr.Cmp); ok {
-						if string(cmpExpr.Data) == "/\x00" {
-							foundRootPath = true
-						}
-					}
-				}
-				Expect(foundRootPath).To(BeTrue(), "Expected root cgroup path in rule expressions")
+				Expect(hasMetaSKUID).To(BeTrue(), "Expected Meta SKUID expression for UID-based matching")
+				Expect(hasSocketExpr).To(BeFalse(), "Should NOT use Socket expression due to Go library bug")
 			})
 		})
 
-		Context("when cgroup version is v2 but socket matching is not functional (hybrid cgroup)", func() {
+		// NOTE: The "hybrid cgroup" test case is no longer distinct from regular cgroup v2
+		// because all cgroup v2 systems now use UID-based matching due to the Go nftables
+		// library bug. Keeping this context for documentation to show that the behavior
+		// is correct regardless of the IsCgroupV2SocketMatchFunctional return value.
+		Context("when cgroup version is v2 and socket matching reports non-functional (hybrid cgroup)", func() {
 			BeforeEach(func() {
 				fakeCgroupResolver.DetectVersionReturns(firewall.CgroupV2, nil)
 				fakeCgroupResolver.IsCgroupV2SocketMatchFunctionalReturns(false) // Hybrid cgroup
@@ -296,7 +230,7 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(err).ToNot(HaveOccurred())
 			})
 
-			It("creates rule with UID matching instead of cgroup socket matching", func() {
+			It("creates rule with UID matching (same behavior as functional v2)", func() {
 				err := mgr.SetupAgentRules("", false)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -317,7 +251,7 @@ var _ = Describe("NftablesFirewall", func() {
 					}
 				}
 				Expect(hasMetaSKUID).To(BeTrue(), "Expected Meta SKUID expression for UID-based matching")
-				Expect(hasSocketExpr).To(BeFalse(), "Should NOT have Socket expression on hybrid cgroup")
+				Expect(hasSocketExpr).To(BeFalse(), "Should NOT have Socket expression")
 			})
 		})
 
