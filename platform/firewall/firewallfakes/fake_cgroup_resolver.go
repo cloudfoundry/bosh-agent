@@ -22,6 +22,19 @@ type FakeCgroupResolver struct {
 		result1 firewall.CgroupVersion
 		result2 error
 	}
+	GetCgroupIDStub        func(string) (uint64, error)
+	getCgroupIDMutex       sync.RWMutex
+	getCgroupIDArgsForCall []struct {
+		arg1 string
+	}
+	getCgroupIDReturns struct {
+		result1 uint64
+		result2 error
+	}
+	getCgroupIDReturnsOnCall map[int]struct {
+		result1 uint64
+		result2 error
+	}
 	GetProcessCgroupStub        func(int, firewall.CgroupVersion) (firewall.ProcessCgroup, error)
 	getProcessCgroupMutex       sync.RWMutex
 	getProcessCgroupArgsForCall []struct {
@@ -102,6 +115,70 @@ func (fake *FakeCgroupResolver) DetectVersionReturnsOnCall(i int, result1 firewa
 	}
 	fake.detectVersionReturnsOnCall[i] = struct {
 		result1 firewall.CgroupVersion
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCgroupResolver) GetCgroupID(arg1 string) (uint64, error) {
+	fake.getCgroupIDMutex.Lock()
+	ret, specificReturn := fake.getCgroupIDReturnsOnCall[len(fake.getCgroupIDArgsForCall)]
+	fake.getCgroupIDArgsForCall = append(fake.getCgroupIDArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetCgroupIDStub
+	fakeReturns := fake.getCgroupIDReturns
+	fake.recordInvocation("GetCgroupID", []interface{}{arg1})
+	fake.getCgroupIDMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCgroupResolver) GetCgroupIDCallCount() int {
+	fake.getCgroupIDMutex.RLock()
+	defer fake.getCgroupIDMutex.RUnlock()
+	return len(fake.getCgroupIDArgsForCall)
+}
+
+func (fake *FakeCgroupResolver) GetCgroupIDCalls(stub func(string) (uint64, error)) {
+	fake.getCgroupIDMutex.Lock()
+	defer fake.getCgroupIDMutex.Unlock()
+	fake.GetCgroupIDStub = stub
+}
+
+func (fake *FakeCgroupResolver) GetCgroupIDArgsForCall(i int) string {
+	fake.getCgroupIDMutex.RLock()
+	defer fake.getCgroupIDMutex.RUnlock()
+	argsForCall := fake.getCgroupIDArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeCgroupResolver) GetCgroupIDReturns(result1 uint64, result2 error) {
+	fake.getCgroupIDMutex.Lock()
+	defer fake.getCgroupIDMutex.Unlock()
+	fake.GetCgroupIDStub = nil
+	fake.getCgroupIDReturns = struct {
+		result1 uint64
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCgroupResolver) GetCgroupIDReturnsOnCall(i int, result1 uint64, result2 error) {
+	fake.getCgroupIDMutex.Lock()
+	defer fake.getCgroupIDMutex.Unlock()
+	fake.GetCgroupIDStub = nil
+	if fake.getCgroupIDReturnsOnCall == nil {
+		fake.getCgroupIDReturnsOnCall = make(map[int]struct {
+			result1 uint64
+			result2 error
+		})
+	}
+	fake.getCgroupIDReturnsOnCall[i] = struct {
+		result1 uint64
 		result2 error
 	}{result1, result2}
 }

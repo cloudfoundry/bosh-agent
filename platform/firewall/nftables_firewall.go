@@ -62,6 +62,10 @@ type CgroupResolver interface {
 	// controllers enabled), this returns false because the socket-to-cgroup
 	// association doesn't work.
 	IsCgroupV2SocketMatchFunctional() bool
+	// GetCgroupID returns the cgroup inode ID for the given cgroup path.
+	// This is used for nftables "socket cgroupv2" matching, which compares
+	// against the cgroup inode ID (not the path string).
+	GetCgroupID(cgroupPath string) (uint64, error)
 }
 
 // realNftablesConn wraps the actual nftables.Conn
@@ -106,6 +110,10 @@ func (r *realCgroupResolver) GetProcessCgroup(pid int, version CgroupVersion) (P
 
 func (r *realCgroupResolver) IsCgroupV2SocketMatchFunctional() bool {
 	return IsCgroupV2SocketMatchFunctional()
+}
+
+func (r *realCgroupResolver) GetCgroupID(cgroupPath string) (uint64, error) {
+	return GetCgroupID(cgroupPath)
 }
 
 // NftablesFirewall implements Manager and NatsFirewallHook using nftables via netlink
@@ -158,16 +166,17 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, cgroupResolver CgroupResolve
 		return nil, bosherr.WrapError(err, "Detecting cgroup version")
 	}
 
-	// Always use UID-based matching for cgroup v2 systems.
-	// The google/nftables Go library has a bug with "socket cgroupv2" expression encoding
-	// that causes "netlink receive: value too large for defined data type" errors.
-	// The nft CLI works correctly, but the Go netlink implementation is broken.
-	// Until the library is fixed, we fall back to UID-based matching (meta skuid 0)
-	// which allows root processes to access protected services.
-	f.useCgroupV2SocketMatch = false
+	// Check if cgroup v2 socket matching is functional
+	// On hybrid cgroup systems (cgroup v2 mounted but with cgroup v1 controllers),
+	// socket cgroupv2 matching doesn't work, so we fall back to UID matching.
+	f.useCgroupV2SocketMatch = cgroupResolver.IsCgroupV2SocketMatchFunctional()
 
 	if f.cgroupVersion == CgroupV2 {
-		f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - Go nftables library limitation)", f.cgroupVersion)
+		if f.useCgroupV2SocketMatch {
+			f.logger.Info(f.logTag, "Initialized with cgroup version %d (using socket cgroupv2 matching)", f.cgroupVersion)
+		} else {
+			f.logger.Info(f.logTag, "Initialized with cgroup version %d (UID-based matching - hybrid cgroup system)", f.cgroupVersion)
+		}
 	} else {
 		f.logger.Info(f.logTag, "Initialized with cgroup version %d", f.cgroupVersion)
 	}
@@ -389,7 +398,10 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 	// this packet was allowed by the agent and should NOT be dropped.
 	// This is necessary because nftables evaluates each table independently -
 	// an ACCEPT in one table doesn't prevent other tables from also evaluating.
-	exprs := f.buildCgroupMatchExprs(cgroup)
+	exprs, err := f.buildCgroupMatchExprs(cgroup)
+	if err != nil {
+		return fmt.Errorf("building cgroup match expressions: %w", err)
+	}
 	exprs = append(exprs, f.buildLoopbackDestExprs()...)
 	exprs = append(exprs, f.buildTCPDestPortExprs(MonitPort)...)
 	exprs = append(exprs, f.buildSetMarkExprs()...)
@@ -407,7 +419,10 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) error {
 	// Build rule: <cgroup match> + dst <addr> + dport <port> -> accept
 	// This allows the agent (in its cgroup) to connect to the director's NATS
-	exprs := f.buildCgroupMatchExprs(f.agentCgroup)
+	exprs, err := f.buildCgroupMatchExprs(f.agentCgroup)
+	if err != nil {
+		return fmt.Errorf("building cgroup match expressions: %w", err)
+	}
 	exprs = append(exprs, f.buildDestIPExprs(addr)...)
 	exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
@@ -439,11 +454,24 @@ func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
 	return nil
 }
 
-func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) []expr.Any {
+func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) ([]expr.Any, error) {
 	if f.cgroupVersion == CgroupV2 {
 		if f.useCgroupV2SocketMatch {
-			// Cgroup v2 with functional socket matching: match on cgroup path
-			// This matches: socket cgroupv2 level 2 "<path>"
+			// Cgroup v2 with functional socket matching: match on cgroup ID
+			// The nftables "socket cgroupv2" matching compares against the cgroup
+			// inode ID (8 bytes), NOT the path string. The nft CLI translates
+			// the path to an inode ID at rule add time.
+			cgroupID, err := f.cgroupResolver.GetCgroupID(cgroup.Path)
+			if err != nil {
+				return nil, fmt.Errorf("getting cgroup ID for %s: %w", cgroup.Path, err)
+			}
+
+			f.logger.Debug(f.logTag, "Using cgroup v2 socket matching with cgroup ID %d for path %s", cgroupID, cgroup.Path)
+
+			// The cgroup ID is an 8-byte value (uint64) in native byte order
+			cgroupIDBytes := make([]byte, 8)
+			binary.NativeEndian.PutUint64(cgroupIDBytes, cgroupID)
+
 			return []expr.Any{
 				&expr.Socket{
 					Key:      expr.SocketKeyCgroupv2,
@@ -453,11 +481,11 @@ func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) []expr.An
 				&expr.Cmp{
 					Op:       expr.CmpOpEq,
 					Register: 1,
-					Data:     []byte(cgroup.Path + "\x00"),
+					Data:     cgroupIDBytes,
 				},
-			}
+			}, nil
 		}
-		// Hybrid cgroup system: cgroup v2 socket matching doesn't work
+		// Hybrid cgroup system or cgroup ID lookup failed: cgroup v2 socket matching doesn't work
 		// Fall back to UID-based matching (allow root processes)
 		// This matches: meta skuid 0
 		f.logger.Debug(f.logTag, "Using UID-based matching (cgroup v2 socket match not functional)")
@@ -473,7 +501,7 @@ func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) []expr.An
 				Register: 1,
 				Data:     uidBytes,
 			},
-		}
+		}, nil
 	}
 
 	// Cgroup v1: match on classid
@@ -497,7 +525,7 @@ func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) []expr.An
 			Register: 1,
 			Data:     classIDBytes,
 		},
-	}
+	}, nil
 }
 
 func (f *NftablesFirewall) buildLoopbackDestExprs() []expr.Any {

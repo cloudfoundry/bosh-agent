@@ -5,7 +5,9 @@ package firewall
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	cgroups "github.com/containerd/cgroups/v3"
 )
@@ -109,4 +111,23 @@ func ReadOperatingSystem() (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
+}
+
+// GetCgroupID returns the cgroup inode ID for the given cgroup path.
+// This is used for nftables "socket cgroupv2" matching, which compares
+// against the cgroup inode ID (not the path string).
+//
+// The cgroup path should be relative to /sys/fs/cgroup, e.g.:
+// "/system.slice/bosh-agent.service" -> /sys/fs/cgroup/system.slice/bosh-agent.service
+func GetCgroupID(cgroupPath string) (uint64, error) {
+	// Construct the full path in the cgroup filesystem
+	// The cgroup path from /proc/<pid>/cgroup is relative to the cgroup root
+	fullPath := filepath.Join("/sys/fs/cgroup", cgroupPath)
+
+	var stat syscall.Stat_t
+	if err := syscall.Stat(fullPath, &stat); err != nil {
+		return 0, fmt.Errorf("stat %s: %w", fullPath, err)
+	}
+
+	return stat.Ino, nil
 }
