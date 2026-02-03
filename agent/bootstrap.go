@@ -100,6 +100,10 @@ func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 
+	if err = boot.platform.SetupFirewall(settings.GetMbusURL()); err != nil {
+		return bosherr.WrapError(err, "Setting up firewall")
+	}
+
 	if err = boot.platform.SetupRawEphemeralDisks(settings.RawEphemeralDiskSettings()); err != nil {
 		return bosherr.WrapError(err, "Setting up raw ephemeral disk")
 	}

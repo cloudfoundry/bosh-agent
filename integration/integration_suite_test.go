@@ -44,6 +44,10 @@ func TestIntegration(t *testing.T) {
 
 		Expect(output).To(ContainSubstring("[DEV BUILD]"))
 
+		// Install nft-dump utility for nftables inspection without nft CLI
+		err = testEnvironment.InstallNftDump()
+		Expect(err).ToNot(HaveOccurred(), "Failed to install nft-dump utility")
+
 		return []byte("done")
 
 	}, func(in []byte) {})

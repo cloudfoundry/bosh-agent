@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -133,15 +134,16 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 				t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
 
-			// Lazily unmount /var/log to prevent intermittent test failures. As of 2024-06-24, this mount point
-			// is a bind mount of /var/vcap/data/root_log. For reasons we don't currently understand the
-			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount, but this is
-			// the only mount that has this problem.
+			// Lazily unmount /var/log and /var/tmp to prevent intermittent test failures.
+			// As of 2024-06-24, /var/log is a bind mount of /var/vcap/data/root_log.
+			// On Noble (systemd), /var/tmp can have similar issues with systemd services
+			// holding file handles open. For reasons we don't currently understand the
+			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount.
 			//
-			// Because we later unmount /var/vcap/data, lazily unmounting /var/log will eventually alert us if
-			// anyone has handles open in that mount point... so we'll eventually fail loudly, making this not
-			// a catastrophically bad thing to do.
-			if mountPoint == "/var/log" {
+			// Because we later unmount /var/vcap/data, lazily unmounting these will eventually
+			// alert us if anyone has handles open in that mount point... so we'll eventually
+			// fail loudly, making this not a catastrophically bad thing to do.
+			if mountPoint == "/var/log" || strings.HasPrefix(mountPoint, "/var/tmp") {
 				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
 			} else {
 				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
@@ -152,8 +154,19 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		}
 	}
 
-	_, err = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
-	return err
+	// Retry rm -rf a few times with brief sleeps. On systemd-based systems (Noble),
+	// processes like systemd-tmpfiles might briefly hold file handles open even after
+	// fuser -k, causing rm to fail with "Device or resource busy".
+	var rmErr error
+	for i := 0; i < 3; i++ {
+		_, rmErr = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
+		if rmErr == nil {
+			return nil
+		}
+		t.writerPrinter.Printf("DetachDevice: rm -rf %s failed (attempt %d/3): %s", dir, i+1, rmErr)
+		time.Sleep(500 * time.Millisecond)
+	}
+	return rmErr
 }
 
 func (t *TestEnvironment) CleanupDataDir() error {
@@ -172,9 +185,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	// /var/tmp cleanup is non-fatal since we recreate it immediately after.
+	// On systemd systems, /var/tmp may be held by various services and difficult to remove.
 	err = t.DetachDevice("/var/tmp")
 	if err != nil {
-		return err
+		t.writerPrinter.Printf("CleanupDataDir: /var/tmp cleanup failed (non-fatal, will recreate): %s", err)
 	}
 
 	err = t.DetachDevice("/var/log")
@@ -223,6 +238,22 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	}
 
 	_, err = t.RunCommand("sudo chown root:syslog /var/log")
+	if err != nil {
+		return err
+	}
+
+	// Create /var/log/audit for auditd (required on Noble/systemd-based systems)
+	_, err = t.RunCommand("sudo mkdir -p /var/log/audit")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chmod 750 /var/log/audit")
+	if err != nil {
+		return err
+	}
+
+	_, err = t.RunCommand("sudo chown root:root /var/log/audit")
 	if err != nil {
 		return err
 	}
@@ -292,6 +323,9 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 		return err
 	}
 	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
+		if loopDev == "" {
+			continue
+		}
 		ignoredErr := t.DetachLoopDevice(loopDev)
 		if ignoredErr != nil {
 			t.writerPrinter.Printf("ResetDeviceMap: %s", ignoredErr)
@@ -602,12 +636,32 @@ func (t *TestEnvironment) RestartAgent() error {
 	return t.StartAgent()
 }
 
+// isSystemdSystem returns true if the remote system uses systemd (e.g., Noble)
+// rather than runit (e.g., Jammy). Noble stemcells use systemd for service management.
+func (t *TestEnvironment) isSystemdSystem() bool {
+	_, err := t.RunCommand("grep -qi noble /etc/lsb-release")
+	return err == nil
+}
+
 func (t *TestEnvironment) StopAgent() error {
+	if t.isSystemdSystem() {
+		// For systemd, we can run stop synchronously (it returns when stopped).
+		// Note: We ignore errors since the agent might not be running.
+		_, _ = t.RunCommand("sudo systemctl stop bosh-agent") //nolint:errcheck
+		return nil
+	}
 	_, err := t.RunCommand("nohup sudo sv stop agent &")
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
+	if t.isSystemdSystem() {
+		// For systemd, use restart to ensure a fresh start even if already running.
+		// This is important for tests that need a fresh agent state (e.g., firewall tests
+		// that delete the nftables table and need the agent to recreate it on startup).
+		_, err := t.RunCommand("sudo systemctl restart bosh-agent")
+		return err
+	}
 	_, err := t.RunCommand("nohup sudo sv start agent &")
 	return err
 }
@@ -919,4 +973,95 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 		return ssh.NewClient(proxyClientConnection, proxyClientChannel, proxyClientRequest), nil
 	}
 	return ssh.Dial("tcp", testVMAddress, testVMSSHConfig)
+}
+
+// NftDumpBinaryPath is the path where the nft-dump binary is installed on the VM.
+const NftDumpBinaryPath = "/var/vcap/bosh/bin/nft-dump"
+
+// InstallNftDump copies the nft-dump utility to the VM.
+// If the binary doesn't exist, it will be built automatically.
+func (t *TestEnvironment) InstallNftDump() error {
+	// Try to find the binary in common locations
+	paths := []string{
+		"nft-dump-linux-amd64",
+		"../nft-dump-linux-amd64",
+	}
+
+	var foundPath string
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			foundPath = p
+			break
+		}
+	}
+
+	// If not found, try to build it
+	if foundPath == "" {
+		t.writerPrinter.Printf("nft-dump binary not found, building it...\n")
+
+		// Determine the source directory - look for integration/nftdump/main.go
+		sourcePaths := []string{
+			"./integration/nftdump",
+			"../integration/nftdump",
+			"./nftdump",
+		}
+
+		var sourceDir string
+		for _, sp := range sourcePaths {
+			if _, err := os.Stat(filepath.Join(sp, "main.go")); err == nil {
+				sourceDir = sp
+				break
+			}
+		}
+
+		if sourceDir == "" {
+			return fmt.Errorf("nft-dump source not found in %v and binary not found in %v", sourcePaths, paths)
+		}
+
+		// Build the binary
+		outputPath := "nft-dump-linux-amd64"
+		cmd := exec.Command("go", "build", "-o", outputPath, sourceDir)
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux", "GOARCH=amd64")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to build nft-dump: %w, output: %s", err, string(output))
+		}
+		t.writerPrinter.Printf("Built nft-dump binary at %s\n", outputPath)
+		foundPath = outputPath
+	}
+
+	// Copy the binary to the VM
+	err := t.CopyFileToPath(foundPath, NftDumpBinaryPath)
+	if err != nil {
+		return fmt.Errorf("failed to copy nft-dump binary: %w", err)
+	}
+
+	// Make it executable
+	_, err = t.RunCommand("sudo chmod +x " + NftDumpBinaryPath)
+	if err != nil {
+		return fmt.Errorf("failed to make nft-dump executable: %w", err)
+	}
+
+	return nil
+}
+
+// NftDumpCheck checks if nftables kernel support is available.
+func (t *TestEnvironment) NftDumpCheck() (bool, error) {
+	_, err := t.RunCommand("sudo " + NftDumpBinaryPath + " check")
+	return err == nil, nil
+}
+
+// NftDumpTable returns YAML output for a specific table.
+func (t *TestEnvironment) NftDumpTable(family, name string) (string, error) {
+	output, err := t.RunCommand(fmt.Sprintf("sudo %s table %s %s", NftDumpBinaryPath, family, name))
+	if err != nil {
+		return "", err
+	}
+	return output, nil
+}
+
+// NftDumpDelete deletes a specific nftables table.
+func (t *TestEnvironment) NftDumpDelete(family, name string) error {
+	_, err := t.RunCommand(fmt.Sprintf("sudo %s delete %s %s", NftDumpBinaryPath, family, name))
+	return err
 }

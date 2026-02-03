@@ -15,6 +15,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	boshfirewall "github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
@@ -559,6 +560,14 @@ func (p dummyPlatform) existingMounts() ([]mount, error) {
 }
 
 func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
+	return nil
+}
+
+func (p dummyPlatform) SetupFirewall(mbusURL string) error {
+	return nil
+}
+
+func (p dummyPlatform) GetNatsFirewallHook() boshfirewall.NatsFirewallHook {
 	return nil
 }
 

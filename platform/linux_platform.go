@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	boshfirewall "github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -89,6 +90,11 @@ type LinuxOptions struct {
 	// example: "pattern": "^(disk-.+)$", "replacement": "google-${1}",
 	DiskIDTransformPattern     string
 	DiskIDTransformReplacement string
+
+	// When set to true, NATS firewall rules will be set up.
+	// Jammy stemcells should set this to true (uses static NATS credentials).
+	// Noble stemcells should leave this false (uses ephemeral NATS credentials).
+	EnableNATSFirewall bool
 }
 
 type linux struct {
@@ -113,6 +119,7 @@ type linux struct {
 	auditLogger            AuditLogger
 	logsTarProvider        boshlogstarprovider.LogsTarProvider
 	serviceManager         servicemanager.ServiceManager
+	firewallManager        boshfirewall.Manager // stores firewall manager for GetNatsFirewallHook
 }
 
 func NewLinuxPlatform(
@@ -239,12 +246,45 @@ func (p linux) SetupNetworking(networks boshsettings.Networks, mbus string) (err
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 
+func (p *linux) SetupFirewall(mbusURL string) error {
+	firewallManager, err := boshfirewall.NewNftablesFirewall(p.logger)
+	if err != nil {
+		// Log warning but don't fail - firewall may not be available on all systems
+		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
+		return nil
+	}
+
+	// Store for GetNatsFirewallHook
+	p.firewallManager = firewallManager
+
+	err = firewallManager.SetupAgentRules(mbusURL, p.options.EnableNATSFirewall)
+	if err != nil {
+		// Log warning but don't fail agent startup - old stemcells may not have base firewall
+		p.logger.Warn(logTag, "Failed to setup firewall rules: %s", err)
+		return nil
+	}
+
+	return nil
+}
+
 func (p linux) GetConfiguredNetworkInterfaces() ([]string, error) {
 	return p.netManager.GetConfiguredNetworkInterfaces()
 }
 
 func (p linux) GetCertManager() boshcert.Manager {
 	return p.certManager
+}
+
+func (p linux) GetNatsFirewallHook() boshfirewall.NatsFirewallHook {
+	if p.firewallManager == nil {
+		return nil
+	}
+	// The firewall manager implements NatsFirewallHook
+	hook, ok := p.firewallManager.(boshfirewall.NatsFirewallHook)
+	if !ok {
+		return nil
+	}
+	return hook
 }
 
 func (p linux) GetHostPublicKey() (string, error) {
