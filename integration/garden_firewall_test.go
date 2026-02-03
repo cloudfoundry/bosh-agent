@@ -19,17 +19,13 @@ var _ = Describe("garden container firewall", Ordered, func() {
 	var containerHandle string
 
 	BeforeAll(func() {
-		// Skip if GARDEN_ADDRESS not set
-		if utils.GardenAddress() == "" {
-			Skip("GARDEN_ADDRESS not set - skipping Garden container firewall tests")
-		}
+		// Fail fast if required environment variables are missing
+		Expect(utils.GardenAddress()).NotTo(BeEmpty(), "GARDEN_ADDRESS environment variable must be set")
 
 		// Create Garden client
 		var err error
 		gardenClient, err = utils.NewGardenClient()
-		if err != nil {
-			Skip(fmt.Sprintf("Failed to connect to Garden: %v", err))
-		}
+		Expect(err).NotTo(HaveOccurred(), "Failed to connect to Garden at %s", utils.GardenAddress())
 
 		// Generate unique container handle
 		containerHandle = fmt.Sprintf("firewall-test-%d", time.Now().UnixNano())
@@ -46,9 +42,7 @@ var _ = Describe("garden container firewall", Ordered, func() {
 
 	Context("cgroup detection in container", func() {
 		BeforeEach(func() {
-			if gardenClient == nil {
-				Skip("Garden client not available")
-			}
+			Expect(gardenClient).NotTo(BeNil(), "Garden client must be initialized")
 
 			// Create fresh container for each test
 			err := gardenClient.CreateStemcellContainer(containerHandle)
@@ -92,9 +86,7 @@ var _ = Describe("garden container firewall", Ordered, func() {
 
 	Context("nftables firewall rules in container", Ordered, func() {
 		BeforeAll(func() {
-			if gardenClient == nil {
-				Skip("Garden client not available")
-			}
+			Expect(gardenClient).NotTo(BeNil(), "Garden client must be initialized")
 
 			// Create container
 			containerHandle = fmt.Sprintf("firewall-agent-test-%d", time.Now().UnixNano())
@@ -115,11 +107,10 @@ var _ = Describe("garden container firewall", Ordered, func() {
 		It("can copy bosh-agent binary into container", func() {
 			// The agent binary should be pre-built at bosh-agent-linux-amd64
 			agentBinaryPath := "bosh-agent-linux-amd64"
-			if _, err := os.Stat(agentBinaryPath); os.IsNotExist(err) {
-				Skip("bosh-agent-linux-amd64 binary not found - run 'go build -o bosh-agent-linux-amd64 ./main' first")
-			}
+			_, err := os.Stat(agentBinaryPath)
+			Expect(err).NotTo(HaveOccurred(), "bosh-agent-linux-amd64 binary not found - run 'go build -o bosh-agent-linux-amd64 ./main' first")
 
-			err := gardenClient.StreamIn(agentBinaryPath, "/var/vcap/bosh/bin/")
+			err = gardenClient.StreamIn(agentBinaryPath, "/var/vcap/bosh/bin/")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Rename and make executable
@@ -217,10 +208,9 @@ var _ = Describe("garden container firewall", Ordered, func() {
 			GinkgoWriter.Printf("Agent output:\nstdout: %s\nstderr: %s\nexit: %d\n", stdout, stderr, exitCode)
 
 			// Check if firewall rules were created
-			ruleOutput, _, exitCode2, _ := gardenClient.RunCommand("nft", "list", "table", "inet", "bosh_agent")
-			if exitCode2 != 0 {
-				Skip("Agent failed to create firewall table - this may be expected if cgroups aren't fully supported in this container environment")
-			}
+			ruleOutput, ruleStderr, exitCode2, ruleErr := gardenClient.RunCommand("nft", "list", "table", "inet", "bosh_agent")
+			Expect(ruleErr).NotTo(HaveOccurred(), "Failed to run nft command")
+			Expect(exitCode2).To(Equal(0), "Agent failed to create firewall table. stderr: %s", ruleStderr)
 
 			GinkgoWriter.Printf("nftables rules:\n%s\n", ruleOutput)
 
@@ -230,10 +220,9 @@ var _ = Describe("garden container firewall", Ordered, func() {
 
 		It("uses cgroup-based socket matching (not UID fallback)", func() {
 			// Get the nftables rules
-			ruleOutput, _, exitCode, err := gardenClient.RunCommand("nft", "list", "table", "inet", "bosh_agent")
-			if exitCode != 0 || err != nil {
-				Skip("bosh_agent table not found - previous test may have skipped")
-			}
+			ruleOutput, ruleStderr, exitCode, err := gardenClient.RunCommand("nft", "list", "table", "inet", "bosh_agent")
+			Expect(err).NotTo(HaveOccurred(), "Failed to run nft command")
+			Expect(exitCode).To(Equal(0), "bosh_agent table not found - previous test should have created it. stderr: %s", ruleStderr)
 
 			// On Noble (cgroup v2), rules should use socket cgroupv2 matching
 			// NOT meta skuid (which is the UID fallback)
