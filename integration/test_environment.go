@@ -134,15 +134,16 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 				t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
 
-			// Lazily unmount /var/log to prevent intermittent test failures. As of 2024-06-24, this mount point
-			// is a bind mount of /var/vcap/data/root_log. For reasons we don't currently understand the
-			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount, but this is
-			// the only mount that has this problem.
+			// Lazily unmount /var/log and /var/tmp to prevent intermittent test failures.
+			// As of 2024-06-24, /var/log is a bind mount of /var/vcap/data/root_log.
+			// On Noble (systemd), /var/tmp can have similar issues with systemd services
+			// holding file handles open. For reasons we don't currently understand the
+			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount.
 			//
-			// Because we later unmount /var/vcap/data, lazily unmounting /var/log will eventually alert us if
-			// anyone has handles open in that mount point... so we'll eventually fail loudly, making this not
-			// a catastrophically bad thing to do.
-			if mountPoint == "/var/log" {
+			// Because we later unmount /var/vcap/data, lazily unmounting these will eventually
+			// alert us if anyone has handles open in that mount point... so we'll eventually
+			// fail loudly, making this not a catastrophically bad thing to do.
+			if mountPoint == "/var/log" || strings.HasPrefix(mountPoint, "/var/tmp") {
 				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
 			} else {
 				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
@@ -153,8 +154,19 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		}
 	}
 
-	_, err = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
-	return err
+	// Retry rm -rf a few times with brief sleeps. On systemd-based systems (Noble),
+	// processes like systemd-tmpfiles might briefly hold file handles open even after
+	// fuser -k, causing rm to fail with "Device or resource busy".
+	var rmErr error
+	for i := 0; i < 3; i++ {
+		_, rmErr = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
+		if rmErr == nil {
+			return nil
+		}
+		t.writerPrinter.Printf("DetachDevice: rm -rf %s failed (attempt %d/3): %s", dir, i+1, rmErr)
+		time.Sleep(500 * time.Millisecond)
+	}
+	return rmErr
 }
 
 func (t *TestEnvironment) CleanupDataDir() error {
