@@ -1,4 +1,4 @@
-package integration_test
+package garden_test
 
 import (
 	"encoding/json"
@@ -105,12 +105,24 @@ var _ = Describe("garden container firewall", Ordered, func() {
 		})
 
 		It("can copy bosh-agent binary into container", func() {
-			// The agent binary should be pre-built at bosh-agent-linux-amd64
+			// The agent binary should be pre-built at the repo root as bosh-agent-linux-amd64
+			// First try current directory, then look up in parent directories
 			agentBinaryPath := "bosh-agent-linux-amd64"
-			_, err := os.Stat(agentBinaryPath)
-			Expect(err).NotTo(HaveOccurred(), "bosh-agent-linux-amd64 binary not found - run 'go build -o bosh-agent-linux-amd64 ./main' first")
+			paths := []string{
+				agentBinaryPath,
+				"../../bosh-agent-linux-amd64",
+			}
 
-			err = gardenClient.StreamIn(agentBinaryPath, "/var/vcap/bosh/bin/")
+			var foundPath string
+			for _, p := range paths {
+				if _, err := os.Stat(p); err == nil {
+					foundPath = p
+					break
+				}
+			}
+			Expect(foundPath).NotTo(BeEmpty(), "bosh-agent-linux-amd64 binary not found in %v - run 'go build -o bosh-agent-linux-amd64 ./main' first", paths)
+
+			err := gardenClient.StreamIn(foundPath, "/var/vcap/bosh/bin/")
 			Expect(err).NotTo(HaveOccurred())
 
 			// Rename and make executable
@@ -123,12 +135,40 @@ var _ = Describe("garden container firewall", Ordered, func() {
 			stdout, stderr, exitCode, err = gardenClient.RunCommand("/var/vcap/bosh/bin/bosh-agent", "-v")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exitCode).To(Equal(0), "Agent version check failed. stdout: %s, stderr: %s", stdout, stderr)
-			Expect(stdout).To(ContainSubstring("version"))
+			// Version output contains either "version" or "[DEV BUILD]"
+			Expect(stdout).To(SatisfyAny(
+				ContainSubstring("version"),
+				ContainSubstring("[DEV BUILD]"),
+			))
 		})
 
 		It("can create minimal settings.json", func() {
-			// Create a minimal settings.json that enables the firewall
-			// but doesn't require NATS connection (for monit_access rules only)
+			// First, create agent.json that tells the agent to load settings from a file
+			agentConfig := map[string]interface{}{
+				"Infrastructure": map[string]interface{}{
+					"Settings": map[string]interface{}{
+						"Sources": []map[string]interface{}{
+							{
+								"Type":         "File",
+								"SettingsPath": "/var/vcap/bosh/settings.json",
+							},
+						},
+					},
+				},
+				"Platform": map[string]interface{}{
+					"Linux": map[string]interface{}{
+						"EnableNATSFirewall": true,
+					},
+				},
+			}
+
+			agentJSON, err := json.MarshalIndent(agentConfig, "", "  ")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = gardenClient.StreamInContent(agentJSON, "agent.json", "/var/vcap/bosh/", 0644)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Now create settings.json with the actual settings
 			settings := map[string]interface{}{
 				"agent_id": "test-agent-in-container",
 				"mbus":     "https://mbus:mbus@127.0.0.1:6868",
@@ -175,11 +215,21 @@ var _ = Describe("garden container firewall", Ordered, func() {
 		})
 
 		It("starts agent briefly to create firewall rules", func() {
+			// Create a dummy bosh-agent-rc script (required by bootstrap)
+			err := gardenClient.StreamInContent([]byte("#!/bin/bash\nexit 0\n"), "bosh-agent-rc", "/usr/local/bin/", 0755)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Make it executable
+			_, _, exitCode, err := gardenClient.RunCommand("chmod", "+x", "/usr/local/bin/bosh-agent-rc")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exitCode).To(Equal(0))
+
 			// Start agent in background, let it initialize firewall, then kill it
 			// We use timeout to prevent hanging if agent fails to start
+			// Agent uses -C to specify the config file (agent.json) which tells it where to find settings
 			stdout, stderr, exitCode, err := gardenClient.RunCommandWithTimeout(30*time.Second, "sh", "-c", `
-				# Start agent in background
-				/var/vcap/bosh/bin/bosh-agent -P ubuntu -C /var/vcap/bosh/settings.json &
+				# Start agent in background with the config file
+				/var/vcap/bosh/bin/bosh-agent -P ubuntu -C /var/vcap/bosh/agent.json &
 				AGENT_PID=$!
 				
 				# Wait for firewall rules to be created (poll nftables)
