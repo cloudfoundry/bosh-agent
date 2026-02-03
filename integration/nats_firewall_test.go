@@ -107,34 +107,61 @@ var _ = Describe("nats firewall", Ordered, func() {
 			Expect(out).To(ContainSubstring("timed out"))
 
 			// Test that we CAN access NATS when running in the agent's cgroup
-			// Find the agent's cgroup path and run nc from within it
-			// Note: On hybrid cgroup systems (v1+v2), use grep "^0::" to get the v2 unified hierarchy
-			// The cgroup v2 filesystem may be at /sys/fs/cgroup (pure v2) or /sys/fs/cgroup/unified (hybrid)
+			// First, debug the cgroup setup to understand why moving might fail
+			debugOut, _ := testEnvironment.RunCommand(`sudo sh -c '
+				agent_pid=$(pgrep -f "bosh-agent$" | head -1)
+				echo "=== Agent PID: $agent_pid ==="
+				echo "=== Agent cgroup info ==="
+				cat /proc/$agent_pid/cgroup
+				echo "=== Cgroup v2 path ==="
+				agent_cgroup=$(grep "^0::" /proc/$agent_pid/cgroup | cut -d: -f3)
+				echo "Cgroup path: $agent_cgroup"
+				echo "=== Cgroup directory contents ==="
+				ls -la /sys/fs/cgroup${agent_cgroup}/ 2>&1 || echo "Path not found"
+				echo "=== Cgroup type ==="
+				cat /sys/fs/cgroup${agent_cgroup}/cgroup.type 2>&1 || echo "No cgroup.type"
+				echo "=== Cgroup controllers ==="
+				cat /sys/fs/cgroup${agent_cgroup}/cgroup.controllers 2>&1 || echo "No controllers"
+				echo "=== Cgroup subtree_control ==="
+				cat /sys/fs/cgroup${agent_cgroup}/cgroup.subtree_control 2>&1 || echo "No subtree_control"
+			'`)
+			GinkgoWriter.Printf("Cgroup debug info:\n%s\n", debugOut)
+
+			// On systemd systems with cgroup v2, we cannot directly write to cgroup.procs
+			// of a systemd-managed service. Instead, we need to create a child cgroup.
+			// Use systemd-run to create a transient scope as a CHILD of the agent's cgroup.
 			out, err = testEnvironment.RunCommand(fmt.Sprintf(`sudo sh -c '
-				# Find the agent process cgroup
+				set -e
+				# Find the agent process
 				agent_pid=$(pgrep -f "bosh-agent$" | head -1)
 				if [ -z "$agent_pid" ]; then
-					echo "Agent process not found"
+					echo "Agent process not found" >&2
 					exit 1
 				fi
-				# For cgroup v2 (or hybrid), get the unified hierarchy path
+				# Get the agent cgroup path
 				agent_cgroup=$(grep "^0::" /proc/$agent_pid/cgroup | cut -d: -f3)
-				if [ -z "$agent_cgroup" ]; then
-					# Fallback to first cgroup line for pure v1 systems
-					agent_cgroup=$(head -1 /proc/$agent_pid/cgroup | cut -d: -f3)
-				fi
-				# Try unified mount point first (hybrid), then standard (pure v2)
-				if [ -d /sys/fs/cgroup/unified ]; then
-					echo $$ > /sys/fs/cgroup/unified${agent_cgroup}/cgroup.procs
+				
+				# Create a child cgroup under the agent cgroup
+				child_cgroup="/sys/fs/cgroup${agent_cgroup}/nats-test-$$"
+				mkdir -p "$child_cgroup" 2>/dev/null || true
+				
+				# If we can create the child cgroup, use it
+				if [ -d "$child_cgroup" ]; then
+					echo $$ > "$child_cgroup/cgroup.procs" 2>&1
+					nc %v 4222 -w2 -v 2>&1
+					# Cleanup
+					rmdir "$child_cgroup" 2>/dev/null || true
 				else
-					echo $$ > /sys/fs/cgroup${agent_cgroup}/cgroup.procs
-				fi
-				nc %v 4222 -w2 -v'
-			`, boshEnv))
+					# Fall back to trying the parent cgroup directly
+					echo $$ > /sys/fs/cgroup${agent_cgroup}/cgroup.procs 2>&1
+					nc %v 4222 -w2 -v 2>&1
+				fi'
+			`, boshEnv, boshEnv))
+
 			// Skip if cgroup manipulation failed - this happens in nested containers (e.g., incus VMs)
 			// where we don't have permission to move processes between cgroups
 			if err != nil {
-				Skip("Skipping cgroup access test - cgroup manipulation not supported in this environment: " + err.Error())
+				Skip("Skipping cgroup access test - cgroup manipulation not supported in this environment. Output: " + out + " Error: " + err.Error())
 			}
 			Expect(out).To(MatchRegexp("INFO.*server_id.*version.*host.*"))
 		})
