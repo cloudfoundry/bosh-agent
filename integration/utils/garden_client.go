@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -505,7 +506,7 @@ func (g *GardenClient) CheckNftablesAvailable() (bool, error) {
 const NftDumpBinaryPath = "/var/vcap/bosh/bin/nft-dump"
 
 // InstallNftDump copies the nft-dump utility into the container.
-// The binary should be pre-built at the repo root as nft-dump-linux-amd64.
+// If the binary doesn't exist, it will be built automatically.
 func (g *GardenClient) InstallNftDump() error {
 	// Try to find the binary in common locations
 	paths := []string{
@@ -521,8 +522,40 @@ func (g *GardenClient) InstallNftDump() error {
 		}
 	}
 
+	// If not found, try to build it
 	if foundPath == "" {
-		return fmt.Errorf("nft-dump-linux-amd64 binary not found in %v - run 'go build -o nft-dump-linux-amd64 ./integration/nftdump' first", paths)
+		g.logger.Info("nft-dump-build", lager.Data{"message": "nft-dump binary not found, building it..."})
+
+		// Determine the source directory - look for integration/nftdump/main.go
+		sourcePaths := []string{
+			"./integration/nftdump",
+			"../../integration/nftdump",
+			"../nftdump",
+			"./nftdump",
+		}
+
+		var sourceDir string
+		for _, sp := range sourcePaths {
+			if _, err := os.Stat(filepath.Join(sp, "main.go")); err == nil {
+				sourceDir = sp
+				break
+			}
+		}
+
+		if sourceDir == "" {
+			return fmt.Errorf("nft-dump source not found in %v and binary not found in %v", sourcePaths, paths)
+		}
+
+		// Build the binary
+		outputPath := "nft-dump-linux-amd64"
+		cmd := exec.Command("go", "build", "-o", outputPath, sourceDir)
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux", "GOARCH=amd64")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to build nft-dump: %w, output: %s", err, string(output))
+		}
+		g.logger.Info("nft-dump-build", lager.Data{"message": "Built nft-dump binary", "path": outputPath})
+		foundPath = outputPath
 	}
 
 	// Stream the binary into the container

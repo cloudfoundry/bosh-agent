@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -961,7 +962,7 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 const NftDumpBinaryPath = "/var/vcap/bosh/bin/nft-dump"
 
 // InstallNftDump copies the nft-dump utility to the VM.
-// The binary should be pre-built in the working directory as nft-dump-linux-amd64.
+// If the binary doesn't exist, it will be built automatically.
 func (t *TestEnvironment) InstallNftDump() error {
 	// Try to find the binary in common locations
 	paths := []string{
@@ -977,8 +978,39 @@ func (t *TestEnvironment) InstallNftDump() error {
 		}
 	}
 
+	// If not found, try to build it
 	if foundPath == "" {
-		return fmt.Errorf("nft-dump-linux-amd64 binary not found in %v", paths)
+		t.writerPrinter.Printf("nft-dump binary not found, building it...\n")
+
+		// Determine the source directory - look for integration/nftdump/main.go
+		sourcePaths := []string{
+			"./integration/nftdump",
+			"../integration/nftdump",
+			"./nftdump",
+		}
+
+		var sourceDir string
+		for _, sp := range sourcePaths {
+			if _, err := os.Stat(filepath.Join(sp, "main.go")); err == nil {
+				sourceDir = sp
+				break
+			}
+		}
+
+		if sourceDir == "" {
+			return fmt.Errorf("nft-dump source not found in %v and binary not found in %v", sourcePaths, paths)
+		}
+
+		// Build the binary
+		outputPath := "nft-dump-linux-amd64"
+		cmd := exec.Command("go", "build", "-o", outputPath, sourceDir)
+		cmd.Env = append(os.Environ(), "CGO_ENABLED=0", "GOOS=linux", "GOARCH=amd64")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("failed to build nft-dump: %w, output: %s", err, string(output))
+		}
+		t.writerPrinter.Printf("Built nft-dump binary at %s\n", outputPath)
+		foundPath = outputPath
 	}
 
 	// Copy the binary to the VM
