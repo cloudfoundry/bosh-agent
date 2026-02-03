@@ -323,6 +323,9 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 		return err
 	}
 	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
+		if loopDev == "" {
+			continue
+		}
 		ignoredErr := t.DetachLoopDevice(loopDev)
 		if ignoredErr != nil {
 			t.writerPrinter.Printf("ResetDeviceMap: %s", ignoredErr)
