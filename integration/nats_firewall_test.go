@@ -109,21 +109,31 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// Test that we CAN access NATS when running in the agent's cgroup
 			// First, debug the cgroup setup to understand why moving might fail
 			debugOut, _ := testEnvironment.RunCommand(`sudo sh -c '
-				agent_pid=$(pgrep -f "bosh-agent$" | head -1)
+				# Use pgrep -x to match the exact process name (not full command line)
+				# On systemd, bosh-agent runs as: /var/vcap/bosh/bin/bosh-agent -P ubuntu -C ...
+				agent_pid=$(pgrep -x bosh-agent | head -1)
+				if [ -z "$agent_pid" ]; then
+					# Fallback: try matching the binary path
+					agent_pid=$(pgrep -f "/var/vcap/bosh/bin/bosh-agent" | head -1)
+				fi
 				echo "=== Agent PID: $agent_pid ==="
-				echo "=== Agent cgroup info ==="
-				cat /proc/$agent_pid/cgroup
-				echo "=== Cgroup v2 path ==="
-				agent_cgroup=$(grep "^0::" /proc/$agent_pid/cgroup | cut -d: -f3)
-				echo "Cgroup path: $agent_cgroup"
-				echo "=== Cgroup directory contents ==="
-				ls -la /sys/fs/cgroup${agent_cgroup}/ 2>&1 || echo "Path not found"
-				echo "=== Cgroup type ==="
-				cat /sys/fs/cgroup${agent_cgroup}/cgroup.type 2>&1 || echo "No cgroup.type"
-				echo "=== Cgroup controllers ==="
-				cat /sys/fs/cgroup${agent_cgroup}/cgroup.controllers 2>&1 || echo "No controllers"
-				echo "=== Cgroup subtree_control ==="
-				cat /sys/fs/cgroup${agent_cgroup}/cgroup.subtree_control 2>&1 || echo "No subtree_control"
+				echo "=== Process list ==="
+				ps aux | grep -E "[b]osh-agent" || echo "No bosh-agent in ps"
+				if [ -n "$agent_pid" ]; then
+					echo "=== Agent cgroup info ==="
+					cat /proc/$agent_pid/cgroup
+					echo "=== Cgroup v2 path ==="
+					agent_cgroup=$(grep "^0::" /proc/$agent_pid/cgroup | cut -d: -f3)
+					echo "Cgroup path: $agent_cgroup"
+					echo "=== Cgroup directory contents ==="
+					ls -la /sys/fs/cgroup${agent_cgroup}/ 2>&1 || echo "Path not found"
+					echo "=== Cgroup type ==="
+					cat /sys/fs/cgroup${agent_cgroup}/cgroup.type 2>&1 || echo "No cgroup.type"
+					echo "=== Cgroup controllers ==="
+					cat /sys/fs/cgroup${agent_cgroup}/cgroup.controllers 2>&1 || echo "No controllers"
+					echo "=== Cgroup subtree_control ==="
+					cat /sys/fs/cgroup${agent_cgroup}/cgroup.subtree_control 2>&1 || echo "No subtree_control"
+				fi
 			'`)
 			GinkgoWriter.Printf("Cgroup debug info:\n%s\n", debugOut)
 
@@ -132,10 +142,15 @@ var _ = Describe("nats firewall", Ordered, func() {
 			// Use systemd-run to create a transient scope as a CHILD of the agent's cgroup.
 			out, err = testEnvironment.RunCommand(fmt.Sprintf(`sudo sh -c '
 				set -e
-				# Find the agent process
-				agent_pid=$(pgrep -f "bosh-agent$" | head -1)
+				# Find the agent process - use -x for exact process name match
+				agent_pid=$(pgrep -x bosh-agent | head -1)
+				if [ -z "$agent_pid" ]; then
+					# Fallback: try matching the binary path
+					agent_pid=$(pgrep -f "/var/vcap/bosh/bin/bosh-agent" | head -1)
+				fi
 				if [ -z "$agent_pid" ]; then
 					echo "Agent process not found" >&2
+					ps aux | grep -E "[b]osh-agent" >&2 || true
 					exit 1
 				fi
 				# Get the agent cgroup path
