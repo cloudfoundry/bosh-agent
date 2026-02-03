@@ -185,9 +185,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	// /var/tmp cleanup is non-fatal since we recreate it immediately after.
+	// On systemd systems, /var/tmp may be held by various services and difficult to remove.
 	err = t.DetachDevice("/var/tmp")
 	if err != nil {
-		return err
+		t.writerPrinter.Printf("CleanupDataDir: /var/tmp cleanup failed (non-fatal, will recreate): %s", err)
 	}
 
 	err = t.DetachDevice("/var/log")
