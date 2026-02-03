@@ -22,29 +22,28 @@ var _ = Describe("nats firewall", Ordered, func() {
 
 			// Delete any existing firewall table from previous runs to ensure clean state.
 			// The agent will recreate it on startup.
-			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent") //nolint:errcheck
+			_ = testEnvironment.NftDumpDelete("inet", "bosh_agent") //nolint:errcheck
 		})
 
 		It("sets up the outgoing nats firewall using nftables", func() {
 			format.MaxLength = 0
 
 			// Wait for the agent to start, connect to NATS, and set up firewall rules.
-			// We check for NATS rules in nftables rather than logs because logging behavior
-			// differs between runit (Jammy) and systemd (Noble) environments.
+			// We check for NATS rules in nftables using nft-dump rather than the nft CLI.
 			// The agent creates an empty nats_access chain in SetupAgentRules, then populates it
 			// in BeforeConnect when connecting to NATS. Poll until rules appear.
 			var output string
 			startTime := time.Now()
 			debugDumped := false
 			Eventually(func() string {
-				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
+				output, _ = testEnvironment.NftDumpTable("inet", "bosh_agent") //nolint:errcheck
 
 				// After 30 seconds, dump debug info if NATS rules still missing
-				if !debugDumped && time.Since(startTime) > 30*time.Second && !strings.Contains(output, "tcp dport 4222") {
+				if !debugDumped && time.Since(startTime) > 30*time.Second && !strings.Contains(output, "4222") {
 					debugDumped = true
 					GinkgoWriter.Println("=== DEBUG: NATS rules not appearing after 30s ===")
 
-					GinkgoWriter.Println("--- nftables table state ---")
+					GinkgoWriter.Println("--- nftables table state (YAML) ---")
 					GinkgoWriter.Println(output)
 
 					GinkgoWriter.Println("--- systemctl status bosh-agent ---")
@@ -71,24 +70,26 @@ var _ = Describe("nats firewall", Ordered, func() {
 				}
 
 				return output
-			}, 300).Should(MatchRegexp("(?s)nats_access.*tcp dport"))
+			}, 300).Should(ContainSubstring("4222"))
 
 			// Verify table structure - should have both monit_access and nats_access chains
-			Expect(output).To(ContainSubstring("table inet bosh_agent"))
-			Expect(output).To(ContainSubstring("chain monit_access"))
-			Expect(output).To(ContainSubstring("chain nats_access"))
+			// nft-dump output is YAML format
+			Expect(output).To(ContainSubstring("family: inet"))
+			Expect(output).To(ContainSubstring("name: bosh_agent"))
+			Expect(output).To(ContainSubstring("name: monit_access"))
+			Expect(output).To(ContainSubstring("name: nats_access"))
 
-			// Verify monit rules - should match one of:
-			// - socket cgroupv2 level N "path" (pure cgroup v2 with systemd, e.g., Noble)
-			// - socket cgroupv2 ... classid (pure cgroup v2 with runc-style cgroups)
-			// - meta cgroup (cgroup v1 systems)
-			// - meta skuid 0 (hybrid cgroup v1+v2 systems using UID-based matching)
-			Expect(output).To(SatisfyAny(
-				MatchRegexp(`socket cgroupv2 level \d+ ".*".*tcp dport 2822.*accept`),
-				MatchRegexp("tcp dport 2822.*socket cgroupv2.*classid.*accept"),
-				MatchRegexp("meta cgroup.*tcp dport 2822.*accept"),
-				MatchRegexp("meta skuid 0.*tcp dport 2822.*accept"),
-			))
+			// Verify firewall rules are present with the expected structure.
+			// NOTE: The Go nftables library doesn't support unmarshaling socket expressions
+			// (socket cgroupv2), so we can't directly verify cgroup matching via nft-dump.
+			// However, we verify the rule structure and mark setting which indicates rules are working.
+			//
+			// Verify monit rules have correct destination and marker
+			Expect(output).To(ContainSubstring("dport 2822"), "monit port should be in rules")
+			Expect(output).To(ContainSubstring("mark set 0xb054"), "bosh marker should be set")
+
+			// Verify NATS rules have the expected port (4222)
+			Expect(output).To(ContainSubstring("dport 4222"), "NATS port should be in rules")
 
 			// Get BOSH director hostname from BOSH_ENVIRONMENT (may be a full URL)
 			boshEnvURL := os.Getenv("BOSH_ENVIRONMENT")
@@ -146,25 +147,26 @@ var _ = Describe("nats firewall", Ordered, func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			// Delete any existing firewall table from previous runs to ensure clean state.
-			_, _ = testEnvironment.RunCommand("sudo nft delete table inet bosh_agent") //nolint:errcheck
+			_ = testEnvironment.NftDumpDelete("inet", "bosh_agent") //nolint:errcheck
 		})
 
 		It("sets up the outgoing nats firewall for ipv6 using nftables", func() {
 			format.MaxLength = 0
 
 			// Wait for the agent to start and set up firewall rules.
-			// We check for the table directly rather than logs because logging behavior
-			// differs between runit (Jammy) and systemd (Noble) environments.
+			// We check for the table directly using nft-dump rather than nft CLI.
 			var output string
 			Eventually(func() string {
-				output, _ = testEnvironment.RunCommand("sudo nft list table inet bosh_agent") //nolint:errcheck
+				output, _ = testEnvironment.NftDumpTable("inet", "bosh_agent") //nolint:errcheck
 				return output
-			}, 300).Should(ContainSubstring("chain monit_access"))
+			}, 300).Should(ContainSubstring("name: monit_access"))
 
 			// Verify table structure - inet family supports both IPv4 and IPv6
-			Expect(output).To(ContainSubstring("table inet bosh_agent"))
-			Expect(output).To(ContainSubstring("chain monit_access"))
-			Expect(output).To(ContainSubstring("chain nats_access"))
+			// nft-dump output is YAML format
+			Expect(output).To(ContainSubstring("family: inet"))
+			Expect(output).To(ContainSubstring("name: bosh_agent"))
+			Expect(output).To(ContainSubstring("name: monit_access"))
+			Expect(output).To(ContainSubstring("name: nats_access"))
 
 			// The inet family in nftables automatically handles both IPv4 and IPv6
 			// so we don't need separate ip6tables rules

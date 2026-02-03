@@ -956,3 +956,63 @@ func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
 	}
 	return ssh.Dial("tcp", testVMAddress, testVMSSHConfig)
 }
+
+// NftDumpBinaryPath is the path where the nft-dump binary is installed on the VM.
+const NftDumpBinaryPath = "/var/vcap/bosh/bin/nft-dump"
+
+// InstallNftDump copies the nft-dump utility to the VM.
+// The binary should be pre-built in the working directory as nft-dump-linux-amd64.
+func (t *TestEnvironment) InstallNftDump() error {
+	// Try to find the binary in common locations
+	paths := []string{
+		"nft-dump-linux-amd64",
+		"../nft-dump-linux-amd64",
+	}
+
+	var foundPath string
+	for _, p := range paths {
+		if _, err := os.Stat(p); err == nil {
+			foundPath = p
+			break
+		}
+	}
+
+	if foundPath == "" {
+		return fmt.Errorf("nft-dump-linux-amd64 binary not found in %v", paths)
+	}
+
+	// Copy the binary to the VM
+	err := t.CopyFileToPath(foundPath, NftDumpBinaryPath)
+	if err != nil {
+		return fmt.Errorf("failed to copy nft-dump binary: %w", err)
+	}
+
+	// Make it executable
+	_, err = t.RunCommand("sudo chmod +x " + NftDumpBinaryPath)
+	if err != nil {
+		return fmt.Errorf("failed to make nft-dump executable: %w", err)
+	}
+
+	return nil
+}
+
+// NftDumpCheck checks if nftables kernel support is available.
+func (t *TestEnvironment) NftDumpCheck() (bool, error) {
+	_, err := t.RunCommand("sudo " + NftDumpBinaryPath + " check")
+	return err == nil, nil
+}
+
+// NftDumpTable returns YAML output for a specific table.
+func (t *TestEnvironment) NftDumpTable(family, name string) (string, error) {
+	output, err := t.RunCommand(fmt.Sprintf("sudo %s table %s %s", NftDumpBinaryPath, family, name))
+	if err != nil {
+		return "", err
+	}
+	return output, nil
+}
+
+// NftDumpDelete deletes a specific nftables table.
+func (t *TestEnvironment) NftDumpDelete(family, name string) error {
+	_, err := t.RunCommand(fmt.Sprintf("sudo %s delete %s %s", NftDumpBinaryPath, family, name))
+	return err
+}

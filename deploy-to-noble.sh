@@ -113,7 +113,7 @@ instance_groups:
   - name: ${INSTANCE_GROUP}
     azs: [z1]
     instances: 1
-    vm_type: default
+    vm_type: garden-test
     stemcell: stemcell
     networks:
       - name: default
@@ -207,6 +207,8 @@ show_help() {
     echo "  INSTANCE_GROUP          - Instance group name (default: agent-test)"
     echo "  INSTANCE_ID             - Instance ID (default: 0)"
     echo "  GARDEN_RUNC_RELEASE_PATH - Path to garden-runc-release (default: ~/workspace/garden-runc-release)"
+    echo "  STEMCELL_IMAGE          - Specific stemcell image to test (default: tests both Noble and Jammy)"
+    echo "                            Example: STEMCELL_IMAGE=docker://ghcr.io/cloudfoundry/ubuntu-jammy-stemcell:latest"
 }
 
 # Check Garden status
@@ -239,6 +241,10 @@ run_garden_tests() {
     log_info "Building agent binary for container tests (static)..."
     cd "$SCRIPT_DIR"
     CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o bosh-agent-linux-amd64 ./main
+    
+    # Build nft-dump utility for inspecting nftables without nft CLI
+    log_info "Building nft-dump utility for container tests..."
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o nft-dump-linux-amd64 ./integration/nftdump
     
     # Determine SSH key path for agent VM
     local ssh_key_path
