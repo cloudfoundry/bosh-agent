@@ -1,7 +1,9 @@
 #!/bin/bash
 # Script to cross-compile the bosh-agent and deploy it to a Noble VM for debugging
 # Uses os-conf user_add for SSH access to ensure it works even when agent is broken
-# Supports Garden deployment for nested container firewall testing
+#
+# Garden is installed automatically by the test suite using the gardeninstaller
+# package when GARDEN_RELEASE_TARBALL is set.
 
 set -euo pipefail
 
@@ -9,7 +11,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOYMENT_NAME="${DEPLOYMENT_NAME:-bosh-agent-integration-firewall-noble}"
 INSTANCE_GROUP="${INSTANCE_GROUP:-agent-test}"
 INSTANCE_ID="${INSTANCE_ID:-0}"
-GARDEN_RUNC_RELEASE_PATH="${GARDEN_RUNC_RELEASE_PATH:-}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -37,50 +38,9 @@ check_bosh() {
     log_info "BOSH environment: $(bosh env --json 2>/dev/null | jq -r '.Tables[0].Rows[0].name // "unknown"')"
 }
 
-# Upload garden-runc dev release if needed
-upload_garden_runc() {
-    local garden_runc_path="${GARDEN_RUNC_RELEASE_PATH:-$HOME/workspace/garden-runc-release}"
-    
-    if [[ ! -d "$garden_runc_path" ]]; then
-        log_error "garden-runc-release not found at $garden_runc_path"
-        log_info "Clone it with: git clone --recurse-submodules https://github.com/rkoster/garden-runc-release -b noble-nested-warden"
-        log_info "Or set GARDEN_RUNC_RELEASE_PATH to the correct path"
-        exit 1
-    fi
-    
-    cd "$garden_runc_path"
-    
-    local commit_hash
-    commit_hash=$(git rev-parse --short HEAD)
-    log_info "Garden-runc release commit hash: ${commit_hash}"
-    
-    # Check if release with this commit hash already exists
-    if bosh releases --json | jq -e ".Tables[0].Rows[] | select(.name == \"garden-runc\") | select(.commit_hash == \"${commit_hash}\")" > /dev/null 2>&1; then
-        log_info "Garden-runc release with commit ${commit_hash} already uploaded, skipping build"
-    else
-        log_info "Building and uploading garden-runc dev release..."
-        
-        # Verify the guardian patch is present
-        if grep -q "Loop devices" src/guardian/guardiancmd/server.go 2>/dev/null; then
-            log_info "Guardian loop device patch found!"
-        else
-            log_warn "Guardian patch not found - nested containers may not work"
-        fi
-        
-        # Create and upload dev release
-        bosh create-release --force --timestamp-version
-        bosh upload-release
-    fi
-    
-    cd "$SCRIPT_DIR"
-}
-
-# Create deployment with Garden for nested container testing
+# Create deployment (Garden is installed by the test suite via gardeninstaller)
 create_deployment() {
-    log_info "Creating deployment ${DEPLOYMENT_NAME} with Garden..."
-    
-    # Upload garden-runc release
-    upload_garden_runc
+    log_info "Creating deployment ${DEPLOYMENT_NAME}..."
     
     # Get SSH public key for user_add
     local ssh_pubkey
@@ -97,13 +57,12 @@ create_deployment() {
     fi
     log_info "Using SSH key: ${ssh_pubkey:0:50}..."
     
-    # Create deployment manifest
+    # Create deployment manifest without garden-runc
+    # Garden is installed by the test suite using gardeninstaller
     cat > /tmp/agent-deployment.yml <<EOF
 name: ${DEPLOYMENT_NAME}
 releases:
   - name: os-conf
-    version: latest
-  - name: garden-runc
     version: latest
 stemcells:
   - alias: stemcell
@@ -124,14 +83,6 @@ instance_groups:
           users:
             - name: agent_test_user
               public_key: "${ssh_pubkey}"
-      - name: garden
-        release: garden-runc
-        properties:
-          garden:
-            listen_network: tcp
-            listen_address: 0.0.0.0:7777
-            allow_host_access: true
-            containerd_mode: false
       - name: pre-start-script
         release: os-conf
         properties:
@@ -170,8 +121,10 @@ EOF
     log_info "Installing nftables CLI..."
     bosh -d "$DEPLOYMENT_NAME" ssh "${INSTANCE_GROUP}/${INSTANCE_ID}" -c "sudo apt-get update && sudo apt-get install -y nftables" 2>/dev/null || true
     
-    # Check Garden status
-    check_garden "$vm_ip"
+    log_info ""
+    log_info "Next steps:"
+    log_info "  1. Compile garden-runc: bin/compile-garden-release.sh"
+    log_info "  2. Run tests: GARDEN_RELEASE_TARBALL=./compiled-releases/garden-runc-*.tgz $0 test-garden"
 }
 
 # Delete deployment
@@ -186,7 +139,7 @@ show_help() {
     echo "Usage: $0 [create|delete|build|deploy|start|stop|logs|nft|garden|test-garden|ssh]"
     echo ""
     echo "Deployment management:"
-    echo "  create       - Create a new deployment with Garden for nested container testing"
+    echo "  create       - Create a new deployment"
     echo "  delete       - Delete the deployment"
     echo ""
     echo "Agent commands:"
@@ -206,9 +159,11 @@ show_help() {
     echo "  DEPLOYMENT_NAME         - BOSH deployment name (default: bosh-agent-integration-firewall-noble)"
     echo "  INSTANCE_GROUP          - Instance group name (default: agent-test)"
     echo "  INSTANCE_ID             - Instance ID (default: 0)"
-    echo "  GARDEN_RUNC_RELEASE_PATH - Path to garden-runc-release (default: ~/workspace/garden-runc-release)"
+    echo "  GARDEN_RELEASE_TARBALL  - Path to compiled garden-runc release tarball"
     echo "  STEMCELL_IMAGE          - Specific stemcell image to test (default: tests both Noble and Jammy)"
-    echo "                            Example: STEMCELL_IMAGE=docker://ghcr.io/cloudfoundry/ubuntu-jammy-stemcell:latest"
+    echo ""
+    echo "To compile a Garden release tarball:"
+    echo "  bin/compile-garden-release.sh"
 }
 
 # Check Garden status
@@ -218,14 +173,17 @@ check_garden() {
     log_info "Checking Garden status..."
     
     bosh -d "$DEPLOYMENT_NAME" ssh "${INSTANCE_GROUP}/${INSTANCE_ID}" -c "
-        echo '=== Monit summary ==='
-        sudo /var/vcap/bosh/bin/monit summary || true
+        echo '=== Garden process ==='
+        ps aux | grep -E '(gdn|guardian)' | grep -v grep || echo 'Not running'
         echo ''
         echo '=== Garden ping ==='
         curl -s http://localhost:7777/ping && echo ' - Garden is responding' || echo 'Garden ping failed'
         echo ''
         echo '=== Garden listening ==='
         ss -tlnp | grep 7777 || echo 'Not listening on 7777'
+        echo ''
+        echo '=== Recent logs ==='
+        sudo tail -20 /var/vcap/sys/log/garden/garden.stderr.log 2>/dev/null || echo 'No logs found'
     " 2>/dev/null
 }
 
@@ -315,13 +273,31 @@ EOF
 
     # Set up environment variables
     export AGENT_IP="$vm_ip"
-    export GARDEN_ADDRESS="${vm_ip}:7777"
+    export AGENT_KEY_PATH="$ssh_key_path"
+    export AGENT_USER="agent_test_user"
+    
+    # Set GARDEN_ADDRESS if Garden is already running, otherwise the test suite will install it
+    if curl -sf --connect-timeout 2 "http://${vm_ip}:7777/ping" 2>/dev/null; then
+        export GARDEN_ADDRESS="${vm_ip}:7777"
+        log_info "Garden already running at ${GARDEN_ADDRESS}"
+    else
+        log_info "Garden not running - test suite will install it if GARDEN_RELEASE_TARBALL is set"
+        if [[ -z "${GARDEN_RELEASE_TARBALL:-}" ]]; then
+            log_warn "GARDEN_RELEASE_TARBALL not set - tests may fail"
+            log_info "Create compiled release with: bin/compile-garden-release.sh"
+        else
+            # Convert to absolute path since we'll cd to integration/garden
+            export GARDEN_RELEASE_TARBALL="$(cd "$(dirname "$GARDEN_RELEASE_TARBALL")" && pwd)/$(basename "$GARDEN_RELEASE_TARBALL")"
+        fi
+    fi
     
     log_info "Running Garden container firewall tests..."
     log_info "  AGENT_IP=$AGENT_IP"
-    log_info "  GARDEN_ADDRESS=$GARDEN_ADDRESS"
+    log_info "  AGENT_KEY_PATH=$AGENT_KEY_PATH"
     log_info "  JUMPBOX_IP=${JUMPBOX_IP}"
     log_info "  JUMPBOX_KEY_PATH=${JUMPBOX_KEY_PATH}"
+    [[ -n "${GARDEN_ADDRESS:-}" ]] && log_info "  GARDEN_ADDRESS=$GARDEN_ADDRESS"
+    [[ -n "${GARDEN_RELEASE_TARBALL:-}" ]] && log_info "  GARDEN_RELEASE_TARBALL=$GARDEN_RELEASE_TARBALL"
     
     cd "${SCRIPT_DIR}/integration/garden"
     go run github.com/onsi/ginkgo/v2/ginkgo --trace -v .
