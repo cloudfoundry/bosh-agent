@@ -150,6 +150,20 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
 
+	var instanceStorageResolver devicepathresolver.InstanceStorageResolver
+	switch options.Linux.InstanceStorageResolutionType {
+	case "aws-nvme":
+		instanceStorageResolver = devicepathresolver.NewAWSNVMeInstanceStorageResolver(
+			fs,
+			devicePathResolver,
+			logger,
+			options.Linux.InstanceStorageManagedVolumePattern,
+			options.Linux.InstanceStorageDevicePattern,
+		)
+	default:
+		instanceStorageResolver = devicepathresolver.NewIdentityInstanceStorageResolver(devicePathResolver)
+	}
+
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
@@ -168,6 +182,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			centosCertManager,
 			monitRetryStrategy,
 			devicePathResolver,
+			instanceStorageResolver,
 			bootstrapState,
 			options.Linux,
 			logger,
@@ -194,6 +209,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			ubuntuCertManager,
 			monitRetryStrategy,
 			devicePathResolver,
+			instanceStorageResolver,
 			bootstrapState,
 			options.Linux,
 			logger,
