@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"github.com/cloudfoundry/bosh-agent/v2/integration/gardeninstaller"
+	"github.com/cloudfoundry/bosh-agent/v2/integration/installerdriver"
 	"github.com/cloudfoundry/bosh-agent/v2/integration/utils"
 	windowsutils "github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
 
@@ -19,6 +20,9 @@ import (
 
 // gardenInstallerInstance holds the installer for cleanup
 var gardenInstallerInstance *gardeninstaller.Installer
+
+// vmDriver holds the SSH driver for the agent VM
+var vmDriver *installerdriver.SSHDriver
 
 // agentSSHClient holds the SSH connection to the agent for cleanup
 var agentSSHClient *ssh.Client
@@ -34,20 +38,28 @@ var _ = BeforeSuite(func() {
 	if gardenAddr != "" {
 		GinkgoWriter.Printf("Using existing Garden at %s\n", gardenAddr)
 
-		// Verify connectivity by creating a client
-		client, err := utils.NewGardenClient()
+		// Verify connectivity by pinging Garden through SSH tunnel
+		sshClient, err := windowsutils.GetSSHTunnelClient()
 		if err != nil {
-			GinkgoWriter.Printf("Warning: Could not connect to Garden at %s: %v\n", gardenAddr, err)
+			GinkgoWriter.Printf("Warning: Could not get SSH tunnel client: %v\n", err)
 			GinkgoWriter.Printf("Will attempt to install Garden if GARDEN_RELEASE_TARBALL is set\n")
 		} else {
-			GinkgoWriter.Printf("Garden connectivity verified\n")
-			_ = client // Don't need it yet, just checking connectivity
-			return
+			gardenClient, err := installerdriver.NewGardenAPIClient(sshClient, gardenAddr, nil)
+			if err != nil {
+				GinkgoWriter.Printf("Warning: Could not connect to Garden at %s: %v\n", gardenAddr, err)
+				GinkgoWriter.Printf("Will attempt to install Garden if GARDEN_RELEASE_TARBALL is set\n")
+			} else if err := gardenClient.Ping(); err != nil {
+				GinkgoWriter.Printf("Warning: Garden ping failed at %s: %v\n", gardenAddr, err)
+				GinkgoWriter.Printf("Will attempt to install Garden if GARDEN_RELEASE_TARBALL is set\n")
+			} else {
+				GinkgoWriter.Printf("Garden connectivity verified\n")
+				return
+			}
 		}
 	}
 
 	// Check if we should install Garden from a compiled release
-	releaseTarball := os.Getenv("GARDEN_RELEASE_TARBALL")
+	releaseTarball := utils.GetReleaseTarball()
 	if releaseTarball == "" {
 		if gardenAddr == "" {
 			Skip("GARDEN_ADDRESS not set and GARDEN_RELEASE_TARBALL not provided - skipping Garden tests")
@@ -63,7 +75,7 @@ var _ = BeforeSuite(func() {
 	GinkgoWriter.Printf("Installing Garden from tarball: %s\n", releaseTarball)
 
 	// Get agent IP
-	agentIP := os.Getenv("AGENT_IP")
+	agentIP := utils.GetAgentIP()
 	if agentIP == "" {
 		Fail("AGENT_IP must be set when using GARDEN_RELEASE_TARBALL")
 	}
@@ -75,14 +87,21 @@ var _ = BeforeSuite(func() {
 		Fail("Failed to connect to agent VM: " + err.Error())
 	}
 
-	// Create SSH driver for the gardeninstaller (with sudo for non-root users)
-	driver := gardeninstaller.NewSSHDriverWithSudo(agentSSHClient, agentIP)
+	// Create SSH driver for the VM
+	vmDriver = installerdriver.NewSSHDriver(installerdriver.SSHDriverConfig{
+		Client:  agentSSHClient,
+		Host:    agentIP,
+		UseSudo: true,
+	})
+
+	// Bootstrap the driver (creates base directories)
+	err = vmDriver.Bootstrap()
+	Expect(err).NotTo(HaveOccurred(), "Failed to bootstrap VM driver")
 
 	// Configure the installer
 	cfg := gardeninstaller.DefaultConfig()
 	cfg.ReleaseTarballPath = releaseTarball
 	cfg.Debug = true
-	cfg.SkipUnprivilegedStore = true // For nested containers
 
 	// Determine listen address
 	listenAddr := os.Getenv("GARDEN_LISTEN_ADDRESS")
@@ -92,7 +111,7 @@ var _ = BeforeSuite(func() {
 	cfg.ListenAddress = listenAddr
 
 	// Create installer
-	gardenInstallerInstance = gardeninstaller.New(cfg, driver)
+	gardenInstallerInstance = gardeninstaller.New(cfg, vmDriver)
 
 	// Install Garden
 	GinkgoWriter.Printf("Installing Garden on %s...\n", agentIP)
@@ -128,6 +147,10 @@ var _ = AfterSuite(func() {
 		}
 	}
 
+	if vmDriver != nil {
+		vmDriver.Cleanup()
+	}
+
 	if agentSSHClient != nil {
 		agentSSHClient.Close()
 	}
@@ -148,23 +171,7 @@ func dialAgentThroughJumpbox(agentIP string) (*ssh.Client, error) {
 	}
 
 	// Get agent SSH credentials
-	// Use the same key used for the agent VM (from AGENT_KEY_PATH or fallback to jumpbox key)
-	agentKeyPath := os.Getenv("AGENT_KEY_PATH")
-	if agentKeyPath == "" {
-		// Try common locations
-		for _, path := range []string{
-			"debug-ssh-key",
-			"../../debug-ssh-key",
-			os.Getenv("HOME") + "/.ssh/id_rsa",
-			os.Getenv("HOME") + "/.ssh/id_ed25519",
-		} {
-			if _, err := os.Stat(path); err == nil {
-				agentKeyPath = path
-				break
-			}
-		}
-	}
-
+	agentKeyPath := utils.FindAgentKey()
 	if agentKeyPath == "" {
 		return nil, fmt.Errorf("no agent SSH key found - set AGENT_KEY_PATH")
 	}

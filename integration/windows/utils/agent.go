@@ -97,10 +97,26 @@ func GetSSHTunnelClient() (*ssh.Client, error) {
 		User:            JumpboxUsername(),
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         30 * time.Second, // Connection timeout
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	// Start a goroutine to send keepalive requests to prevent the connection from timing out.
+	// This is especially important for long-running operations like installing Garden in nested containers.
+	go func() {
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			// SendRequest with wantReply=true acts as a keepalive
+			_, _, err := sshClient.SendRequest("keepalive@openssh.com", true, nil)
+			if err != nil {
+				// Connection is dead, stop the goroutine
+				return
+			}
+		}
+	}()
 
 	return sshClient, nil
 }

@@ -1,4 +1,4 @@
-package gardeninstaller
+package installerdriver
 
 import (
 	"archive/tar"
@@ -6,26 +6,34 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
 
+// SSHDriverConfig holds configuration for SSHDriver.
+type SSHDriverConfig struct {
+	Client  *ssh.Client
+	Host    string
+	UseSudo bool
+}
+
 // SSHDriver implements Driver for VMs accessible via SSH.
 type SSHDriver struct {
-	client  *ssh.Client
-	host    string
-	useSudo bool
+	client       *ssh.Client
+	host         string
+	useSudo      bool
+	bootstrapped bool
 }
 
-// NewSSHDriver creates a new driver for the given SSH client.
-func NewSSHDriver(client *ssh.Client, host string) *SSHDriver {
-	return &SSHDriver{client: client, host: host, useSudo: false}
-}
-
-// NewSSHDriverWithSudo creates a new driver that runs commands with sudo.
-func NewSSHDriverWithSudo(client *ssh.Client, host string) *SSHDriver {
-	return &SSHDriver{client: client, host: host, useSudo: true}
+// NewSSHDriver creates a new driver with the given configuration.
+func NewSSHDriver(cfg SSHDriverConfig) *SSHDriver {
+	return &SSHDriver{
+		client:  cfg.Client,
+		host:    cfg.Host,
+		useSudo: cfg.UseSudo,
+	}
 }
 
 // Description returns a human-readable description of the target.
@@ -33,8 +41,64 @@ func (d *SSHDriver) Description() string {
 	return fmt.Sprintf("ssh:%s", d.host)
 }
 
+// IsBootstrapped returns true if Bootstrap() has been called successfully.
+func (d *SSHDriver) IsBootstrapped() bool {
+	return d.bootstrapped
+}
+
+// Bootstrap prepares the target environment by creating base directories.
+func (d *SSHDriver) Bootstrap() error {
+	// Verify SSH connection works
+	session, err := d.client.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create SSH session: %w", err)
+	}
+	session.Close()
+
+	// Create base directories
+	dirs := []string{
+		BaseDir,
+		filepath.Join(BaseDir, "data"),
+		filepath.Join(BaseDir, "sys"),
+		filepath.Join(BaseDir, "sys", "log"),
+		filepath.Join(BaseDir, "sys", "run"),
+	}
+
+	for _, dir := range dirs {
+		if err := d.mkdirAllInternal(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	d.bootstrapped = true
+	return nil
+}
+
+// Cleanup cleans up resources created by Bootstrap.
+// For SSHDriver this is a no-op - we leave directories for debugging.
+func (d *SSHDriver) Cleanup() error {
+	d.bootstrapped = false
+	return nil
+}
+
+// checkBootstrapped returns an error if Bootstrap() hasn't been called.
+func (d *SSHDriver) checkBootstrapped() error {
+	if !d.bootstrapped {
+		return ErrNotBootstrapped
+	}
+	return nil
+}
+
 // RunCommand executes a command on the remote host.
 func (d *SSHDriver) RunCommand(path string, args ...string) (stdout, stderr string, exitCode int, err error) {
+	if err := d.checkBootstrapped(); err != nil {
+		return "", "", -1, err
+	}
+	return d.runCommandInternal(path, args...)
+}
+
+// runCommandInternal executes a command without bootstrap check.
+func (d *SSHDriver) runCommandInternal(path string, args ...string) (stdout, stderr string, exitCode int, err error) {
 	session, err := d.client.NewSession()
 	if err != nil {
 		return "", "", -1, fmt.Errorf("failed to create session: %w", err)
@@ -72,6 +136,14 @@ func (d *SSHDriver) RunCommand(path string, args ...string) (stdout, stderr stri
 
 // RunScript executes a shell script on the remote host.
 func (d *SSHDriver) RunScript(script string) (stdout, stderr string, exitCode int, err error) {
+	if err := d.checkBootstrapped(); err != nil {
+		return "", "", -1, err
+	}
+	return d.runScriptInternal(script)
+}
+
+// runScriptInternal executes a shell script without bootstrap check.
+func (d *SSHDriver) runScriptInternal(script string) (stdout, stderr string, exitCode int, err error) {
 	session, err := d.client.NewSession()
 	if err != nil {
 		return "", "", -1, fmt.Errorf("failed to create session: %w", err)
@@ -105,6 +177,10 @@ func (d *SSHDriver) RunScript(script string) (stdout, stderr string, exitCode in
 
 // WriteFile writes content to a file on the remote host.
 func (d *SSHDriver) WriteFile(path string, content []byte, mode int64) error {
+	if err := d.checkBootstrapped(); err != nil {
+		return err
+	}
+
 	session, err := d.client.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
@@ -127,6 +203,10 @@ func (d *SSHDriver) WriteFile(path string, content []byte, mode int64) error {
 
 // ReadFile reads a file from the remote host.
 func (d *SSHDriver) ReadFile(path string) ([]byte, error) {
+	if err := d.checkBootstrapped(); err != nil {
+		return nil, err
+	}
+
 	session, err := d.client.NewSession()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
@@ -149,7 +229,15 @@ func (d *SSHDriver) ReadFile(path string) ([]byte, error) {
 
 // MkdirAll creates a directory and all parent directories.
 func (d *SSHDriver) MkdirAll(path string, mode int64) error {
-	stdout, stderr, exitCode, err := d.RunCommand("mkdir", "-p", path)
+	if err := d.checkBootstrapped(); err != nil {
+		return err
+	}
+	return d.mkdirAllInternal(path, mode)
+}
+
+// mkdirAllInternal creates a directory without bootstrap check.
+func (d *SSHDriver) mkdirAllInternal(path string, mode int64) error {
+	stdout, stderr, exitCode, err := d.runCommandInternal("mkdir", "-p", path)
 	if err != nil {
 		return err
 	}
@@ -161,6 +249,10 @@ func (d *SSHDriver) MkdirAll(path string, mode int64) error {
 
 // StreamTarball streams a gzipped tarball and extracts it to destDir on the remote host.
 func (d *SSHDriver) StreamTarball(r io.Reader, destDir string) error {
+	if err := d.checkBootstrapped(); err != nil {
+		return err
+	}
+
 	session, err := d.client.NewSession()
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
@@ -198,8 +290,12 @@ func (d *SSHDriver) StreamTarballFromData(data []byte, destDir string) error {
 // ExtractTarGzToDir extracts a gzipped tar archive to a directory on the remote host.
 // This reads the tarball locally and re-creates it for streaming.
 func (d *SSHDriver) ExtractTarGzToDir(data []byte, destDir string) error {
+	if err := d.checkBootstrapped(); err != nil {
+		return err
+	}
+
 	// First ensure the destination directory exists
-	if err := d.MkdirAll(destDir, 0755); err != nil {
+	if err := d.mkdirAllInternal(destDir, 0755); err != nil {
 		return err
 	}
 
@@ -266,8 +362,12 @@ func (d *SSHDriver) ExtractTarGzToDir(data []byte, destDir string) error {
 
 // Chmod changes the file mode of the specified path.
 func (d *SSHDriver) Chmod(path string, mode int64) error {
+	if err := d.checkBootstrapped(); err != nil {
+		return err
+	}
+
 	modeStr := fmt.Sprintf("%o", mode)
-	stdout, stderr, exitCode, err := d.RunCommand("chmod", modeStr, path)
+	stdout, stderr, exitCode, err := d.runCommandInternal("chmod", modeStr, path)
 	if err != nil {
 		return err
 	}

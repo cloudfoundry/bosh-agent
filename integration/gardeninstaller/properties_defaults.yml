@@ -1,0 +1,53 @@
+# Default properties for garden job template rendering.
+# These are tuned for integration tests and nested Garden installations.
+# Structure mirrors the BOSH manifest property format.
+
+garden:
+  # Use TCP for easier port forwarding in tests
+  listen_network: tcp
+  listen_address: 0.0.0.0:7777
+  
+  # Allow containers to reach the host (needed for nested networking)
+  allow_host_access: true
+  
+  # Clean slate on each start
+  destroy_containers_on_start: true
+  
+  log_level: info
+  
+  # Default rootfs from busybox package
+  default_container_rootfs: /var/vcap/packages/busybox/busybox-1.37.0.tar
+  
+  # Container network pool
+  network_pool: "10.254.0.0/22"
+  
+  # Disable AppArmor in containers (required for nested containers)
+  apparmor_profile: ""
+  
+  # Use containerd for container lifecycle
+  containerd_mode: true
+  
+  # Use host DNS
+  dns_servers: []
+  
+  max_containers: 250
+  
+  default_container_grace_time: "0"
+  
+  runtime_plugin: /var/vcap/packages/runc/bin/runc
+  
+  iptables_bin_dir: /var/vcap/packages/iptables/sbin
+  
+  network_mtu: 0
+  
+  cleanup_process_dirs_on_wait: false
+
+grootfs:
+  log_level: info
+  skip_mount: false
+  reserved_space_for_other_jobs_in_mb: 15360
+  routine_gc: false
+
+bpm:
+  # Always disabled for nested tests (BPM doesn't work well in containers)
+  enabled: false

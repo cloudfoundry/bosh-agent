@@ -168,17 +168,18 @@ func (i *Installer) extractAndStreamPackage(pkgName, destDir string) error {
 	return nil
 }
 
-// extractJobTemplates extracts non-ERB template files from the garden job tarball
-// and streams them to the target. ERB files need to be rendered separately.
-func (i *Installer) extractJobTemplates() error {
-	// Files to extract (non-ERB templates that can be used as-is)
-	filesToExtract := map[string]string{
-		"templates/bin/overlay-xfs-setup": filepath.Join(i.cfg.BaseDir, "jobs", "garden", "bin", "overlay-xfs-setup"),
-		"templates/bin/pre-start":         filepath.Join(i.cfg.BaseDir, "jobs", "garden", "bin", "pre-start"),
-		"templates/bin/auplink":           filepath.Join(i.cfg.BaseDir, "jobs", "garden", "bin", "auplink"),
+// ExtractJobTemplatesToLocal extracts all templates from the garden job tarball
+// to a local directory for ERB rendering. Returns the path to the extracted templates
+// directory and the job manifest.
+func ExtractJobTemplatesToLocal(releaseTarballPath string) (templateDir string, manifest *JobManifest, err error) {
+	// Create a temporary directory for the templates
+	templateDir, err = os.MkdirTemp("", "garden-job-templates-")
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to create temp dir: %w", err)
 	}
 
-	err := walkTarball(i.cfg.ReleaseTarballPath, func(name string, _ *tar.Header, r io.Reader) (bool, error) {
+	// Find and extract garden.tgz from the release tarball
+	err = walkTarball(releaseTarballPath, func(name string, _ *tar.Header, r io.Reader) (bool, error) {
 		// Look for jobs/garden.tgz
 		if name != "jobs/garden.tgz" && name != "./jobs/garden.tgz" {
 			return true, nil
@@ -190,67 +191,108 @@ func (i *Installer) extractJobTemplates() error {
 			return false, fmt.Errorf("failed to read garden.tgz: %w", err)
 		}
 
-		// Extract files from the inner tarball
-		if err := i.extractFilesFromJobTarball(innerData, filesToExtract); err != nil {
-			return false, err
+		// Extract all files from the inner tarball
+		manifest, err = extractAllFromJobTarball(innerData, templateDir)
+		if err != nil {
+			return false, fmt.Errorf("failed to extract job tarball: %w", err)
 		}
 
 		return false, nil // Stop walking
 	})
 
-	return err
+	if err != nil {
+		os.RemoveAll(templateDir)
+		return "", nil, err
+	}
+	if manifest == nil {
+		os.RemoveAll(templateDir)
+		return "", nil, fmt.Errorf("garden job not found in release tarball")
+	}
+
+	return templateDir, manifest, nil
 }
 
-// extractFilesFromJobTarball extracts specific files from a job tarball.
-func (i *Installer) extractFilesFromJobTarball(data []byte, files map[string]string) error {
+// extractAllFromJobTarball extracts all files from a job tarball to a directory.
+// Returns the job manifest parsed from job.MF.
+func extractAllFromJobTarball(data []byte, destDir string) (*JobManifest, error) {
 	gr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("failed to create gzip reader: %w", err)
+		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
 	defer gr.Close()
 
+	var manifest *JobManifest
 	tr := tar.NewReader(gr)
+
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		name := strings.TrimPrefix(header.Name, "./")
+		destPath := filepath.Join(destDir, name)
 
-		// Check if this file should be extracted
-		destPath, ok := files[name]
-		if !ok {
-			continue
-		}
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(destPath, 0755); err != nil {
+				return nil, fmt.Errorf("failed to create dir %s: %w", destPath, err)
+			}
+		case tar.TypeReg:
+			// Ensure parent directory exists
+			if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+				return nil, fmt.Errorf("failed to create parent dir for %s: %w", destPath, err)
+			}
 
-		// Read file content
-		content, err := io.ReadAll(tr)
-		if err != nil {
-			return fmt.Errorf("failed to read %s: %w", name, err)
-		}
+			// Read file content
+			content, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read %s: %w", name, err)
+			}
 
-		// Scripts in bin/ should be executable. The templates in the job tarball
-		// don't have the executable bit set since BOSH would normally process them.
-		mode := int64(0755)
-		if !strings.Contains(name, "/bin/") {
-			mode = int64(header.Mode)
+			// Parse job.MF if this is it
+			if name == "job.MF" {
+				manifest = &JobManifest{}
+				if err := yaml.Unmarshal(content, manifest); err != nil {
+					return nil, fmt.Errorf("failed to parse job.MF: %w", err)
+				}
+			}
+
+			// Write the file
+			mode := os.FileMode(header.Mode)
 			if mode == 0 {
 				mode = 0644
 			}
+			if err := os.WriteFile(destPath, content, mode); err != nil {
+				return nil, fmt.Errorf("failed to write %s: %w", destPath, err)
+			}
 		}
-
-		// Write to target
-		if err := i.driver.WriteFile(destPath, content, mode); err != nil {
-			return fmt.Errorf("failed to write %s: %w", destPath, err)
-		}
-		i.log("Extracted template: %s -> %s", name, destPath)
 	}
 
-	return nil
+	if manifest == nil {
+		return nil, fmt.Errorf("job.MF not found in job tarball")
+	}
+
+	return manifest, nil
+}
+
+// GetJobPropertyDefaults extracts the default values from the job manifest properties.
+// Returns a flat map with dotted keys (e.g., "garden.listen_network") suitable for
+// use as default_properties in the ERB context. The erb_renderer.rb uses copy_property()
+// which expects flat dotted keys that it splits to navigate nested structures.
+func (m *JobManifest) GetJobPropertyDefaults() map[string]interface{} {
+	defaults := make(map[string]interface{})
+
+	for propName, propDef := range m.Properties {
+		// Keep the property name as a flat dotted key
+		// The erb_renderer.rb copy_property() will split it to navigate nested structures
+		defaults[propName] = propDef.Default
+	}
+
+	return defaults
 }
 
 // walkTarball walks through a gzipped tarball, calling fn for each file.
