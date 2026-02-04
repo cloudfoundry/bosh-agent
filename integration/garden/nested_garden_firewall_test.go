@@ -18,14 +18,12 @@ import (
 	windowsutils "github.com/cloudfoundry/bosh-agent/v2/integration/windows/utils"
 )
 
-// Nested Garden test ports
+// Nested Garden test ports and network configuration
 const (
-	// L1 Garden listens on 7777 inside container, mapped to 17777 on host
-	L1HostPort      uint32 = 17777
+	// L1 Garden listens on 7777 inside container
 	L1ContainerPort uint32 = 7777
 
-	// L2 Garden listens on 7777 inside L1 container, mapped to 27777 on L1 (and host via double forwarding)
-	L2HostPort      uint32 = 27777
+	// L2 Garden listens on 7777 inside L1 container
 	L2ContainerPort uint32 = 7777
 )
 
@@ -185,30 +183,36 @@ var _ = Describe("nested garden firewall", Ordered, func() {
 				Expect(err).NotTo(HaveOccurred(), "Failed to bootstrap parent driver")
 
 				// Create L1 GardenDriver with config
+				// Let Garden dynamically allocate an IP from its pool (10.254.0.0/22).
+				// This ensures proper routing from the agent VM through SSH tunnel.
 				l1Driver = installerdriver.NewGardenDriver(installerdriver.GardenDriverConfig{
 					GardenClient: hostGardenClient,
 					ParentDriver: parentDriver,
 					Handle:       l1Handle,
 					Image:        utils.NobleStemcellImage,
-					NetIn: []installerdriver.NetInRule{
-						{HostPort: L1HostPort, ContainerPort: L1ContainerPort},
-						{HostPort: L2HostPort, ContainerPort: L2HostPort}, // Forward L2 port through L1
-					},
+					// Network is empty - let Garden allocate from its pool
 					DiskLimit: defaultDiskLimit,
 				})
 
 				// Bootstrap L1 container
-				GinkgoWriter.Printf("Creating L1 container: %s with port forwarding %d->%d and %d->%d\n",
-					l1Handle, L1HostPort, L1ContainerPort, L2HostPort, L2HostPort)
+				GinkgoWriter.Printf("Creating L1 container: %s (dynamic IP from host Garden pool)\n", l1Handle)
 				err = l1Driver.Bootstrap()
 				Expect(err).NotTo(HaveOccurred(), "Failed to bootstrap L1 container")
 
 				// Configure and install Garden in L1
+				// Use a different network pool than host Garden to avoid IP conflicts
 				cfg := gardeninstaller.DefaultConfig()
 				cfg.ReleaseTarballPath = releaseTarball
 				cfg.Debug = true
 				cfg.ListenAddress = fmt.Sprintf("0.0.0.0:%d", L1ContainerPort)
+				cfg.NetworkPool = "10.253.0.0/22"            // L1 uses different pool than L0 (10.254.0.0/22)
 				cfg.StoreSizeBytes = 35 * 1024 * 1024 * 1024 // 35GB for L1
+
+				// CRITICAL: Disable containerd mode for nested Garden installations.
+				// Containerd cannot run inside containers because it requires cgroups and
+				// capabilities that are not available in nested environments.
+				containerdMode := false
+				cfg.ContainerdMode = &containerdMode
 
 				l1Installer = gardeninstaller.New(cfg, l1Driver)
 
@@ -223,17 +227,26 @@ var _ = Describe("nested garden firewall", Ordered, func() {
 				// Wait for Garden to be ready
 				time.Sleep(3 * time.Second)
 
-				// Connect to L1 Garden
-				l1GardenAddress = fmt.Sprintf("%s:%d", agentIP, L1HostPort)
+				// Get L1 container IP for direct connection (bypasses NetIn port forwarding
+				// which may not work on systems using nftables instead of iptables)
+				l1ContainerIP, err := l1Driver.ContainerIP()
+				Expect(err).NotTo(HaveOccurred(), "Failed to get L1 container IP")
+				GinkgoWriter.Printf("L1 container IP: %s\n", l1ContainerIP)
+
+				// Connect to L1 Garden using container IP directly
+				l1GardenAddress = fmt.Sprintf("%s:%d", l1ContainerIP, L1ContainerPort)
 			})
 
 			It("can ping L1 Garden from host", func() {
 				GinkgoWriter.Printf("Connecting to L1 Garden at %s\n", l1GardenAddress)
 
-				sshTunnelClient, err := windowsutils.GetSSHTunnelClient()
-				Expect(err).NotTo(HaveOccurred())
+				// L1 Garden runs at a container IP (e.g., 10.254.0.2) which is only reachable
+				// from within the agent VM's network namespace. We need to use an SSH client
+				// connected to the agent VM (not just the jumpbox) to reach it.
+				agentSSHClient, err := utils.DialAgentThroughJumpbox(agentIP)
+				Expect(err).NotTo(HaveOccurred(), "Failed to connect to agent VM")
 
-				l1GardenClient, err = installerdriver.NewGardenAPIClient(sshTunnelClient, l1GardenAddress, nil)
+				l1GardenClient, err = installerdriver.NewGardenAPIClient(agentSSHClient, l1GardenAddress, nil)
 				Expect(err).NotTo(HaveOccurred(), "Failed to connect to L1 Garden at %s", l1GardenAddress)
 
 				err = l1GardenClient.Ping()
@@ -376,20 +389,18 @@ echo "Agent completed"
 				l2Handle := fmt.Sprintf("l2-garden-%d", time.Now().UnixNano())
 
 				// Create L2 GardenDriver with L1Driver as parent
+				// Let Garden dynamically allocate an IP from L1's pool (10.253.0.0/22)
 				l2Driver = installerdriver.NewGardenDriver(installerdriver.GardenDriverConfig{
 					GardenClient: l1GardenClient,
 					ParentDriver: l1Driver,
 					Handle:       l2Handle,
 					Image:        utils.NobleStemcellImage,
-					NetIn: []installerdriver.NetInRule{
-						{HostPort: L2HostPort, ContainerPort: L2ContainerPort},
-					},
+					// Network is empty - let Garden allocate from its pool
 					DiskLimit: defaultDiskLimit,
 				})
 
 				// Bootstrap L2 container
-				GinkgoWriter.Printf("Creating L2 container: %s with port forwarding %d->%d\n",
-					l2Handle, L2HostPort, L2ContainerPort)
+				GinkgoWriter.Printf("Creating L2 container: %s (dynamic IP from L1 Garden pool)\n", l2Handle)
 
 				// Collect diagnostics before L2 creation
 				collectL1Diagnostics(l1Driver, "PRE-L2-BOOTSTRAP")
@@ -401,11 +412,19 @@ echo "Agent completed"
 				Expect(err).NotTo(HaveOccurred(), "Failed to bootstrap L2 container")
 
 				// Configure and install Garden in L2
+				// Use a different network pool than L1 Garden to avoid IP conflicts
 				cfg := gardeninstaller.DefaultConfig()
 				cfg.ReleaseTarballPath = releaseTarball
 				cfg.Debug = true
 				cfg.ListenAddress = fmt.Sprintf("0.0.0.0:%d", L2ContainerPort)
+				cfg.NetworkPool = "10.252.0.0/22"            // L2 uses different pool than L1 (10.253.0.0/22)
 				cfg.StoreSizeBytes = 15 * 1024 * 1024 * 1024 // 15GB for L2
+
+				// CRITICAL: Disable containerd mode for nested Garden installations.
+				// Containerd cannot run inside containers because it requires cgroups and
+				// capabilities that are not available in nested environments.
+				containerdMode := false
+				cfg.ContainerdMode = &containerdMode
 
 				l2Installer = gardeninstaller.New(cfg, l2Driver)
 
@@ -423,8 +442,21 @@ echo "Agent completed"
 				// Wait for Garden to be ready
 				time.Sleep(3 * time.Second)
 
-				// Connect to L2 Garden
-				l2GardenAddress = fmt.Sprintf("%s:%d", agentIP, L2HostPort)
+				// Get L2 container IP
+				l2ContainerIP, err := l2Driver.ContainerIP()
+				Expect(err).NotTo(HaveOccurred(), "Failed to get L2 container IP")
+				GinkgoWriter.Printf("L2 container IP: %s\n", l2ContainerIP)
+
+				// L2 container is only reachable from within L1, not from the agent VM.
+				// We need to start a TCP forwarder in L1 to reach L2 Garden.
+				// The forwarder listens on L1's IP:7778 and forwards to L2's IP:7777.
+				l2TargetAddr := fmt.Sprintf("%s:%d", l2ContainerIP, L2ContainerPort)
+				forwarderAddr, err := installerdriver.StartTCPForwarder(l1Driver, 7778, l2TargetAddr)
+				Expect(err).NotTo(HaveOccurred(), "Failed to start TCP forwarder in L1")
+				GinkgoWriter.Printf("L2 forwarder started: %s -> %s\n", forwarderAddr, l2TargetAddr)
+
+				// Connect to L2 Garden through the forwarder in L1
+				l2GardenAddress = forwarderAddr
 			})
 
 			AfterAll(func() {
@@ -446,10 +478,13 @@ echo "Agent completed"
 			It("can ping L2 Garden from host", func() {
 				GinkgoWriter.Printf("Connecting to L2 Garden at %s\n", l2GardenAddress)
 
-				sshTunnelClient, err := windowsutils.GetSSHTunnelClient()
-				Expect(err).NotTo(HaveOccurred())
+				// L2 Garden is accessed through a TCP forwarder running in L1 container.
+				// The forwarder address is at L1's container IP, which is only reachable
+				// from within the agent VM's network namespace.
+				agentSSHClient, err := utils.DialAgentThroughJumpbox(agentIP)
+				Expect(err).NotTo(HaveOccurred(), "Failed to connect to agent VM")
 
-				l2GardenClient, err = installerdriver.NewGardenAPIClient(sshTunnelClient, l2GardenAddress, nil)
+				l2GardenClient, err = installerdriver.NewGardenAPIClient(agentSSHClient, l2GardenAddress, nil)
 				Expect(err).NotTo(HaveOccurred(), "Failed to connect to L2 Garden at %s", l2GardenAddress)
 
 				err = l2GardenClient.Ping()

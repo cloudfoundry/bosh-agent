@@ -33,6 +33,12 @@ type GardenDriverConfig struct {
 	// Image is the OCI image URI. If empty, uses Garden's default rootfs.
 	Image string
 
+	// Network specifies the container's network configuration in CIDR notation.
+	// Format: "a.b.c.d/n" where a.b.c.d is the desired IP and n is the prefix length.
+	// Example: "10.254.0.10/22" assigns IP 10.254.0.10 from the 10.254.0.0/22 subnet.
+	// If empty, Garden allocates an IP from its default pool.
+	Network string
+
 	// NetIn specifies port forwarding rules.
 	NetIn []NetInRule
 
@@ -48,6 +54,7 @@ type GardenDriver struct {
 	parentDriver Driver
 	handle       string
 	image        string
+	network      string
 	netIn        []NetInRule
 	diskLimit    uint64
 
@@ -65,6 +72,7 @@ func NewGardenDriver(cfg GardenDriverConfig) *GardenDriver {
 		parentDriver: cfg.ParentDriver,
 		handle:       cfg.Handle,
 		image:        cfg.Image,
+		network:      cfg.Network,
 		netIn:        cfg.NetIn,
 		diskLimit:    cfg.DiskLimit,
 	}
@@ -73,6 +81,28 @@ func NewGardenDriver(cfg GardenDriverConfig) *GardenDriver {
 // Description returns a human-readable description of the target.
 func (d *GardenDriver) Description() string {
 	return fmt.Sprintf("garden-container:%s", d.handle)
+}
+
+// ContainerIP returns the IP address of the container.
+// This can be used to connect to services running inside the container directly,
+// bypassing NetIn port forwarding which may not work in all environments.
+func (d *GardenDriver) ContainerIP() (string, error) {
+	if err := d.checkBootstrapped(); err != nil {
+		return "", err
+	}
+	info, err := d.container.Info()
+	if err != nil {
+		return "", fmt.Errorf("failed to get container info: %w", err)
+	}
+	if info.ContainerIP == "" {
+		return "", fmt.Errorf("container has no IP address")
+	}
+	return info.ContainerIP, nil
+}
+
+// Handle returns the container handle.
+func (d *GardenDriver) Handle() string {
+	return d.handle
 }
 
 // IsBootstrapped returns true if Bootstrap() has been called successfully.
@@ -129,6 +159,11 @@ func (d *GardenDriver) Bootstrap() error {
 	// Set image if specified
 	if d.image != "" {
 		spec.Image = garden.ImageRef{URI: d.image}
+	}
+
+	// Set network/static IP if specified
+	if d.network != "" {
+		spec.Network = d.network
 	}
 
 	// Set disk limit if specified

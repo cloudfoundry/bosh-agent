@@ -28,6 +28,13 @@ type Config struct {
 	// ListenAddress is the address for the Garden server (default: 0.0.0.0:7777).
 	ListenAddress string
 
+	// NetworkPool is the CIDR range for container IPs (default: 10.254.0.0/22).
+	// For nested Garden installations, each level should use a non-overlapping pool:
+	// - L0 (host): 10.254.0.0/22
+	// - L1: 10.253.0.0/22
+	// - L2: 10.252.0.0/22
+	NetworkPool string
+
 	// AllowHostAccess allows containers to access the host network (default: true).
 	AllowHostAccess bool
 
@@ -39,6 +46,12 @@ type Config struct {
 	// In containers, disk space detection may return very small values, so an explicit
 	// size is required to avoid "agsize too small" errors from mkfs.xfs.
 	StoreSizeBytes int64
+
+	// ContainerdMode enables containerd for container lifecycle management (default: true).
+	// This MUST be set to false for nested Garden installations (L1, L2, etc.) because
+	// containerd cannot run inside containers - it requires capabilities and cgroups
+	// that are not available in nested environments.
+	ContainerdMode *bool
 
 	// Debug enables debug logging during installation.
 	Debug bool

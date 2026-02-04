@@ -80,12 +80,21 @@ func PropertiesFromConfig(cfg Config) (*Properties, error) {
 	if cfg.ListenAddress != "" {
 		props.Garden.ListenAddress = cfg.ListenAddress
 	}
+	if cfg.NetworkPool != "" {
+		props.Garden.NetworkPool = cfg.NetworkPool
+	}
 	props.Garden.AllowHostAccess = cfg.AllowHostAccess
 	props.Garden.DestroyContainersOnStart = cfg.DestroyOnStart
 
+	// Override containerd mode if explicitly set
+	// This is critical for nested installations where containerd cannot run
+	if cfg.ContainerdMode != nil {
+		props.Garden.ContainerdMode = *cfg.ContainerdMode
+	}
+
 	// Update paths based on BaseDir
 	if cfg.BaseDir != "" && cfg.BaseDir != "/var/vcap" {
-		props.Garden.DefaultContainerRootfs = cfg.BaseDir + "/packages/busybox/busybox-1.37.0.tar"
+		props.Garden.DefaultContainerRootfs = cfg.BaseDir + "/packages/busybox/busybox-1.36.1.tar"
 		props.Garden.RuntimePlugin = cfg.BaseDir + "/packages/runc/bin/runc"
 		props.Garden.IptablesBinDir = cfg.BaseDir + "/packages/iptables/sbin"
 	}

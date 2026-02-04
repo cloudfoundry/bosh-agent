@@ -16,7 +16,7 @@ garden:
   log_level: info
   
   # Default rootfs from busybox package
-  default_container_rootfs: /var/vcap/packages/busybox/busybox-1.37.0.tar
+  default_container_rootfs: /var/vcap/packages/busybox/busybox-1.36.1.tar
   
   # Container network pool
   network_pool: "10.254.0.0/22"

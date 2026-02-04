@@ -3,6 +3,7 @@ package installerdriver
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/garden/client"
@@ -47,4 +48,89 @@ func NewGardenAPIClientDirect(address string, logger lager.Logger) (garden.Clien
 	}
 
 	return gardenClient, nil
+}
+
+// StartTCPForwarder starts a TCP port forwarder inside the container using socat.
+// It listens on listenPort and forwards connections to targetAddr (e.g., "10.253.0.10:7777").
+// This is used to reach nested containers (e.g., L2) from outside by tunneling through
+// an intermediate container (e.g., L1).
+// Returns the address to connect to (containerIP:listenPort).
+func StartTCPForwarder(driver *GardenDriver, listenPort uint32, targetAddr string) (string, error) {
+	if !driver.IsBootstrapped() {
+		return "", fmt.Errorf("driver not bootstrapped")
+	}
+
+	// Get container IP to return the full address
+	containerIP, err := driver.ContainerIP()
+	if err != nil {
+		return "", fmt.Errorf("failed to get container IP: %w", err)
+	}
+
+	// Step 1: Check if socat is available, install if needed
+	checkScript := `command -v socat >/dev/null 2>&1 && echo "socat available" || echo "socat missing"`
+	stdout, _, _, err := driver.RunScript(checkScript)
+	if err != nil {
+		return "", fmt.Errorf("failed to check socat: %w", err)
+	}
+
+	if strings.Contains(stdout, "socat missing") {
+		// Install socat - run apt-get in a separate command to isolate any trigger issues
+		installScript := `
+set -e
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -qq
+apt-get install -qq -y socat
+echo "socat installed"
+`
+		stdout, stderr, exitCode, err := driver.RunScript(installScript)
+		if err != nil {
+			return "", fmt.Errorf("failed to install socat: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
+		}
+		if exitCode != 0 {
+			return "", fmt.Errorf("socat installation failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
+		}
+	}
+
+	// Step 2: Kill any existing forwarder on this port
+	killScript := fmt.Sprintf(`pkill -f "socat.*TCP-LISTEN:%d" 2>/dev/null || true`, listenPort)
+	_, _, _, _ = driver.RunScript(killScript) // Ignore errors
+
+	// Step 3: Start socat forwarder using setsid to fully detach from the process group
+	// Using setsid ensures the process survives after the shell exits
+	startScript := fmt.Sprintf(`
+setsid socat TCP-LISTEN:%d,fork,reuseaddr TCP:%s </dev/null >/tmp/socat-forwarder-%d.log 2>&1 &
+disown
+sleep 1
+echo "forwarder started"
+`, listenPort, targetAddr, listenPort)
+
+	stdout, stderr, exitCode, err := driver.RunScript(startScript)
+	if err != nil {
+		return "", fmt.Errorf("failed to start forwarder: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
+	}
+	if exitCode != 0 {
+		return "", fmt.Errorf("forwarder start script failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
+	}
+
+	// Step 4: Verify the forwarder is running
+	verifyScript := fmt.Sprintf(`
+if pgrep -f "socat.*TCP-LISTEN:%d" >/dev/null; then
+    echo "Forwarder running on port %d -> %s"
+    exit 0
+else
+    echo "ERROR: Forwarder not running" >&2
+    cat /tmp/socat-forwarder-%d.log 2>/dev/null >&2 || true
+    exit 1
+fi
+`, listenPort, listenPort, targetAddr, listenPort)
+
+	stdout, stderr, exitCode, err = driver.RunScript(verifyScript)
+	if err != nil {
+		return "", fmt.Errorf("failed to verify forwarder: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
+	}
+	if exitCode != 0 {
+		return "", fmt.Errorf("forwarder verification failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
+	}
+
+	return fmt.Sprintf("%s:%d", containerIP, listenPort), nil
 }
