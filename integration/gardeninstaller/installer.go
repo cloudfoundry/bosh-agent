@@ -35,6 +35,11 @@ type Config struct {
 	// Set to true for nested Garden installations where loop devices may not work.
 	SkipUnprivilegedStore bool
 
+	// UseDirectStore uses direct overlay storage instead of XFS loopback.
+	// This is required for nested containers where loop devices are not available.
+	// With direct store, grootfs uses the host filesystem directly (no quotas).
+	UseDirectStore bool
+
 	// Debug enables debug logging during installation.
 	Debug bool
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net"
@@ -620,4 +621,174 @@ func (g *GardenClient) NftDumpDelete(family, name string) error {
 		return fmt.Errorf("nft-dump delete failed: exit %d, stdout: %s, stderr: %s", exitCode, stdout, stderr)
 	}
 	return nil
+}
+
+// NewGardenClientWithAddress creates a client connected to a Garden at the specified address.
+// Used to connect to nested Garden instances via forwarded ports.
+// The address should be in the form "host:port" (e.g., "10.246.0.104:17777").
+func NewGardenClientWithAddress(address string, stemcellImage string) (*GardenClient, error) {
+	logger := lager.NewLogger("garden-test-client")
+	logger.RegisterSink(lager.NewWriterSink(os.Stderr, lager.INFO))
+
+	// Get SSH tunnel client for dialing through jumpbox
+	sshClient, err := utils.GetSSHTunnelClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SSH tunnel client: %w", err)
+	}
+
+	// Create a dialer that uses the SSH tunnel
+	dialer := func(network, addr string) (net.Conn, error) {
+		// Dial the Garden server through the SSH tunnel
+		return sshClient.Dial("tcp", address)
+	}
+
+	// Create Garden connection with custom dialer
+	conn := connection.NewWithDialerAndLogger(dialer, logger)
+	gardenClient := client.New(conn)
+
+	// Verify connectivity
+	if err := gardenClient.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping Garden server at %s: %w", address, err)
+	}
+
+	return &GardenClient{
+		client:        gardenClient,
+		logger:        logger,
+		stemcellImage: stemcellImage,
+	}, nil
+}
+
+// CreateNestedGardenContainer creates a privileged container suitable for running Garden inside.
+// It sets up bind mounts for cgroup and lib/modules, and configures port forwarding.
+// The hostPort is the port on the host that forwards to containerPort in the container.
+//
+// For nested Garden to work, the container needs:
+// - /sys/fs/cgroup: Required for cgroup v2 and resource isolation
+// - /lib/modules: Required for loading kernel modules if needed
+// - Loop devices: Garden's start script creates these via mknod when it starts
+//
+// Note: We do NOT bind mount /dev from the host because it overwrites the container's
+// /dev/pts and breaks pseudo-terminals. Garden's start script creates loop devices
+// via mknod when it starts (see garden_start.erb).
+//
+// The host Garden must be running with the guardian patch that allows loop device access
+// for privileged containers. See: https://github.com/rkoster/guardian/commit/5a01702e
+func (g *GardenClient) CreateNestedGardenContainer(handle string, hostPort, containerPort uint32) error {
+	spec := garden.ContainerSpec{
+		Handle: handle,
+		Image: garden.ImageRef{
+			URI: g.stemcellImage,
+		},
+		Privileged: true,
+		Properties: garden.Properties{
+			"test":   "nested-garden",
+			"nested": "true",
+		},
+		// Bind mounts needed for running Garden inside the container:
+		// - /sys/fs/cgroup: Required for cgroup v2 and resource isolation
+		// - /lib/modules: Required for loading kernel modules if needed
+		BindMounts: []garden.BindMount{
+			{
+				SrcPath: "/sys/fs/cgroup",
+				DstPath: "/sys/fs/cgroup",
+				Mode:    garden.BindMountModeRW,
+				Origin:  garden.BindMountOriginHost,
+			},
+			{
+				SrcPath: "/lib/modules",
+				DstPath: "/lib/modules",
+				Mode:    garden.BindMountModeRO,
+				Origin:  garden.BindMountOriginHost,
+			},
+		},
+	}
+
+	g.logger.Info("creating-nested-garden-container", lager.Data{
+		"handle":        handle,
+		"image":         g.stemcellImage,
+		"hostPort":      hostPort,
+		"containerPort": containerPort,
+	})
+
+	container, err := g.client.Create(spec)
+	if err != nil {
+		return fmt.Errorf("failed to create nested garden container: %w", err)
+	}
+
+	g.container = container
+
+	// Set up port forwarding: hostPort -> containerPort
+	// This allows the test to connect to Garden inside the container via host:hostPort
+	if hostPort > 0 && containerPort > 0 {
+		actualHostPort, actualContainerPort, err := container.NetIn(hostPort, containerPort)
+		if err != nil {
+			// Clean up on error
+			_ = g.client.Destroy(handle)
+			g.container = nil
+			return fmt.Errorf("failed to set up port forwarding %d->%d: %w", hostPort, containerPort, err)
+		}
+		g.logger.Info("port-forwarding-configured", lager.Data{
+			"hostPort":      actualHostPort,
+			"containerPort": actualContainerPort,
+		})
+	}
+
+	return nil
+}
+
+// StreamTarball streams a gzipped tarball file into the container and extracts it.
+// This is used to copy the compiled garden-runc release into nested containers.
+func (g *GardenClient) StreamTarball(localPath, containerDir string) error {
+	if g.container == nil {
+		return fmt.Errorf("no container created")
+	}
+
+	// Open the local tarball
+	f, err := os.Open(localPath)
+	if err != nil {
+		return fmt.Errorf("failed to open tarball: %w", err)
+	}
+	defer f.Close()
+
+	// For gzipped tarballs, we need to decompress first since Garden expects raw tar
+	var reader io.Reader = f
+
+	// Check if it's gzipped by looking at magic bytes
+	header := make([]byte, 2)
+	if _, err := f.Read(header); err != nil {
+		return fmt.Errorf("failed to read tarball header: %w", err)
+	}
+	// Reset to beginning
+	if _, err := f.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to seek tarball: %w", err)
+	}
+
+	// Gzip magic bytes: 0x1f 0x8b
+	isGzip := header[0] == 0x1f && header[1] == 0x8b
+	if isGzip {
+		gzReader, err := gzip.NewReader(f)
+		if err != nil {
+			return fmt.Errorf("failed to create gzip reader: %w", err)
+		}
+		defer gzReader.Close()
+		reader = gzReader
+	}
+
+	spec := garden.StreamInSpec{
+		Path:      containerDir,
+		User:      "root",
+		TarStream: reader,
+	}
+
+	if err := g.container.StreamIn(spec); err != nil {
+		return fmt.Errorf("failed to stream tarball into container: %w", err)
+	}
+
+	return nil
+}
+
+// Container returns the underlying Garden container, or nil if none exists.
+// This is useful for creating a GardenDriver for the gardeninstaller.
+func (g *GardenClient) Container() garden.Container {
+	return g.container
 }
