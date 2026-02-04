@@ -105,6 +105,13 @@ func (d *GardenDriver) Handle() string {
 	return d.handle
 }
 
+// Container returns the underlying Garden container.
+// This can be used for advanced operations like running processes or tunneling traffic.
+// Returns nil if Bootstrap() hasn't been called.
+func (d *GardenDriver) Container() garden.Container {
+	return d.container
+}
+
 // IsBootstrapped returns true if Bootstrap() has been called successfully.
 func (d *GardenDriver) IsBootstrapped() bool {
 	return d.bootstrapped

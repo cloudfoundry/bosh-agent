@@ -2,8 +2,8 @@ package installerdriver
 
 import (
 	"fmt"
+	"io"
 	"net"
-	"strings"
 
 	"code.cloudfoundry.org/garden"
 	"code.cloudfoundry.org/garden/client"
@@ -12,10 +12,25 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// ensureLogger returns a valid logger, creating a no-op logger if nil is passed.
+// This prevents panics in the Garden client library which doesn't handle nil loggers.
+func ensureLogger(logger lager.Logger, name string) lager.Logger {
+	if logger != nil {
+		return logger
+	}
+	// Create a logger that discards all output
+	l := lager.NewLogger(name)
+	l.RegisterSink(lager.NewWriterSink(io.Discard, lager.ERROR))
+	return l
+}
+
 // NewGardenAPIClient creates a Garden client that connects through an SSH tunnel.
 // The sshClient is used to dial the Garden server at the specified address.
 // Address should be in "host:port" format (e.g., "10.0.0.1:7777").
+// If logger is nil, a no-op logger will be created to prevent panics.
 func NewGardenAPIClient(sshClient *ssh.Client, address string, logger lager.Logger) (garden.Client, error) {
+	logger = ensureLogger(logger, "garden-ssh-client")
+
 	dialer := func(network, addr string) (net.Conn, error) {
 		return sshClient.Dial("tcp", address)
 	}
@@ -34,7 +49,10 @@ func NewGardenAPIClient(sshClient *ssh.Client, address string, logger lager.Logg
 // NewGardenAPIClientDirect creates a Garden client that connects directly to the address.
 // This is useful for local testing without SSH tunnels.
 // Address should be in "host:port" format (e.g., "127.0.0.1:7777").
+// If logger is nil, a no-op logger will be created to prevent panics.
 func NewGardenAPIClientDirect(address string, logger lager.Logger) (garden.Client, error) {
+	logger = ensureLogger(logger, "garden-direct-client")
+
 	dialer := func(network, addr string) (net.Conn, error) {
 		return net.Dial("tcp", address)
 	}
@@ -50,87 +68,68 @@ func NewGardenAPIClientDirect(address string, logger lager.Logger) (garden.Clien
 	return gardenClient, nil
 }
 
-// StartTCPForwarder starts a TCP port forwarder inside the container using socat.
-// It listens on listenPort and forwards connections to targetAddr (e.g., "10.253.0.10:7777").
-// This is used to reach nested containers (e.g., L2) from outside by tunneling through
-// an intermediate container (e.g., L1).
-// Returns the address to connect to (containerIP:listenPort).
-func StartTCPForwarder(driver *GardenDriver, listenPort uint32, targetAddr string) (string, error) {
-	if !driver.IsBootstrapped() {
-		return "", fmt.Errorf("driver not bootstrapped")
+// NewGardenAPIClientThroughContainer creates a Garden client that connects through
+// a Garden container using netcat. This is useful for reaching nested containers
+// that are only accessible from within an intermediate container's network namespace.
+//
+// For example, to connect to L2 Garden (running inside L1 container), the traffic
+// must be tunneled through L1 because L2's IP is only reachable from L1's namespace.
+//
+// The container parameter is the Garden container to tunnel through (e.g., L1 container).
+// The address parameter is the target Garden server address (e.g., "10.253.0.2:7777").
+// If logger is nil, a no-op logger will be created to prevent panics.
+//
+// Note: This creates a new netcat process for each connection, which is less efficient
+// than a persistent TCP forwarder but avoids the need to install external tools like socat.
+func NewGardenAPIClientThroughContainer(container garden.Container, address string, logger lager.Logger) (garden.Client, error) {
+	logger = ensureLogger(logger, "garden-tunnel-client")
+
+	dialer := func(network, addr string) (net.Conn, error) {
+		return DialThroughContainer(container, address)
 	}
 
-	// Get container IP to return the full address
-	containerIP, err := driver.ContainerIP()
-	if err != nil {
-		return "", fmt.Errorf("failed to get container IP: %w", err)
+	conn := connection.NewWithDialerAndLogger(dialer, logger)
+	gardenClient := client.New(conn)
+
+	// Verify connectivity
+	if err := gardenClient.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping Garden at %s through container: %w", address, err)
 	}
 
-	// Step 1: Check if socat is available, install if needed
-	checkScript := `command -v socat >/dev/null 2>&1 && echo "socat available" || echo "socat missing"`
-	stdout, _, _, err := driver.RunScript(checkScript)
-	if err != nil {
-		return "", fmt.Errorf("failed to check socat: %w", err)
+	return gardenClient, nil
+}
+
+// NewGardenAPIClientWithForwarder creates a Garden client that connects through
+// a TCP forwarder running inside a Garden container. This is more reliable than
+// NewGardenAPIClientThroughContainer for long-running operations because it uses
+// a persistent TCP proxy instead of spawning a new netcat process for each request.
+//
+// The sshClient parameter is an SSH client connected to a host that can reach
+// the container's network namespace (e.g., the host running the container).
+// The forwarder parameter is a running TCPForwarder started with StartTCPForwarder.
+// If logger is nil, a no-op logger will be created to prevent panics.
+//
+// Returns the Garden client. The caller is responsible for stopping the forwarder
+// when done using the client.
+func NewGardenAPIClientWithForwarder(sshClient *ssh.Client, forwarder *TCPForwarder, logger lager.Logger) (garden.Client, error) {
+	logger = ensureLogger(logger, "garden-forwarder-client")
+
+	forwarderAddr := forwarder.Address()
+	tunnelDebug("Creating Garden client through forwarder at %s", forwarderAddr)
+
+	dialer := func(network, addr string) (net.Conn, error) {
+		tunnelDebug("Dialing forwarder at %s via SSH", forwarderAddr)
+		return sshClient.Dial("tcp", forwarderAddr)
 	}
 
-	if strings.Contains(stdout, "socat missing") {
-		// Install socat - run apt-get in a separate command to isolate any trigger issues
-		installScript := `
-set -e
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -qq -y socat
-echo "socat installed"
-`
-		stdout, stderr, exitCode, err := driver.RunScript(installScript)
-		if err != nil {
-			return "", fmt.Errorf("failed to install socat: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
-		}
-		if exitCode != 0 {
-			return "", fmt.Errorf("socat installation failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
-		}
+	conn := connection.NewWithDialerAndLogger(dialer, logger)
+	gardenClient := client.New(conn)
+
+	// Verify connectivity
+	if err := gardenClient.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping Garden through forwarder at %s: %w", forwarderAddr, err)
 	}
 
-	// Step 2: Kill any existing forwarder on this port
-	killScript := fmt.Sprintf(`pkill -f "socat.*TCP-LISTEN:%d" 2>/dev/null || true`, listenPort)
-	_, _, _, _ = driver.RunScript(killScript) // Ignore errors
-
-	// Step 3: Start socat forwarder using setsid to fully detach from the process group
-	// Using setsid ensures the process survives after the shell exits
-	startScript := fmt.Sprintf(`
-setsid socat TCP-LISTEN:%d,fork,reuseaddr TCP:%s </dev/null >/tmp/socat-forwarder-%d.log 2>&1 &
-disown
-sleep 1
-echo "forwarder started"
-`, listenPort, targetAddr, listenPort)
-
-	stdout, stderr, exitCode, err := driver.RunScript(startScript)
-	if err != nil {
-		return "", fmt.Errorf("failed to start forwarder: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
-	}
-	if exitCode != 0 {
-		return "", fmt.Errorf("forwarder start script failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
-	}
-
-	// Step 4: Verify the forwarder is running
-	verifyScript := fmt.Sprintf(`
-if pgrep -f "socat.*TCP-LISTEN:%d" >/dev/null; then
-    echo "Forwarder running on port %d -> %s"
-    exit 0
-else
-    echo "ERROR: Forwarder not running" >&2
-    cat /tmp/socat-forwarder-%d.log 2>/dev/null >&2 || true
-    exit 1
-fi
-`, listenPort, listenPort, targetAddr, listenPort)
-
-	stdout, stderr, exitCode, err = driver.RunScript(verifyScript)
-	if err != nil {
-		return "", fmt.Errorf("failed to verify forwarder: %w (stdout=%s, stderr=%s)", err, stdout, stderr)
-	}
-	if exitCode != 0 {
-		return "", fmt.Errorf("forwarder verification failed with exit code %d (stdout=%s, stderr=%s)", exitCode, stdout, stderr)
-	}
-
-	return fmt.Sprintf("%s:%d", containerIP, listenPort), nil
+	tunnelDebug("Garden client connected through forwarder")
+	return gardenClient, nil
 }

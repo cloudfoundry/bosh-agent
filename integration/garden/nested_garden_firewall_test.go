@@ -127,6 +127,7 @@ var _ = Describe("nested garden firewall", Ordered, func() {
 			l2GardenClient  garden.Client
 			l2Installer     *gardeninstaller.Installer
 			l2GardenAddress string
+			l2Forwarder     *installerdriver.TCPForwarder // Persistent TCP forwarder for L2 Garden
 		)
 
 		BeforeAll(func() {
@@ -253,6 +254,22 @@ var _ = Describe("nested garden firewall", Ordered, func() {
 				Expect(err).NotTo(HaveOccurred(), "Failed to ping L1 Garden")
 
 				GinkgoWriter.Printf("Successfully connected to L1 Garden\n")
+			})
+
+			It("has netcat available in L1 container", func() {
+				// Verify netcat is available in L1 container (required for L2 tunneling)
+				stdout, stderr, exitCode, err := l1Driver.RunCommand("which", "nc")
+				if err != nil || exitCode != 0 {
+					GinkgoWriter.Printf("netcat not found: stdout=%s stderr=%s exit=%d err=%v\n", stdout, stderr, exitCode, err)
+				}
+				Expect(err).NotTo(HaveOccurred(), "Failed to check for netcat in L1")
+				Expect(exitCode).To(Equal(0), "netcat not found in L1 container, stdout=%s stderr=%s", stdout, stderr)
+				GinkgoWriter.Printf("netcat found in L1 container at: %s\n", strings.TrimSpace(stdout))
+
+				// Also verify nc works with the flags we need
+				stdout, stderr, exitCode, err = l1Driver.RunCommand("nc", "--help")
+				// nc --help returns exit code 1 on OpenBSD netcat, but should still work
+				GinkgoWriter.Printf("netcat help output: %s%s\n", stdout, stderr)
 			})
 
 			It("can create container in L1 Garden", func() {
@@ -447,19 +464,38 @@ echo "Agent completed"
 				Expect(err).NotTo(HaveOccurred(), "Failed to get L2 container IP")
 				GinkgoWriter.Printf("L2 container IP: %s\n", l2ContainerIP)
 
-				// L2 container is only reachable from within L1, not from the agent VM.
-				// We need to start a TCP forwarder in L1 to reach L2 Garden.
-				// The forwarder listens on L1's IP:7778 and forwards to L2's IP:7777.
-				l2TargetAddr := fmt.Sprintf("%s:%d", l2ContainerIP, L2ContainerPort)
-				forwarderAddr, err := installerdriver.StartTCPForwarder(l1Driver, 7778, l2TargetAddr)
-				Expect(err).NotTo(HaveOccurred(), "Failed to start TCP forwarder in L1")
-				GinkgoWriter.Printf("L2 forwarder started: %s -> %s\n", forwarderAddr, l2TargetAddr)
+				// L2 container is only reachable from within L1's network namespace.
+				// Start a persistent TCP forwarder in L1 that forwards traffic to L2 Garden.
+				// This is more reliable than spawning a new netcat for each Garden API request.
+				l2GardenAddress = fmt.Sprintf("%s:%d", l2ContainerIP, L2ContainerPort)
+				GinkgoWriter.Printf("L2 Garden address: %s\n", l2GardenAddress)
 
-				// Connect to L2 Garden through the forwarder in L1
-				l2GardenAddress = forwarderAddr
+				// Start the TCP forwarder in L1 container
+				// Use port 17777 for the forwarder to avoid conflicts with L1 Garden on 7777
+				l1Container := l1Driver.Container()
+				Expect(l1Container).NotTo(BeNil(), "L1 container not available")
+
+				const forwarderPort = 17777
+				l2Forwarder, err = installerdriver.StartTCPForwarder(l1Container, forwarderPort, l2GardenAddress)
+				if err != nil {
+					GinkgoWriter.Printf("Failed to start TCP forwarder: %v\n", err)
+					collectL1Diagnostics(l1Driver, "POST-FORWARDER-START-FAILURE")
+				}
+				Expect(err).NotTo(HaveOccurred(), "Failed to start TCP forwarder for L2 Garden")
+
+				GinkgoWriter.Printf("TCP forwarder started: %s -> %s\n", l2Forwarder.Address(), l2GardenAddress)
 			})
 
 			AfterAll(func() {
+				// Stop forwarder first (before stopping Garden or destroying containers)
+				if l2Forwarder != nil {
+					GinkgoWriter.Printf("Stopping L2 TCP forwarder...\n")
+					GinkgoWriter.Printf("Forwarder logs:\n%s\n", l2Forwarder.Logs())
+					if err := l2Forwarder.Stop(); err != nil {
+						GinkgoWriter.Printf("Warning: failed to stop L2 forwarder: %v\n", err)
+					}
+				}
+
 				if l2Installer != nil {
 					GinkgoWriter.Printf("Stopping L2 Garden...\n")
 					if err := l2Installer.Stop(); err != nil {
@@ -478,14 +514,15 @@ echo "Agent completed"
 			It("can ping L2 Garden from host", func() {
 				GinkgoWriter.Printf("Connecting to L2 Garden at %s\n", l2GardenAddress)
 
-				// L2 Garden is accessed through a TCP forwarder running in L1 container.
-				// The forwarder address is at L1's container IP, which is only reachable
-				// from within the agent VM's network namespace.
-				agentSSHClient, err := utils.DialAgentThroughJumpbox(agentIP)
-				Expect(err).NotTo(HaveOccurred(), "Failed to connect to agent VM")
+				// L2 Garden is only reachable from within L1's network namespace.
+				// We use NewGardenAPIClientThroughContainer which runs netcat inside L1
+				// to tunnel traffic to L2. This avoids needing to install socat.
+				l1Container := l1Driver.Container()
+				Expect(l1Container).NotTo(BeNil(), "L1 container not available")
 
-				l2GardenClient, err = installerdriver.NewGardenAPIClient(agentSSHClient, l2GardenAddress, nil)
-				Expect(err).NotTo(HaveOccurred(), "Failed to connect to L2 Garden at %s", l2GardenAddress)
+				var err error
+				l2GardenClient, err = installerdriver.NewGardenAPIClientThroughContainer(l1Container, l2GardenAddress, nil)
+				Expect(err).NotTo(HaveOccurred(), "Failed to connect to L2 Garden at %s through L1 container", l2GardenAddress)
 
 				err = l2GardenClient.Ping()
 				Expect(err).NotTo(HaveOccurred(), "Failed to ping L2 Garden")
