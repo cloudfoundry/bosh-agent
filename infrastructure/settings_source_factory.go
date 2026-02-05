@@ -64,7 +64,10 @@ type CDROMSourceOptions struct {
 
 func (o CDROMSourceOptions) sourceOptionsInterface() {}
 
-type VsphereGuestInfoSourceOptions struct{}
+type VsphereGuestInfoSourceOptions struct {
+	RpcToolPath  string
+	VmToolsdPath string
+}
 
 func (o VsphereGuestInfoSourceOptions) sourceOptionsInterface() {}
 
@@ -143,6 +146,8 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 			settingsSource = NewVsphereGuestInfoSettingsSource(
 				f.platform,
 				f.logger,
+				typedOpts.RpcToolPath,
+				typedOpts.VmToolsdPath,
 			)
 
 		case InstanceMetadataSourceOptions:

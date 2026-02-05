@@ -135,7 +135,7 @@ var _ = Describe("SettingsSourceFactory", func() {
 				})
 
 				It("returns a settings source that uses the VsphereGuestInfo to fetch settings", func() {
-					vsphereGuestInfoSettingsSource := NewVsphereGuestInfoSettingsSource(platform, logger)
+					vsphereGuestInfoSettingsSource := NewVsphereGuestInfoSettingsSource(platform, logger, "", "")
 
 					multiSettingsSource, err := NewMultiSettingsSource(logger, vsphereGuestInfoSettingsSource)
 					Expect(err).ToNot(HaveOccurred())
@@ -202,6 +202,17 @@ var _ = Describe("SettingsSourceFactory", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(sourceOptionsSlice).To(HaveLen(1))
 			Expect(sourceOptionsSlice[0]).To(Equal(VsphereGuestInfoSourceOptions{}))
+		})
+
+		It("unmarshals VsphereGuestInfo source options with custom tool paths", func() {
+			jsonStr := `[{"Type": "VsphereGuestInfo", "RpcToolPath": "C:\\Program Files\\VMware\\VMware Tools\\rpctool.exe", "VmToolsdPath": "C:\\Program Files\\VMware\\VMware Tools\\vmtoolsd.exe"}]`
+			err := json.Unmarshal([]byte(jsonStr), &sourceOptionsSlice)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(sourceOptionsSlice).To(HaveLen(1))
+			Expect(sourceOptionsSlice[0]).To(Equal(VsphereGuestInfoSourceOptions{
+				RpcToolPath:  `C:\Program Files\VMware\VMware Tools\rpctool.exe`,
+				VmToolsdPath: `C:\Program Files\VMware\VMware Tools\vmtoolsd.exe`,
+			}))
 		})
 
 		It("returns error when Type is missing", func() {
