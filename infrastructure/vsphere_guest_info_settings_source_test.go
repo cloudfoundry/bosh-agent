@@ -32,7 +32,7 @@ var _ = Describe("VsphereGuestInfoSettingsSource", func() {
 		cmdRunner = fakes.NewFakeCmdRunner()
 		platform.GetRunnerReturns(cmdRunner)
 		logger := logger.NewLogger(logger.LevelNone)
-		source = NewVsphereGuestInfoSettingsSource(platform, logger)
+		source = NewVsphereGuestInfoSettingsSource(platform, logger, "", "")
 		settings = boshsettings.Settings{AgentID: "123"}
 		settingsBytes, err := json.Marshal(settings)
 		Expect(err).ToNot(HaveOccurred())
@@ -133,6 +133,41 @@ var _ = Describe("VsphereGuestInfoSettingsSource", func() {
 			Expect(cmdRunner.RunCommands).To(HaveLen(3))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata ---"}))
 			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"vmware-rpctool", "info-set guestinfo.userdata.encoding ''"}))
+		})
+
+		Context("with custom tool paths", func() {
+			var customSource *VsphereGuestInfoSettingsSource
+
+			BeforeEach(func() {
+				l := logger.NewLogger(logger.LevelNone)
+				customSource = NewVsphereGuestInfoSettingsSource(
+					platform, l,
+					`C:\Program Files\VMware\VMware Tools\rpctool.exe`,
+					`C:\Program Files\VMware\VMware Tools\vmtoolsd.exe`,
+				)
+			})
+
+			It("uses the custom rpctool path", func() {
+				cmdRunner.AddCmdResult(`C:\Program Files\VMware\VMware Tools\rpctool.exe info-get guestinfo.userdata`, fakes.FakeCmdResult{Stdout: encodedSettings})
+
+				settings, err := customSource.Settings()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(settings.AgentID).To(Equal("123"))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{`C:\Program Files\VMware\VMware Tools\rpctool.exe`, "info-get guestinfo.userdata"}))
+			})
+
+			It("falls back to the custom vmtoolsd path when rpctool fails", func() {
+				cmdRunner.AddCmdResult(`C:\Program Files\VMware\VMware Tools\rpctool.exe info-get guestinfo.userdata`, fakes.FakeCmdResult{Error: errors.New("fail"), ExitStatus: 1})
+				cmdRunner.AddCmdResult(`C:\Program Files\VMware\VMware Tools\vmtoolsd.exe --cmd info-get guestinfo.userdata`, fakes.FakeCmdResult{Stdout: encodedSettings})
+				cmdRunner.AddCmdResult(`C:\Program Files\VMware\VMware Tools\rpctool.exe info-set guestinfo.userdata ---`, fakes.FakeCmdResult{Error: errors.New("fail"), ExitStatus: 1})
+				cmdRunner.AddCmdResult(`C:\Program Files\VMware\VMware Tools\rpctool.exe info-set guestinfo.userdata.encoding `, fakes.FakeCmdResult{Error: errors.New("fail"), ExitStatus: 1})
+
+				settings, err := customSource.Settings()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(settings.AgentID).To(Equal("123"))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{`C:\Program Files\VMware\VMware Tools\rpctool.exe`, "info-get guestinfo.userdata"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{`C:\Program Files\VMware\VMware Tools\vmtoolsd.exe`, "--cmd", "info-get guestinfo.userdata"}))
+			})
 		})
 	})
 })
