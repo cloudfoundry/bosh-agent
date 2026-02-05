@@ -106,3 +106,36 @@ func GetCgroupID(cgroupPath string) (uint64, error) {
 
 	return stat.Ino, nil
 }
+
+// IsRunningUnderSystemd checks if the current process is managed by systemd.
+// Returns true if the process is in a systemd-managed cgroup (*.service, *.scope, or *.slice).
+//
+// When running under systemd:
+// - The agent will be in a cgroup like /system.slice/bosh-agent.service
+// - Other processes will be in different cgroups (e.g., /user.slice/...)
+// - Cgroup-based firewall isolation will work correctly
+//
+// When NOT running under systemd (e.g., in a container with runsv/runsvdir):
+// - All processes share the same cgroup (typically "/" or the container's cgroup)
+// - Cgroup-based firewall isolation cannot distinguish agent from other processes
+// - The firewall rules are still created but blocking won't be effective
+func IsRunningUnderSystemd() bool {
+	version, err := DetectCgroupVersion()
+	if err != nil {
+		return false
+	}
+
+	cgroup, err := GetProcessCgroup(os.Getpid(), version)
+	if err != nil {
+		return false
+	}
+
+	return isSystemdCgroupPath(cgroup.Path)
+}
+
+// isSystemdCgroupPath returns true if the cgroup path indicates systemd management.
+func isSystemdCgroupPath(path string) bool {
+	return strings.Contains(path, ".service") ||
+		strings.Contains(path, ".scope") ||
+		strings.Contains(path, ".slice")
+}

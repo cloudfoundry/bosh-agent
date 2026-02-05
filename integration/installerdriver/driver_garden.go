@@ -44,19 +44,41 @@ type GardenDriverConfig struct {
 
 	// DiskLimit is the disk limit in bytes. 0 means no limit.
 	DiskLimit uint64
+
+	// SkipCgroupMount when true, does not bind-mount /sys/fs/cgroup into the container.
+	// This simulates warden-cpi's default behavior (without systemd mode) where
+	// containers don't have access to the cgroup filesystem. Used to test the
+	// bosh-agent's firewall behavior when cgroup detection fails.
+	SkipCgroupMount bool
+
+	// UseSystemd when true, starts systemd as PID 1 in the container.
+	// This requires:
+	// 1. /sys/fs/cgroup to be bind-mounted (SkipCgroupMount must be false)
+	// 2. The stemcell image to have systemd installed
+	//
+	// When UseSystemd is true:
+	// - The bosh-agent.service is disabled before systemd starts
+	// - systemd runs as PID 1, managing the container's processes
+	// - Processes run in proper cgroup slices (e.g., /system.slice/foo.service)
+	//
+	// This enables testing of cgroup-based firewall isolation, where the agent
+	// runs in a different cgroup than other processes.
+	UseSystemd bool
 }
 
 // GardenDriver implements Driver for Garden containers.
 // It creates and manages a container during Bootstrap().
 type GardenDriver struct {
 	// Config (set at construction)
-	gardenClient garden.Client
-	parentDriver Driver
-	handle       string
-	image        string
-	network      string
-	netIn        []NetInRule
-	diskLimit    uint64
+	gardenClient    garden.Client
+	parentDriver    Driver
+	handle          string
+	image           string
+	network         string
+	netIn           []NetInRule
+	diskLimit       uint64
+	skipCgroupMount bool
+	useSystemd      bool
 
 	// State (set by Bootstrap)
 	container    garden.Container
@@ -68,13 +90,15 @@ type GardenDriver struct {
 // The container is not created until Bootstrap() is called.
 func NewGardenDriver(cfg GardenDriverConfig) *GardenDriver {
 	return &GardenDriver{
-		gardenClient: cfg.GardenClient,
-		parentDriver: cfg.ParentDriver,
-		handle:       cfg.Handle,
-		image:        cfg.Image,
-		network:      cfg.Network,
-		netIn:        cfg.NetIn,
-		diskLimit:    cfg.DiskLimit,
+		gardenClient:    cfg.GardenClient,
+		parentDriver:    cfg.ParentDriver,
+		handle:          cfg.Handle,
+		image:           cfg.Image,
+		network:         cfg.Network,
+		netIn:           cfg.NetIn,
+		diskLimit:       cfg.DiskLimit,
+		skipCgroupMount: cfg.SkipCgroupMount,
+		useSystemd:      cfg.UseSystemd,
 	}
 }
 
@@ -130,37 +154,55 @@ func (d *GardenDriver) Bootstrap() error {
 		return fmt.Errorf("failed to create host data directory %s: %w", d.hostDataDir, err)
 	}
 
+	// Verify directory was created and check mount info
+	stdout, stderr, exitCode, err := d.parentDriver.RunCommand("sh", "-c",
+		fmt.Sprintf("ls -la %s && cat /proc/self/mountinfo | grep -E '(cgroup|/var/vcap)' | head -20", d.hostDataDir))
+	if err != nil || exitCode != 0 {
+		fmt.Printf("[GardenDriver.Bootstrap] Warning: failed to verify directory %s: err=%v, exit=%d, stdout=%s, stderr=%s\n",
+			d.hostDataDir, err, exitCode, stdout, stderr)
+	} else {
+		fmt.Printf("[GardenDriver.Bootstrap] Directory verified: %s\n%s\n", d.hostDataDir, stdout)
+	}
+
 	// 2. Build container spec with standard bind mounts
+	bindMounts := []garden.BindMount{}
+
+	// Conditionally add cgroup bind mount
+	if !d.skipCgroupMount {
+		bindMounts = append(bindMounts, garden.BindMount{
+			SrcPath: "/sys/fs/cgroup",
+			DstPath: "/sys/fs/cgroup",
+			Mode:    garden.BindMountModeRW,
+			Origin:  garden.BindMountOriginHost,
+		})
+	}
+
+	// Always add lib/modules and data mounts
+	bindMounts = append(bindMounts,
+		garden.BindMount{
+			SrcPath: "/lib/modules",
+			DstPath: "/lib/modules",
+			Mode:    garden.BindMountModeRO,
+			Origin:  garden.BindMountOriginHost,
+		},
+		garden.BindMount{
+			// Bind mount host directory to /var/vcap/data in container.
+			// This provides access to the host's data disk for packages,
+			// Garden depot, and GrootFS store.
+			SrcPath: d.hostDataDir,
+			DstPath: filepath.Join(BaseDir, "data"),
+			Mode:    garden.BindMountModeRW,
+			Origin:  garden.BindMountOriginHost,
+		},
+	)
+
 	spec := garden.ContainerSpec{
 		Handle:     d.handle,
 		Privileged: true,
 		Properties: garden.Properties{
 			"installerdriver": "true",
 		},
-		// Standard bind mounts for running Garden inside the container
-		BindMounts: []garden.BindMount{
-			{
-				SrcPath: "/sys/fs/cgroup",
-				DstPath: "/sys/fs/cgroup",
-				Mode:    garden.BindMountModeRW,
-				Origin:  garden.BindMountOriginHost,
-			},
-			{
-				SrcPath: "/lib/modules",
-				DstPath: "/lib/modules",
-				Mode:    garden.BindMountModeRO,
-				Origin:  garden.BindMountOriginHost,
-			},
-			{
-				// Bind mount host directory to /var/vcap/data in container.
-				// This provides access to the host's data disk for packages,
-				// Garden depot, and GrootFS store.
-				SrcPath: d.hostDataDir,
-				DstPath: filepath.Join(BaseDir, "data"),
-				Mode:    garden.BindMountModeRW,
-				Origin:  garden.BindMountOriginHost,
-			},
-		},
+		BindMounts: bindMounts,
 	}
 
 	// Set image if specified
@@ -205,9 +247,28 @@ func (d *GardenDriver) Bootstrap() error {
 		}
 	}
 
-	// 5. Unmount bind-mounted files and configure DNS
-	// Garden bind-mounts /etc/resolv.conf, /etc/hosts, /etc/hostname from host.
-	// We need to unmount them so the container can modify these files.
+	// 5. Container initialization depends on mode
+	if d.useSystemd {
+		// Systemd mode: disable bosh-agent services and start systemd as PID 1
+		if err := d.bootstrapSystemd(); err != nil {
+			_ = d.cleanupContainer()
+			return err
+		}
+	} else {
+		// Non-systemd mode: just unmount bind-mounted files and configure DNS
+		if err := d.bootstrapNonSystemd(); err != nil {
+			_ = d.cleanupContainer()
+			return err
+		}
+	}
+
+	d.bootstrapped = true
+	return nil
+}
+
+// bootstrapNonSystemd prepares the container for non-systemd operation.
+// This unmounts Garden's bind-mounted files and configures DNS.
+func (d *GardenDriver) bootstrapNonSystemd() error {
 	unmountScript := `
 umount /etc/resolv.conf 2>/dev/null || true
 umount /etc/hosts 2>/dev/null || true
@@ -221,15 +282,97 @@ EOF
 `
 	_, stderr, exitCode, err := d.runScriptInternal(unmountScript)
 	if err != nil {
-		_ = d.cleanupContainer()
 		return fmt.Errorf("failed to unmount bind-mounted files: %w", err)
 	}
 	if exitCode != 0 {
 		// Log but don't fail - unmount may fail if files weren't mounted
 		_ = stderr // suppress unused warning
 	}
+	return nil
+}
 
-	d.bootstrapped = true
+// bootstrapSystemd prepares the container for systemd operation.
+// This:
+// 1. Disables bosh-agent.service so our test agent can be installed separately
+// 2. Unmounts Garden's bind-mounted files
+// 3. Starts systemd as PID 1 in the background
+func (d *GardenDriver) bootstrapSystemd() error {
+	if d.skipCgroupMount {
+		return fmt.Errorf("UseSystemd requires cgroup mount - SkipCgroupMount must be false")
+	}
+
+	// Disable bosh-agent services so our test can install and start its own agent.
+	// Also unmount Garden's bind-mounted files and configure DNS.
+	prepareScript := `
+set -e
+
+# Unmount Garden's bind-mounted files
+umount /etc/resolv.conf 2>/dev/null || true
+umount /etc/hosts 2>/dev/null || true
+umount /etc/hostname 2>/dev/null || true
+
+# Configure DNS
+cat > /etc/resolv.conf <<EOF
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+EOF
+
+# Disable bosh-agent services so systemd won't start them automatically.
+# This allows our test installer to install and start the agent manually.
+systemctl mask bosh-agent.service 2>/dev/null || true
+systemctl mask bosh-agent-wait.service 2>/dev/null || true
+
+# Also disable via runsvdir in case the stemcell uses runit
+rm -rf /etc/sv/bosh-agent 2>/dev/null || true
+rm -rf /etc/service/bosh-agent 2>/dev/null || true
+
+echo "Container prepared for systemd"
+`
+	stdout, stderr, exitCode, err := d.runScriptInternal(prepareScript)
+	if err != nil {
+		return fmt.Errorf("failed to prepare container for systemd: %w (stdout: %s, stderr: %s)", err, stdout, stderr)
+	}
+	if exitCode != 0 {
+		return fmt.Errorf("failed to prepare container for systemd: exit %d (stdout: %s, stderr: %s)", exitCode, stdout, stderr)
+	}
+
+	// Start systemd as PID 1.
+	// We use 'exec /sbin/init' to replace the current process with systemd.
+	// This runs in the background (no Wait) so the container continues running.
+	//
+	// Note: In Garden containers, processes run via container.Run() are not PID 1.
+	// However, starting /sbin/init (which is symlinked to systemd on Noble stemcells)
+	// will initialize systemd and allow it to manage services.
+	//
+	// We run systemd with --system to ensure it runs in system mode.
+	systemdStartScript := `
+# Start systemd in the background
+# Using nohup to ensure it survives the parent shell exiting
+nohup /sbin/init --system < /dev/null > /var/log/systemd-init.log 2>&1 &
+echo "systemd starting as PID $!"
+
+# Wait a moment for systemd to initialize
+sleep 2
+
+# Verify systemd is running
+if systemctl is-system-running --wait 2>/dev/null; then
+    echo "systemd is running"
+elif systemctl is-system-running 2>/dev/null | grep -qE '(running|starting|initializing|degraded)'; then
+    echo "systemd state: $(systemctl is-system-running)"
+else
+    echo "Warning: systemd may not be fully operational"
+    systemctl is-system-running 2>&1 || true
+fi
+`
+	stdout, stderr, exitCode, err = d.runScriptInternal(systemdStartScript)
+	if err != nil {
+		return fmt.Errorf("failed to start systemd: %w (stdout: %s, stderr: %s)", err, stdout, stderr)
+	}
+	// Don't fail on non-zero exit code - systemd might report "degraded" state
+	// which is acceptable for our testing purposes
+	fmt.Printf("[GardenDriver.bootstrapSystemd] systemd start result: exit=%d, stdout=%s, stderr=%s\n",
+		exitCode, stdout, stderr)
+
 	return nil
 }
 

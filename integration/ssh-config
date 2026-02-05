@@ -1,0 +1,16 @@
+Host agent_vm
+  User agent_test_user
+  HostName 10.246.0.104
+  Port 22
+  IdentityFile /home/ruben/workspace/bosh-agent/debug-ssh-key
+  ProxyJump 10.246.0.10
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+
+Host jumpbox
+  User jumpbox
+  HostName 10.246.0.10
+  Port 22
+  IdentityFile /home/ruben/workspace/noble-concourse-nested-cpi-validation/jumpbox-private-key.pem
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null

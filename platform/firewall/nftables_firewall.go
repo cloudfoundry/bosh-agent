@@ -181,13 +181,28 @@ func (f *NftablesFirewall) SetupAgentRules(mbusURL string, enableNATSFirewall bo
 	f.logger.Info(f.logTag, "Agent cgroup: version=%d path='%s' classid=%d",
 		agentCgroup.Version, agentCgroup.Path, agentCgroup.ClassID)
 
+	// Log warning if running without systemd (cgroup isolation won't be effective)
+	// This is logged once during bootstrap.
+	if f.cgroupVersion == CgroupV2 && !IsRunningUnderSystemd() {
+		f.logger.Warn(f.logTag,
+			"Not running under systemd - monit firewall rules will be created but cannot "+
+				"effectively block unauthorized access (all processes share the same cgroup). "+
+				"This is expected in warden-cpi containers without systemd.")
+	}
+
 	// Create monit chain and add monit rule
 	if err := f.ensureMonitChain(); err != nil {
 		return bosherr.WrapError(err, "Creating monit chain")
 	}
 
+	// Add allow rule for agent's cgroup first (order matters - first match wins)
 	if err := f.addMonitRule(agentCgroup); err != nil {
 		return bosherr.WrapError(err, "Adding agent monit rule")
+	}
+
+	// Add block rule for everyone else (must come after allow rule)
+	if err := f.addMonitBlockRule(); err != nil {
+		return bosherr.WrapError(err, "Adding monit block rule")
 	}
 
 	// Create NATS chain (empty for now - BeforeConnect will populate it)
@@ -390,6 +405,24 @@ func (f *NftablesFirewall) addMonitRule(cgroup ProcessCgroup) error {
 	return nil
 }
 
+func (f *NftablesFirewall) addMonitBlockRule() error {
+	// Build rule: dst 127.0.0.1 + dport 2822 -> drop
+	// This blocks everyone else (not in agent's cgroup) from connecting to monit.
+	// This rule must come AFTER the allow rule so the agent's cgroup is matched first.
+	// Note: No cgroup match means this applies to all processes.
+	exprs := f.buildLoopbackDestExprs()
+	exprs = append(exprs, f.buildTCPDestPortExprs(MonitPort)...)
+	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictDrop})
+
+	f.conn.AddRule(&nftables.Rule{
+		Table: f.table,
+		Chain: f.monitChain,
+		Exprs: exprs,
+	})
+
+	return nil
+}
+
 func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) error {
 	// Build rule: <cgroup match> + dst <addr> + dport <port> -> accept
 	// This allows the agent (in its cgroup) to connect to the director's NATS
@@ -448,7 +481,7 @@ func (f *NftablesFirewall) buildCgroupMatchExprs(cgroup ProcessCgroup) ([]expr.A
 		return []expr.Any{
 			&expr.Socket{
 				Key:      expr.SocketKeyCgroupv2,
-				Level:    2,
+				Level:    0, // Level 0 = match socket's direct cgroup (not an ancestor)
 				Register: 1,
 			},
 			&expr.Cmp{
