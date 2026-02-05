@@ -1,4 +1,7 @@
 ---
+vars:
+  - &worker_tag_windows windows-nimbus
+
 resource_types:
   - name: bosh-deployment
     type: docker-image
@@ -216,7 +219,6 @@ jobs:
       - task: bump-deps
         file: golang-release/ci/tasks/shared/bump-deps.yml
         image: golang-release-image
-        tags: [ windows-nimbus ]
         input_mapping:
           input_repo: bosh-agent
         output_mapping:
@@ -293,7 +295,7 @@ jobs:
         trigger: true
       - task: test-unit
         file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
-        tags: [ windows-nimbus ]
+        tags: [*worker_tag_windows]
 
   - name: test-integration
     serial: true
