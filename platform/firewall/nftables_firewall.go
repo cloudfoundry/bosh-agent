@@ -115,24 +115,16 @@ func (f *NftablesFirewall) SetupMonitFirewall() error {
 	f.logger.Info(f.logTag, "Setting up monit firewall rules (UID-based matching)")
 
 	// Create or get our table
-	if err := f.ensureTable(); err != nil {
-		return bosherr.WrapError(err, "Creating nftables table")
-	}
+	f.ensureTable()
 
 	// Create monit chain
-	if err := f.ensureMonitChain(); err != nil {
-		return bosherr.WrapError(err, "Creating monit chain")
-	}
+	f.ensureMonitChain()
 
 	// Add allow rule for root (UID 0)
-	if err := f.addMonitAllowRule(); err != nil {
-		return bosherr.WrapError(err, "Adding monit allow rule")
-	}
+	f.addMonitAllowRule()
 
 	// Add block rule for everyone else
-	if err := f.addMonitBlockRule(); err != nil {
-		return bosherr.WrapError(err, "Adding monit block rule")
-	}
+	f.addMonitBlockRule()
 
 	// Commit all rules
 	if err := f.conn.Flush(); err != nil {
@@ -169,26 +161,18 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURL string) error {
 	f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", host, port, addrs)
 
 	// Ensure table exists
-	if err := f.ensureTable(); err != nil {
-		return bosherr.WrapError(err, "Creating nftables table")
-	}
+	f.ensureTable()
 
 	// Ensure NATS chain exists
-	if err := f.ensureNATSChain(); err != nil {
-		return bosherr.WrapError(err, "Creating NATS chain")
-	}
+	f.ensureNATSChain()
 
 	// Flush NATS chain (removes old rules for previous IPs)
 	f.conn.FlushChain(f.natsChain)
 
 	// Add rules for each resolved IP
 	for _, addr := range addrs {
-		if err := f.addNATSAllowRule(addr, port); err != nil {
-			return bosherr.WrapError(err, "Adding NATS allow rule")
-		}
-		if err := f.addNATSBlockRule(addr, port); err != nil {
-			return bosherr.WrapError(err, "Adding NATS block rule")
-		}
+		f.addNATSAllowRule(addr, port)
+		f.addNATSBlockRule(addr, port)
 	}
 
 	// Commit
@@ -205,16 +189,15 @@ func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
 	return f.SetupNATSFirewall(mbusURL)
 }
 
-func (f *NftablesFirewall) ensureTable() error {
+func (f *NftablesFirewall) ensureTable() {
 	f.table = &nftables.Table{
 		Family: nftables.TableFamilyINet,
 		Name:   TableName,
 	}
 	f.conn.AddTable(f.table)
-	return nil
 }
 
-func (f *NftablesFirewall) ensureMonitChain() error {
+func (f *NftablesFirewall) ensureMonitChain() {
 	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
 
 	f.monitChain = &nftables.Chain{
@@ -226,10 +209,9 @@ func (f *NftablesFirewall) ensureMonitChain() error {
 		Policy:   policyPtr(nftables.ChainPolicyAccept),
 	}
 	f.conn.AddChain(f.monitChain)
-	return nil
 }
 
-func (f *NftablesFirewall) ensureNATSChain() error {
+func (f *NftablesFirewall) ensureNATSChain() {
 	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
 
 	f.natsChain = &nftables.Chain{
@@ -241,10 +223,9 @@ func (f *NftablesFirewall) ensureNATSChain() error {
 		Policy:   policyPtr(nftables.ChainPolicyAccept),
 	}
 	f.conn.AddChain(f.natsChain)
-	return nil
 }
 
-func (f *NftablesFirewall) addMonitAllowRule() error {
+func (f *NftablesFirewall) addMonitAllowRule() {
 	// Rule: meta skuid 0 ip daddr 127.0.0.1 tcp dport 2822 accept
 	exprs := f.buildUIDMatchExprs(0)
 	exprs = append(exprs, f.buildLoopbackDestExprs()...)
@@ -256,11 +237,9 @@ func (f *NftablesFirewall) addMonitAllowRule() error {
 		Chain: f.monitChain,
 		Exprs: exprs,
 	})
-
-	return nil
 }
 
-func (f *NftablesFirewall) addMonitBlockRule() error {
+func (f *NftablesFirewall) addMonitBlockRule() {
 	// Rule: ip daddr 127.0.0.1 tcp dport 2822 drop
 	exprs := f.buildLoopbackDestExprs()
 	exprs = append(exprs, f.buildTCPDestPortExprs(MonitPort)...)
@@ -271,11 +250,9 @@ func (f *NftablesFirewall) addMonitBlockRule() error {
 		Chain: f.monitChain,
 		Exprs: exprs,
 	})
-
-	return nil
 }
 
-func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) error {
+func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) {
 	// Rule: meta skuid 0 ip daddr <addr> tcp dport <port> accept
 	exprs := f.buildUIDMatchExprs(0)
 	exprs = append(exprs, f.buildDestIPExprs(addr)...)
@@ -287,11 +264,9 @@ func (f *NftablesFirewall) addNATSAllowRule(addr net.IP, port int) error {
 		Chain: f.natsChain,
 		Exprs: exprs,
 	})
-
-	return nil
 }
 
-func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
+func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) {
 	// Rule: ip daddr <addr> tcp dport <port> drop
 	exprs := f.buildDestIPExprs(addr)
 	exprs = append(exprs, f.buildTCPDestPortExprs(port)...)
@@ -302,8 +277,6 @@ func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) error {
 		Chain: f.natsChain,
 		Exprs: exprs,
 	})
-
-	return nil
 }
 
 // buildUIDMatchExprs creates expressions for matching socket UID
