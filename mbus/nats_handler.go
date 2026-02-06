@@ -153,7 +153,11 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	var natsOptions = []nats.Option{
 		nats.RetryOnFailedConnect(true),
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
-			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
+			if err != nil {
+				h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
+			} else {
+				h.logger.Debug(natsHandlerLogTag, "Nats disconnected")
+			}
 			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
 			// Update firewall rules before reconnection attempts (allows DNS re-resolution)
 			h.updateFirewallForNATS()

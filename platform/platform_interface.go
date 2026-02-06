@@ -78,6 +78,7 @@ type Platform interface {
 	SetupLoggingAndAuditing() (err error)
 	SetupOptDir() (err error)
 	SetupRecordsJSONPermission(path string) error
+	SetupFirewall() error
 
 	// Disk management
 	AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) error

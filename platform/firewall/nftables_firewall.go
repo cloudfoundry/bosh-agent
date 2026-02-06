@@ -31,7 +31,6 @@ type NftablesConn interface {
 	AddTable(t *nftables.Table) *nftables.Table
 	AddChain(c *nftables.Chain) *nftables.Chain
 	AddRule(r *nftables.Rule) *nftables.Rule
-	DelTable(t *nftables.Table)
 	FlushChain(c *nftables.Chain)
 	Flush() error
 }
@@ -65,10 +64,6 @@ func (r *realNftablesConn) AddChain(c *nftables.Chain) *nftables.Chain {
 
 func (r *realNftablesConn) AddRule(rule *nftables.Rule) *nftables.Rule {
 	return r.conn.AddRule(rule)
-}
-
-func (r *realNftablesConn) DelTable(t *nftables.Table) {
-	r.conn.DelTable(t)
 }
 
 func (r *realNftablesConn) FlushChain(c *nftables.Chain) {
@@ -210,17 +205,6 @@ func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
 	return f.SetupNATSFirewall(mbusURL)
 }
 
-// Cleanup removes all agent-managed firewall rules
-func (f *NftablesFirewall) Cleanup() error {
-	f.logger.Info(f.logTag, "Cleaning up firewall rules")
-
-	if f.table != nil {
-		f.conn.DelTable(f.table)
-	}
-
-	return f.conn.Flush()
-}
-
 func (f *NftablesFirewall) ensureTable() error {
 	f.table = &nftables.Table{
 		Family: nftables.TableFamilyINet,
@@ -340,6 +324,9 @@ func (f *NftablesFirewall) buildUIDMatchExprs(uid uint32) []expr.Any {
 	}
 }
 
+// buildLoopbackDestExprs creates expressions for matching IPv4 loopback destination.
+// Note: IPv6 loopback (::1) is intentionally not protected because monit only
+// binds to 127.0.0.1:2822 (see jobsupervisor/monit/provider.go).
 func (f *NftablesFirewall) buildLoopbackDestExprs() []expr.Any {
 	return []expr.Any{
 		// Check this is IPv4

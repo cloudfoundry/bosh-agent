@@ -13,7 +13,7 @@
 // fails in nested container environments due to cgroup filesystem bind-mount issues.
 package firewall
 
-// Manager handles firewall setup and cleanup
+// Manager handles firewall setup
 //
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
 //counterfeiter:generate . Manager
@@ -26,9 +26,6 @@ type Manager interface {
 	// Only root (UID 0) is allowed to connect to the resolved NATS address.
 	// This method resolves DNS and should be called before each connection attempt.
 	SetupNATSFirewall(mbusURL string) error
-
-	// Cleanup removes all agent-managed firewall rules
-	Cleanup() error
 }
 
 // NatsFirewallHook is called by the NATS handler before connection/reconnection.

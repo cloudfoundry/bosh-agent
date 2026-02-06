@@ -238,43 +238,6 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 	})
 
-	Describe("Cleanup", func() {
-		It("deletes the table and flushes", func() {
-			// First setup to create the table
-			err := manager.SetupMonitFirewall()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = manager.Cleanup()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(fakeConn.DelTableCallCount()).To(Equal(1))
-			// Flush called once for setup, once for cleanup
-			Expect(fakeConn.FlushCallCount()).To(Equal(2))
-		})
-
-		It("returns error when Flush fails", func() {
-			// Setup first
-			err := manager.SetupMonitFirewall()
-			Expect(err).NotTo(HaveOccurred())
-
-			// Make flush fail on cleanup
-			fakeConn.FlushReturnsOnCall(1, errors.New("flush failed"))
-
-			err = manager.Cleanup()
-			Expect(err).To(HaveOccurred())
-		})
-
-		Context("when table was never created", func() {
-			It("does not call DelTable but still flushes", func() {
-				err := manager.Cleanup()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeConn.DelTableCallCount()).To(Equal(0))
-				Expect(fakeConn.FlushCallCount()).To(Equal(1))
-			})
-		})
-	})
-
 	Describe("Manager interface implementation", func() {
 		It("implements NatsFirewallHook interface", func() {
 			hook := manager.(firewall.NatsFirewallHook)
