@@ -1812,23 +1812,32 @@ func prepareDiskLabelPrefix(labelPrefix string) string {
 	return labelPrefix
 }
 
+// SetupFirewall initializes the nftables-based firewall for protecting monit and NATS.
+// This should be called during platform setup, before NATS connections are attempted.
+func (p *linux) SetupFirewall() error {
+	mgr, err := firewall.NewNftablesFirewall(p.logger)
+	if err != nil {
+		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
+		// Not a fatal error - continue without firewall protection
+		return nil
+	}
+	p.firewallManager = mgr
+
+	// Set up monit firewall rules
+	if err := mgr.SetupMonitFirewall(); err != nil {
+		p.logger.Warn(logTag, "Failed to set up monit firewall: %s", err)
+		// Not a fatal error - continue without monit firewall protection
+	}
+
+	return nil
+}
+
 // GetNatsFirewallHook returns the firewall hook for NATS connection management.
 // The hook is called before each NATS connection/reconnection to update firewall
-// rules with resolved DNS addresses.
+// rules with resolved DNS addresses. Returns nil if firewall was not set up.
 func (p *linux) GetNatsFirewallHook() firewall.NatsFirewallHook {
 	if p.firewallManager == nil {
-		// Initialize firewall manager on first use
-		mgr, err := firewall.NewNftablesFirewall(p.logger)
-		if err != nil {
-			p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
-			return nil
-		}
-		p.firewallManager = mgr
-
-		// Set up monit firewall rules immediately
-		if err := mgr.SetupMonitFirewall(); err != nil {
-			p.logger.Warn(logTag, "Failed to set up monit firewall: %s", err)
-		}
+		return nil
 	}
 
 	// The firewall manager implements NatsFirewallHook

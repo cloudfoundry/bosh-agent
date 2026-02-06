@@ -773,6 +773,10 @@ func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupFirewall() error {
+	return nil
+}
+
 func (p WindowsPlatform) Shutdown() error {
 	return nil
 }

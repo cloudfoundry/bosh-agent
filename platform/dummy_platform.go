@@ -563,6 +563,10 @@ func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p dummyPlatform) SetupFirewall() error {
+	return nil
+}
+
 func (p dummyPlatform) Shutdown() error {
 	return nil
 }
