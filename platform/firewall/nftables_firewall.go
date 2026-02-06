@@ -36,6 +36,20 @@ type NftablesConn interface {
 	Flush() error
 }
 
+// DNSResolver abstracts DNS resolution for testing
+//
+//counterfeiter:generate . DNSResolver
+type DNSResolver interface {
+	LookupIP(host string) ([]net.IP, error)
+}
+
+// realDNSResolver uses the standard library for DNS resolution
+type realDNSResolver struct{}
+
+func (r *realDNSResolver) LookupIP(host string) ([]net.IP, error) {
+	return net.LookupIP(host)
+}
+
 // realNftablesConn wraps the actual nftables.Conn
 type realNftablesConn struct {
 	conn *nftables.Conn
@@ -68,6 +82,7 @@ func (r *realNftablesConn) Flush() error {
 // NftablesFirewall implements Manager and NatsFirewallHook using nftables with UID-based matching
 type NftablesFirewall struct {
 	conn       NftablesConn
+	resolver   DNSResolver
 	logger     boshlog.Logger
 	logTag     string
 	table      *nftables.Table
@@ -84,16 +99,18 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 
 	return NewNftablesFirewallWithDeps(
 		&realNftablesConn{conn: conn},
+		&realDNSResolver{},
 		logger,
 	), nil
 }
 
 // NewNftablesFirewallWithDeps creates a firewall manager with injected dependencies (for testing)
-func NewNftablesFirewallWithDeps(conn NftablesConn, logger boshlog.Logger) Manager {
+func NewNftablesFirewallWithDeps(conn NftablesConn, resolver DNSResolver, logger boshlog.Logger) Manager {
 	return &NftablesFirewall{
-		conn:   conn,
-		logger: logger,
-		logTag: "NftablesFirewall",
+		conn:     conn,
+		resolver: resolver,
+		logger:   logger,
+		logTag:   "NftablesFirewall",
 	}
 }
 
@@ -147,7 +164,7 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURL string) error {
 	if ip := net.ParseIP(host); ip != nil {
 		addrs = []net.IP{ip}
 	} else {
-		addrs, err = net.LookupIP(host)
+		addrs, err = f.resolver.LookupIP(host)
 		if err != nil {
 			f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", host, err)
 			return nil
