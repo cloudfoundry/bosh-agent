@@ -44,11 +44,6 @@ type FakeNftablesConn struct {
 	addTableReturnsOnCall map[int]struct {
 		result1 *nftables.Table
 	}
-	DelTableStub        func(*nftables.Table)
-	delTableMutex       sync.RWMutex
-	delTableArgsForCall []struct {
-		arg1 *nftables.Table
-	}
 	FlushStub        func() error
 	flushMutex       sync.RWMutex
 	flushArgsForCall []struct {
@@ -249,38 +244,6 @@ func (fake *FakeNftablesConn) AddTableReturnsOnCall(i int, result1 *nftables.Tab
 	fake.addTableReturnsOnCall[i] = struct {
 		result1 *nftables.Table
 	}{result1}
-}
-
-func (fake *FakeNftablesConn) DelTable(arg1 *nftables.Table) {
-	fake.delTableMutex.Lock()
-	fake.delTableArgsForCall = append(fake.delTableArgsForCall, struct {
-		arg1 *nftables.Table
-	}{arg1})
-	stub := fake.DelTableStub
-	fake.recordInvocation("DelTable", []interface{}{arg1})
-	fake.delTableMutex.Unlock()
-	if stub != nil {
-		fake.DelTableStub(arg1)
-	}
-}
-
-func (fake *FakeNftablesConn) DelTableCallCount() int {
-	fake.delTableMutex.RLock()
-	defer fake.delTableMutex.RUnlock()
-	return len(fake.delTableArgsForCall)
-}
-
-func (fake *FakeNftablesConn) DelTableCalls(stub func(*nftables.Table)) {
-	fake.delTableMutex.Lock()
-	defer fake.delTableMutex.Unlock()
-	fake.DelTableStub = stub
-}
-
-func (fake *FakeNftablesConn) DelTableArgsForCall(i int) *nftables.Table {
-	fake.delTableMutex.RLock()
-	defer fake.delTableMutex.RUnlock()
-	argsForCall := fake.delTableArgsForCall[i]
-	return argsForCall.arg1
 }
 
 func (fake *FakeNftablesConn) Flush() error {
