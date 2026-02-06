@@ -23,6 +23,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -116,6 +117,7 @@ type linux struct {
 	auditLogger            AuditLogger
 	logsTarProvider        boshlogstarprovider.LogsTarProvider
 	serviceManager         servicemanager.ServiceManager
+	firewallManager        firewall.Manager
 }
 
 func NewLinuxPlatform(
@@ -1808,4 +1810,30 @@ func prepareDiskLabelPrefix(labelPrefix string) string {
 	}
 
 	return labelPrefix
+}
+
+// GetNatsFirewallHook returns the firewall hook for NATS connection management.
+// The hook is called before each NATS connection/reconnection to update firewall
+// rules with resolved DNS addresses.
+func (p *linux) GetNatsFirewallHook() firewall.NatsFirewallHook {
+	if p.firewallManager == nil {
+		// Initialize firewall manager on first use
+		mgr, err := firewall.NewNftablesFirewall(p.logger)
+		if err != nil {
+			p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
+			return nil
+		}
+		p.firewallManager = mgr
+
+		// Set up monit firewall rules immediately
+		if err := mgr.SetupMonitFirewall(); err != nil {
+			p.logger.Warn(logTag, "Failed to set up monit firewall: %s", err)
+		}
+	}
+
+	// The firewall manager implements NatsFirewallHook
+	if hook, ok := p.firewallManager.(firewall.NatsFirewallHook); ok {
+		return hook
+	}
+	return nil
 }
