@@ -23,7 +23,7 @@ func (r *identityInstanceStorageResolver) DiscoverInstanceStorage(devices []bosh
 	for i, device := range devices {
 		realPath, _, err := r.devicePathResolver.GetRealDevicePath(device)
 		if err != nil {
-			return nil, bosherr.WrapError(err, "Getting device path")
+			return nil, bosherr.WrapErrorf(err, "Getting device %s path", device)
 		}
 		paths[i] = realPath
 	}

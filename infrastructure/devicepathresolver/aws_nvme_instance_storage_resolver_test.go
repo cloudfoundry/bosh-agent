@@ -85,21 +85,7 @@ var _ = Describe("AWSNVMeInstanceStorageResolver", func() {
 
 				_, err = resolver.DiscoverInstanceStorage(devices)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Expected 3 instance storage devices but only discovered 1"))
-			})
-		})
-		Context("when devices are not NVMe", func() {
-			It("uses device path resolver to get paths", func() {
-				devices := []boshsettings.DiskSettings{
-					{Path: "/dev/xvdb"},
-					{Path: "/dev/xvdc"},
-				}
-				fakeDevicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
-					return diskSettings.Path, false, nil
-				}
-				paths, err := resolver.DiscoverInstanceStorage(devices)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(paths).To(Equal([]string{"/dev/xvdb", "/dev/xvdc"}))
+				Expect(err.Error()).To(ContainSubstring("Expected 3 instance storage devices but discovered 1"))
 			})
 		})
 	})

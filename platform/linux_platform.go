@@ -749,7 +749,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	// For NVMe instances: discover actual instance storage devices by excluding ALL EBS volumes
 	// (root and ephemeral EBS) identified via /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*
 	// For paravirtual/HVM: use CPI-provided device paths (deterministic enumeration)
-	instanceStorageDevices, err := p.discoverInstanceStorageDevices(devices)
+	instanceStorageDevices, err := p.instanceStorageResolver.DiscoverInstanceStorage(devices)
 	if err != nil {
 		return bosherr.WrapError(err, "Discovering instance storage devices")
 	}
@@ -800,12 +800,6 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	}
 
 	return nil
-}
-
-// discoverInstanceStorageDevices delegates to the configured instance storage resolver
-// to discover ephemeral disk devices, filtering out IaaS-managed volumes as needed
-func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSettings) ([]string, error) {
-	return p.instanceStorageResolver.DiscoverInstanceStorage(devices)
 }
 
 func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {

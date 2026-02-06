@@ -150,19 +150,15 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
 
-	var instanceStorageResolver devicepathresolver.InstanceStorageResolver
-	switch options.Linux.InstanceStorageResolutionType {
-	case "aws-nvme":
-		instanceStorageResolver = devicepathresolver.NewAWSNVMeInstanceStorageResolver(
-			fs,
-			devicePathResolver,
-			logger,
-			options.Linux.InstanceStorageManagedVolumePattern,
-			options.Linux.InstanceStorageDevicePattern,
-		)
-	default:
-		instanceStorageResolver = devicepathresolver.NewIdentityInstanceStorageResolver(devicePathResolver)
-	}
+	// Use auto-detecting instance storage resolver that determines NVMe vs non-NVMe
+	// based on device paths from the CPI (e.g., /dev/nvme* vs /dev/xvd* or /dev/sd*)
+	instanceStorageResolver := devicepathresolver.NewAutoDetectingInstanceStorageResolver(
+		fs,
+		devicePathResolver,
+		logger,
+		options.Linux.InstanceStorageManagedVolumePattern,
+		options.Linux.InstanceStorageDevicePattern,
+	)
 
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)

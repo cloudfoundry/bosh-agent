@@ -2,7 +2,6 @@ package devicepathresolver
 
 import (
 	"sort"
-	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -49,11 +48,6 @@ func (r *awsNVMeInstanceStorageResolver) DiscoverInstanceStorage(devices []boshs
 		return []string{}, nil
 	}
 
-	isNVMe := strings.HasPrefix(devices[0].Path, "/dev/nvme")
-	if !isNVMe {
-		return r.discoverNonNVMeDevices(devices)
-	}
-
 	allNvmeDevices, err := r.fs.Glob(r.nvmeDevicePattern)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
@@ -90,22 +84,10 @@ func (r *awsNVMeInstanceStorageResolver) DiscoverInstanceStorage(devices []boshs
 
 	sort.Strings(instanceStorage)
 
-	if len(instanceStorage) < len(devices) {
-		return nil, bosherr.Errorf("Expected %d instance storage devices but only discovered %d: %v",
+	if len(instanceStorage) != len(devices) {
+		return nil, bosherr.Errorf("Expected %d instance storage devices but discovered %d: %v",
 			len(devices), len(instanceStorage), instanceStorage)
 	}
 
 	return instanceStorage, nil
-}
-
-func (r *awsNVMeInstanceStorageResolver) discoverNonNVMeDevices(devices []boshsettings.DiskSettings) ([]string, error) {
-	paths := make([]string, len(devices))
-	for i, device := range devices {
-		realPath, _, err := r.devicePathResolver.GetRealDevicePath(device)
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Getting device path")
-		}
-		paths[i] = realPath
-	}
-	return paths, nil
 }
