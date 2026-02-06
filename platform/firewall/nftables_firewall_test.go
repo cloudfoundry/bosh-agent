@@ -277,7 +277,7 @@ var _ = Describe("NftablesFirewall", func() {
 
 	Describe("Manager interface implementation", func() {
 		It("implements NatsFirewallHook interface", func() {
-			var hook firewall.NatsFirewallHook = manager.(firewall.NatsFirewallHook)
+			hook := manager.(firewall.NatsFirewallHook)
 			Expect(hook).NotTo(BeNil())
 		})
 	})
