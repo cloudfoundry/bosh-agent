@@ -26,7 +26,7 @@ const (
 
 // NftablesConn abstracts the nftables connection for testing
 //
-//counterfeiter:generate . NftablesConn
+//counterfeiter:generate -header ./linux_header.txt . NftablesConn
 type NftablesConn interface {
 	AddTable(t *nftables.Table) *nftables.Table
 	AddChain(c *nftables.Chain) *nftables.Chain
@@ -38,7 +38,7 @@ type NftablesConn interface {
 
 // DNSResolver abstracts DNS resolution for testing
 //
-//counterfeiter:generate . DNSResolver
+//counterfeiter:generate -header ./linux_header.txt . DNSResolver
 type DNSResolver interface {
 	LookupIP(host string) ([]net.IP, error)
 }
