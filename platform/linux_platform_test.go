@@ -1925,13 +1925,13 @@ Number  Start   End     Size    File system  Name             Flags
 			It("returns error when no instance storage devices found but CPI expects some", func() {
 				// Configure instance storage resolver to return error
 				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
-					return nil, errors.New("Expected 1 instance storage devices but only discovered 0")
+					return nil, errors.New("Expected 1 instance storage devices but discovered 0")
 				}
 
 				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but only discovered 0"))
+				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but discovered 0"))
 			})
 
 			It("returns error when globbing NVMe devices fails", func() {

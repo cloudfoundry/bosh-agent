@@ -87,6 +87,34 @@ var _ = Describe("AWSNVMeInstanceStorageResolver", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Expected 3 instance storage devices but discovered 1"))
 			})
+			It("returns error if too much instance storage devices found", func() {
+				devices := []boshsettings.DiskSettings{
+					{Path: "/dev/nvme0n1"},
+					{Path: "/dev/nvme1n1"},
+				}
+
+				// Create device files
+				err := fakeFS.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).NotTo(HaveOccurred())
+				err = fakeFS.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).NotTo(HaveOccurred())
+				err = fakeFS.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).NotTo(HaveOccurred())
+
+				fakeFS.GlobStub = func(pattern string) ([]string, error) {
+					if pattern == "/dev/nvme*n1" {
+						return []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"}, nil
+					}
+					return nil, nil
+				}
+
+				err = fakeFS.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol-root")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = resolver.DiscoverInstanceStorage(devices)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Expected 2 instance storage devices but discovered 3"))
+			})
 		})
 	})
 })
