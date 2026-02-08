@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -725,19 +726,27 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		return nil
 	}
 
-	p.logger.Info(logTag, "Setting up raw ephemeral disks")
+	if len(devices) == 0 {
+		return nil
+	}
 
-	for i, device := range devices {
-		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
-		if err != nil {
-			return bosherr.WrapError(err, "Getting real device path")
-		}
+	p.logger.Info(logTag, "Setting up %d raw ephemeral disk(s)", len(devices))
 
+	// For NVMe instances: discover actual instance storage devices by excluding ALL EBS volumes
+	// (root and ephemeral EBS) identified via /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*
+	// For paravirtual/HVM: use CPI-provided device paths (deterministic enumeration)
+	instanceStorageDevices, err := p.discoverInstanceStorageDevices(devices)
+	if err != nil {
+		return bosherr.WrapError(err, "Discovering instance storage devices")
+	}
+
+	// Partition each discovered device
+	for i, devicePath := range instanceStorageDevices {
 		// check if device is already partitioned correctly
 		stdout, stderr, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"p",
 		)
 
@@ -745,21 +754,22 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
 			if !strings.Contains(stdout, "unrecognised disk label") &&
 				!strings.Contains(stderr, "unrecognised disk label") {
-				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+				return bosherr.WrapErrorf(err, "Checking partition on %s", devicePath)
 			}
 		}
 
 		if strings.Contains(stdout, "Partition Table: gpt") &&
 			strings.Contains(stdout, "raw-ephemeral-") {
+			p.logger.Info(logTag, "Device %s already partitioned, skipping", devicePath)
 			continue
 		}
 
 		// change to gpt partition type, change units to percentage, make partition with name and span from 0-100%
-		p.logger.Info(logTag, "Creating partition on `%s'", realPath)
+		p.logger.Info(logTag, "Creating partition on %s as raw-ephemeral-%d", devicePath, i)
 		_, _, _, err = p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"mklabel",
 			"gpt",
 			"unit",
@@ -771,11 +781,79 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		)
 
 		if err != nil {
-			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			return bosherr.WrapErrorf(err, "Creating partition on %s", devicePath)
 		}
 	}
 
 	return nil
+}
+
+// discoverInstanceStorageDevices finds NVMe instance storage devices by:
+// 1. Enumerating all /dev/nvme*n1 devices
+// 2. Identifying EBS volumes (root + ephemeral) via /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*
+// 3. Filtering out all EBS volumes - remaining devices are instance storage
+// For non-NVMe devices (paravirtual/HVM), returns the CPI-provided paths as-is (reliable)
+func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSettings) ([]string, error) {
+	isNVMe := strings.HasPrefix(devices[0].Path, "/dev/nvme")
+
+	if !isNVMe {
+		paths := make([]string, len(devices))
+		for i, device := range devices {
+			realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
+			if err != nil {
+				return nil, bosherr.WrapError(err, "Getting device path")
+			}
+			paths[i] = realPath
+		}
+		return paths, nil
+	}
+
+	// NVMe discovery: Find all NVMe devices
+	allNvmeDevices, err := p.fs.Glob("/dev/nvme*n1")
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
+	}
+
+	p.logger.Debug(logTag, "Found NVMe devices: %v", allNvmeDevices)
+
+	// Identify EBS volumes via symlinks
+	ebsSymlinks, err := p.fs.Glob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*")
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Globbing EBS symlinks")
+	}
+
+	// Build set of EBS device paths by resolving symlinks
+	ebsDevices := make(map[string]bool)
+	for _, symlink := range ebsSymlinks {
+		absPath, err := p.fs.ReadAndFollowLink(symlink)
+		if err != nil {
+			p.logger.Debug(logTag, "Could not resolve symlink %s: %s", symlink, err.Error())
+			continue
+		}
+
+		p.logger.Debug(logTag, "EBS volume: %s -> %s", symlink, absPath)
+		ebsDevices[absPath] = true
+	}
+
+	// Filter: instance storage = all NVMe - EBS volumes
+	var instanceStorage []string
+	for _, device := range allNvmeDevices {
+		if !ebsDevices[device] {
+			instanceStorage = append(instanceStorage, device)
+			p.logger.Info(logTag, "Discovered instance storage: %s", device)
+		} else {
+			p.logger.Debug(logTag, "Excluding EBS volume: %s", device)
+		}
+	}
+
+	sort.Strings(instanceStorage)
+
+	if len(instanceStorage) < len(devices) {
+		return nil, bosherr.Errorf("Expected %d instance storage devices but only discovered %d: %v",
+			len(devices), len(instanceStorage), instanceStorage)
+	}
+
+	return instanceStorage, nil
 }
 
 func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {

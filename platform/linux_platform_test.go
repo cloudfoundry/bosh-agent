@@ -1849,6 +1849,189 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
 			})
 		})
+
+		Context("NVMe instance storage discovery", func() {
+			BeforeEach(func() {
+				devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+					return diskSettings.Path, false, nil
+				}
+			})
+
+			It("discovers instance storage by excluding EBS volumes via symlinks", func() {
+				// Setup: 3 NVMe devices, 2 are EBS (nvme0n1, nvme1n1), 1 is instance storage (nvme2n1)
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					switch pattern {
+					case "/dev/nvme*n1":
+						return []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"}, nil
+					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
+						return []string{
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
+						}, nil
+					default:
+						return nil, nil
+					}
+				}
+
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlinks for EBS volumes
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Mock parted output for nvme2n1 (instance storage - needs partitioning)
+				cmdRunner.AddCmdResult("parted -s /dev/nvme2n1 p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/nvme2n1: unrecognised disk label",
+				})
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/nvme2n1", "p"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/nvme2n1", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
+			})
+
+			It("returns error when no instance storage devices found but CPI expects some", func() {
+				// Setup: All NVMe devices are EBS
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					switch pattern {
+					case "/dev/nvme*n1":
+						return []string{"/dev/nvme0n1", "/dev/nvme1n1"}, nil
+					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
+						return []string{
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
+						}, nil
+					default:
+						return nil, nil
+					}
+				}
+
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlinks for both EBS volumes
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but only discovered 0"))
+			})
+
+			It("returns error when globbing NVMe devices fails", func() {
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					switch pattern {
+					case "/dev/nvme*n1":
+						return nil, errors.New("permission denied reading /dev")
+					default:
+						return nil, nil
+					}
+				}
+
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme1n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Globbing NVMe devices"))
+			})
+
+			It("returns error when globbing EBS symlinks fails", func() {
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					switch pattern {
+					case "/dev/nvme*n1":
+						return []string{"/dev/nvme0n1", "/dev/nvme1n1"}, nil
+					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
+						return nil, errors.New("permission denied")
+					default:
+						return nil, nil
+					}
+				}
+
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme1n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Globbing EBS symlinks"))
+			})
+
+			It("skips symlinks that fail to resolve and continues", func() {
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					switch pattern {
+					case "/dev/nvme*n1":
+						return []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"}, nil
+					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
+						return []string{
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
+						}, nil
+					default:
+						return nil, nil
+					}
+				}
+
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlinks - vol123 works, vol456 is broken
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+				// Don't create vol456 symlink - it will fail to resolve
+
+				// Mock parted for nvme1n1 and nvme2n1 (instance storage)
+				cmdRunner.AddCmdResult("parted -s /dev/nvme1n1 p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/nvme1n1: unrecognised disk label",
+				})
+				cmdRunner.AddCmdResult("parted -s /dev/nvme2n1 p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/nvme2n1: unrecognised disk label",
+				})
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}, {Path: "/dev/nvme1n1"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				// Should partition nvme1n1 and nvme2n1 (only nvme0n1 was identified as EBS)
+				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			})
+
+			It("uses CPI paths directly for non-NVMe devices", func() {
+				fs.GlobStub = func(pattern string) ([]string, error) {
+					return nil, nil
+				}
+
+				cmdRunner.AddCmdResult("parted -s /dev/xvdb p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/xvdb: unrecognised disk label",
+				})
+
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "p"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
+			})
+		})
 	})
 
 	Describe("SetupDataDir", func() {
