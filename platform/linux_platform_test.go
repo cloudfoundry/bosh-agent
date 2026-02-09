@@ -47,6 +47,7 @@ var _ = Describe("LinuxPlatform", func() {
 		diskManager                *diskfakes.FakeManager
 		dirProvider                boshdirs.Provider
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
+		instanceStorageResolver    *fakedpresolv.FakeInstanceStorageResolver
 		platform                   Platform
 		cdutil                     *fakecdrom.FakeCDUtil
 		compressor                 boshcmd.Compressor
@@ -89,6 +90,17 @@ var _ = Describe("LinuxPlatform", func() {
 		certManager = new(certfakes.FakeManager)
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
+		instanceStorageResolver = fakedpresolv.NewFakeInstanceStorageResolver()
+
+		// Default: instance storage resolver returns device paths as-is (identity resolution)
+		instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+			paths := make([]string, len(devices))
+			for i, device := range devices {
+				paths[i] = device.Path
+			}
+			return paths, nil
+		}
+
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
@@ -148,6 +160,7 @@ var _ = Describe("LinuxPlatform", func() {
 			certManager,
 			monitRetryStrategy,
 			devicePathResolver,
+			instanceStorageResolver,
 			state,
 			options,
 			logger,
@@ -466,6 +479,7 @@ bosh_foobar:...`
 					certManager,
 					monitRetryStrategy,
 					devicePathResolver,
+					instanceStorageResolver,
 					state,
 					options,
 					logger,
@@ -703,6 +717,7 @@ bosh_foobar:...`
 						certManager,
 						monitRetryStrategy,
 						devicePathResolver,
+						instanceStorageResolver,
 						state,
 						options,
 						logger,
@@ -1887,6 +1902,12 @@ Number  Start   End     Size    File system  Name             Flags
 				err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
 				Expect(err).ToNot(HaveOccurred())
 
+				// Configure instance storage resolver to simulate NVMe filtering
+				// Returns only nvme2n1 (the instance storage device, after filtering EBS)
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					return []string{"/dev/nvme2n1"}, nil
+				}
+
 				// Mock parted output for nvme2n1 (instance storage - needs partitioning)
 				cmdRunner.AddCmdResult("parted -s /dev/nvme2n1 p", fakesys.FakeCmdResult{
 					Error:  errors.New("unrecognised disk label"),
@@ -1902,47 +1923,21 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns error when no instance storage devices found but CPI expects some", func() {
-				// Setup: All NVMe devices are EBS
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					switch pattern {
-					case "/dev/nvme*n1":
-						return []string{"/dev/nvme0n1", "/dev/nvme1n1"}, nil
-					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
-						return []string{
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
-						}, nil
-					default:
-						return nil, nil
-					}
+				// Configure instance storage resolver to return error
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					return nil, errors.New("Expected 1 instance storage devices but discovered 0")
 				}
 
-				// Create the NVMe device files
-				err := fs.WriteFileString("/dev/nvme0n1", "")
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.WriteFileString("/dev/nvme1n1", "")
-				Expect(err).ToNot(HaveOccurred())
-
-				// Create symlinks for both EBS volumes
-				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
-				Expect(err).ToNot(HaveOccurred())
-
-				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
 
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but only discovered 0"))
+				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but discovered 0"))
 			})
 
 			It("returns error when globbing NVMe devices fails", func() {
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					switch pattern {
-					case "/dev/nvme*n1":
-						return nil, errors.New("permission denied reading /dev")
-					default:
-						return nil, nil
-					}
+				// Configure instance storage resolver to return error
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					return nil, errors.New("Globbing NVMe devices: permission denied reading /dev")
 				}
 
 				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme1n1"}})
@@ -1952,15 +1947,9 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns error when globbing EBS symlinks fails", func() {
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					switch pattern {
-					case "/dev/nvme*n1":
-						return []string{"/dev/nvme0n1", "/dev/nvme1n1"}, nil
-					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
-						return nil, errors.New("permission denied")
-					default:
-						return nil, nil
-					}
+				// Configure instance storage resolver to return error
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					return nil, errors.New("Globbing EBS symlinks: permission denied")
 				}
 
 				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme1n1"}})
@@ -1970,32 +1959,11 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("skips symlinks that fail to resolve and continues", func() {
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					switch pattern {
-					case "/dev/nvme*n1":
-						return []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"}, nil
-					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
-						return []string{
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
-						}, nil
-					default:
-						return nil, nil
-					}
+				// Configure instance storage resolver to return nvme1n1 and nvme2n1
+				// (simulating that broken symlinks are skipped and only nvme0n1 is EBS)
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					return []string{"/dev/nvme1n1", "/dev/nvme2n1"}, nil
 				}
-
-				// Create the NVMe device files
-				err := fs.WriteFileString("/dev/nvme0n1", "")
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.WriteFileString("/dev/nvme1n1", "")
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.WriteFileString("/dev/nvme2n1", "")
-				Expect(err).ToNot(HaveOccurred())
-
-				// Create symlinks - vol123 works, vol456 is broken
-				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
-				Expect(err).ToNot(HaveOccurred())
-				// Don't create vol456 symlink - it will fail to resolve
 
 				// Mock parted for nvme1n1 and nvme2n1 (instance storage)
 				cmdRunner.AddCmdResult("parted -s /dev/nvme1n1 p", fakesys.FakeCmdResult{
@@ -2007,7 +1975,7 @@ Number  Start   End     Size    File system  Name             Flags
 					Stdout: "Error: /dev/nvme2n1: unrecognised disk label",
 				})
 
-				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}, {Path: "/dev/nvme1n1"}})
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}, {Path: "/dev/nvme1n1"}})
 
 				Expect(err).ToNot(HaveOccurred())
 				// Should partition nvme1n1 and nvme2n1 (only nvme0n1 was identified as EBS)
@@ -2015,8 +1983,14 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("uses CPI paths directly for non-NVMe devices", func() {
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					return nil, nil
+				// For non-NVMe devices, the instance storage resolver returns paths as-is
+				// (this is the default stub behavior, but be explicit)
+				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
+					paths := make([]string, len(devices))
+					for i, d := range devices {
+						paths[i] = d.Path
+					}
+					return paths, nil
 				}
 
 				cmdRunner.AddCmdResult("parted -s /dev/xvdb p", fakesys.FakeCmdResult{
@@ -3914,6 +3888,7 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 					certManager,
 					monitRetryStrategy,
 					devicePathResolver,
+					instanceStorageResolver,
 					state,
 					options,
 					logger,
