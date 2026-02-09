@@ -79,7 +79,6 @@ func (r *autoDetectingInstanceStorageResolver) DiscoverInstanceStorage(devices [
 		r.resolverInitialized = true
 	}
 
-	// Delegate to the appropriate resolver
 	if r.useNVMeResolver {
 		return r.awsNVMeResolver.DiscoverInstanceStorage(devices)
 	}

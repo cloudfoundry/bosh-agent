@@ -1,6 +1,8 @@
 package devicepathresolver_test
 
 import (
+	"runtime"
+
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
@@ -19,6 +21,9 @@ var _ = Describe("AWSNVMeInstanceStorageResolver", func() {
 		logger                 boshlog.Logger
 	)
 	BeforeEach(func() {
+		if runtime.GOOS == "linux" {
+			Skip("Not supported on Linux")
+		}
 		fakeFS = fakesys.NewFakeFileSystem()
 		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)

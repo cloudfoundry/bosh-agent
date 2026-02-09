@@ -1,6 +1,8 @@
 package devicepathresolver_test
 
 import (
+	"runtime"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -21,6 +23,9 @@ var _ = Describe("AutoDetectingInstanceStorageResolver", func() {
 	)
 
 	BeforeEach(func() {
+		if runtime.GOOS == "linux" {
+			Skip("Not supported on Linux")
+		}
 		fakeFS = fakesys.NewFakeFileSystem()
 		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)

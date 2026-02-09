@@ -746,9 +746,6 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 
 	p.logger.Info(logTag, "Setting up %d raw ephemeral disk(s)", len(devices))
 
-	// For NVMe instances: discover actual instance storage devices by excluding ALL EBS volumes
-	// (root and ephemeral EBS) identified via /dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*
-	// For paravirtual/HVM: use CPI-provided device paths (deterministic enumeration)
 	instanceStorageDevices, err := p.instanceStorageResolver.DiscoverInstanceStorage(devices)
 	if err != nil {
 		return bosherr.WrapError(err, "Discovering instance storage devices")
