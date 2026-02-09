@@ -1,7 +1,6 @@
 package devicepathresolver
 
 import (
-	"path/filepath"
 	"sort"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -69,22 +68,17 @@ func (r *awsNVMeInstanceStorageResolver) DiscoverInstanceStorage(devices []boshs
 			continue
 		}
 
-		// Normalize path to use forward slashes for consistent comparison
-		// This is needed because ReadAndFollowLink may return OS-native paths
-		normalizedPath := filepath.ToSlash(absPath)
-		r.logger.Debug(r.logTag, "EBS volume: %s -> %s", symlink, normalizedPath)
-		ebsDevices[normalizedPath] = true
+		r.logger.Debug(r.logTag, "EBS volume: %s -> %s", symlink, absPath)
+		ebsDevices[absPath] = true
 	}
 
 	var instanceStorage []string
-	for _, device := range allNvmeDevices {
-		// Normalize device path for consistent comparison
-		normalizedDevice := filepath.ToSlash(device)
-		if !ebsDevices[normalizedDevice] {
-			instanceStorage = append(instanceStorage, device)
-			r.logger.Info(r.logTag, "Discovered instance storage: %s", device)
+	for _, devicePath := range allNvmeDevices {
+		if !ebsDevices[devicePath] {
+			instanceStorage = append(instanceStorage, devicePath)
+			r.logger.Info(r.logTag, "Discovered instance storage: %s", devicePath)
 		} else {
-			r.logger.Debug(r.logTag, "Excluding EBS volume: %s", device)
+			r.logger.Debug(r.logTag, "Excluding EBS volume: %s", devicePath)
 		}
 	}
 
