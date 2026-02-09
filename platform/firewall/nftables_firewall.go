@@ -18,10 +18,11 @@ import (
 )
 
 const (
-	TableName      = "bosh_agent"
-	MonitChainName = "monit_access"
-	NATSChainName  = "nats_access"
-	MonitPort      = 2822
+	TableName          = "bosh_agent"
+	MonitChainName     = "monit_access"
+	MonitJobsChainName = "monit_access_jobs"
+	NATSChainName      = "nats_access"
+	MonitPort          = 2822
 )
 
 // NftablesConn abstracts the nftables connection for testing
@@ -76,13 +77,14 @@ func (r *realNftablesConn) Flush() error {
 
 // NftablesFirewall implements Manager and NatsFirewallHook using nftables with UID-based matching
 type NftablesFirewall struct {
-	conn       NftablesConn
-	resolver   DNSResolver
-	logger     boshlog.Logger
-	logTag     string
-	table      *nftables.Table
-	monitChain *nftables.Chain
-	natsChain  *nftables.Chain
+	conn           NftablesConn
+	resolver       DNSResolver
+	logger         boshlog.Logger
+	logTag         string
+	table          *nftables.Table
+	monitChain     *nftables.Chain
+	monitJobsChain *nftables.Chain
+	natsChain      *nftables.Chain
 }
 
 // NewNftablesFirewall creates a new nftables-based firewall manager
@@ -110,15 +112,32 @@ func NewNftablesFirewallWithDeps(conn NftablesConn, resolver DNSResolver, logger
 }
 
 // SetupMonitFirewall creates firewall rules to protect monit (port 2822).
-// Only root (UID 0) is allowed to connect.
+// Only root (UID 0) is allowed to connect by default.
+// Jobs can add their own access rules to the monit_access_jobs chain.
+//
+// Architecture:
+//   - monit_access_jobs: Regular chain for job-managed rules (never flushed by agent)
+//   - monit_access: Base chain with hook that jumps to jobs chain, then applies agent rules
+//
+// This allows job rules to persist across agent restarts while ensuring
+// agent rules are always up-to-date.
 func (f *NftablesFirewall) SetupMonitFirewall() error {
 	f.logger.Info(f.logTag, "Setting up monit firewall rules (UID-based matching)")
 
 	// Create or get our table
 	f.ensureTable()
 
+	// Create jobs chain if it doesn't exist (never flush it - job rules persist)
+	f.ensureMonitJobsChain()
+
 	// Create monit chain
 	f.ensureMonitChain()
+
+	// Flush existing agent rules to ensure idempotency on restart
+	f.conn.FlushChain(f.monitChain)
+
+	// Add jump to jobs chain first (so job rules are checked before agent rules)
+	f.addJumpToJobsChain()
 
 	// Add allow rule for root (UID 0)
 	f.addMonitAllowRule()
@@ -211,6 +230,19 @@ func (f *NftablesFirewall) ensureMonitChain() {
 	f.conn.AddChain(f.monitChain)
 }
 
+// ensureMonitJobsChain creates a regular chain (no hook) for job-managed rules.
+// This chain is never flushed by the agent, allowing job rules to persist across agent restarts.
+// Jobs can add rules to this chain via pre-start scripts using the nft CLI.
+func (f *NftablesFirewall) ensureMonitJobsChain() {
+	f.monitJobsChain = &nftables.Chain{
+		Name:  MonitJobsChainName,
+		Table: f.table,
+		// No Type, Hooknum, Priority, or Policy - this is a regular chain
+		// that can only be reached via jump from monit_access
+	}
+	f.conn.AddChain(f.monitJobsChain)
+}
+
 func (f *NftablesFirewall) ensureNATSChain() {
 	priority := nftables.ChainPriority(*nftables.ChainPriorityFilter - 1)
 
@@ -249,6 +281,21 @@ func (f *NftablesFirewall) addMonitBlockRule() {
 		Table: f.table,
 		Chain: f.monitChain,
 		Exprs: exprs,
+	})
+}
+
+// addJumpToJobsChain adds a jump rule to the monit_access_jobs chain.
+// This must be the first rule in monit_access so job rules are evaluated first.
+func (f *NftablesFirewall) addJumpToJobsChain() {
+	f.conn.AddRule(&nftables.Rule{
+		Table: f.table,
+		Chain: f.monitChain,
+		Exprs: []expr.Any{
+			&expr.Verdict{
+				Kind:  expr.VerdictJump,
+				Chain: MonitJobsChainName,
+			},
+		},
 	})
 }
 
