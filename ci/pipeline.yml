@@ -641,6 +641,6 @@ jobs:
       - put: bosh-agent-index
         params:
           files:
-            - compiled-linux-*/*
-            - compiled-windows-*/*
+            - compiled-linux-amd64/*
+            - compiled-windows-amd64/*
           version: version-semver/number
