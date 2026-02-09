@@ -23,8 +23,8 @@ var _ = Describe("AutoDetectingInstanceStorageResolver", func() {
 	)
 
 	BeforeEach(func() {
-		if runtime.GOOS == "linux" {
-			Skip("Not supported on Linux")
+		if runtime.GOOS != "linux" {
+			Skip("Only supported on Linux")
 		}
 		fakeFS = fakesys.NewFakeFileSystem()
 		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
