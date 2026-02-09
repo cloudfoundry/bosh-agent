@@ -11,6 +11,7 @@ import (
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	"github.com/google/nftables"
+	"github.com/google/nftables/expr"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall/firewallfakes"
@@ -32,13 +33,14 @@ var _ = Describe("NftablesFirewall", func() {
 	})
 
 	Describe("SetupMonitFirewall", func() {
-		It("creates table, chain, and rules successfully", func() {
+		It("creates table, chains, and rules successfully", func() {
 			err := manager.SetupMonitFirewall()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConn.AddTableCallCount()).To(Equal(1))
-			Expect(fakeConn.AddChainCallCount()).To(Equal(1))
-			Expect(fakeConn.AddRuleCallCount()).To(Equal(2)) // allow + block
+			Expect(fakeConn.AddChainCallCount()).To(Equal(2)) // jobs chain + monit chain
+			Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+			Expect(fakeConn.AddRuleCallCount()).To(Equal(3)) // jump + allow + block
 			Expect(fakeConn.FlushCallCount()).To(Equal(1))
 		})
 
@@ -51,27 +53,99 @@ var _ = Describe("NftablesFirewall", func() {
 			Expect(table.Family).To(Equal(nftables.TableFamilyINet))
 		})
 
-		It("creates chain with correct configuration", func() {
+		It("creates jobs chain as regular chain (no hook)", func() {
 			err := manager.SetupMonitFirewall()
 			Expect(err).NotTo(HaveOccurred())
 
-			chain := fakeConn.AddChainArgsForCall(0)
-			Expect(chain.Name).To(Equal("monit_access"))
-			Expect(chain.Type).To(Equal(nftables.ChainTypeFilter))
-			Expect(chain.Hooknum).To(Equal(nftables.ChainHookOutput))
+			// First chain is the jobs chain
+			jobsChain := fakeConn.AddChainArgsForCall(0)
+			Expect(jobsChain.Name).To(Equal("monit_access_jobs"))
+			Expect(jobsChain.Type).To(Equal(nftables.ChainType(""))) // Regular chain has no type
+			Expect(jobsChain.Hooknum).To(BeNil())                    // Regular chain has no hook
+			Expect(jobsChain.Priority).To(BeNil())                   // Regular chain has no priority
 		})
 
-		It("creates allow rule for UID 0 first", func() {
+		It("creates monit chain with correct configuration", func() {
 			err := manager.SetupMonitFirewall()
 			Expect(err).NotTo(HaveOccurred())
 
-			// First rule should be the allow rule (has more expressions for UID match)
-			firstRule := fakeConn.AddRuleArgsForCall(0)
-			Expect(firstRule.Exprs).NotTo(BeEmpty())
+			// Second chain is the monit chain (base chain with hook)
+			monitChain := fakeConn.AddChainArgsForCall(1)
+			Expect(monitChain.Name).To(Equal("monit_access"))
+			Expect(monitChain.Type).To(Equal(nftables.ChainTypeFilter))
+			Expect(monitChain.Hooknum).NotTo(BeNil())
+			Expect(*monitChain.Hooknum).To(Equal(*nftables.ChainHookOutput))
+		})
+
+		It("adds jump to jobs chain as first rule", func() {
+			err := manager.SetupMonitFirewall()
+			Expect(err).NotTo(HaveOccurred())
+
+			// First rule should be the jump rule
+			jumpRule := fakeConn.AddRuleArgsForCall(0)
+			Expect(jumpRule.Chain.Name).To(Equal("monit_access"))
+			Expect(jumpRule.Exprs).To(HaveLen(1))
+
+			verdict, ok := jumpRule.Exprs[0].(*expr.Verdict)
+			Expect(ok).To(BeTrue())
+			Expect(verdict.Kind).To(Equal(expr.VerdictJump))
+			Expect(verdict.Chain).To(Equal("monit_access_jobs"))
+		})
+
+		It("adds allow rule for UID 0 after jump rule", func() {
+			err := manager.SetupMonitFirewall()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Second rule should be the allow rule (has UID match expressions)
+			allowRule := fakeConn.AddRuleArgsForCall(1)
+			Expect(allowRule.Chain.Name).To(Equal("monit_access"))
 			// The allow rule has more expressions (UID match + loopback + port + accept)
 			// Block rule has fewer (loopback + port + drop)
-			secondRule := fakeConn.AddRuleArgsForCall(1)
-			Expect(len(firstRule.Exprs)).To(BeNumerically(">", len(secondRule.Exprs)))
+			blockRule := fakeConn.AddRuleArgsForCall(2)
+			Expect(len(allowRule.Exprs)).To(BeNumerically(">", len(blockRule.Exprs)))
+		})
+
+		It("flushes monit chain before adding rules", func() {
+			err := manager.SetupMonitFirewall()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+			flushedChain := fakeConn.FlushChainArgsForCall(0)
+			Expect(flushedChain.Name).To(Equal("monit_access"))
+		})
+
+		It("never flushes jobs chain to preserve job-managed rules", func() {
+			// Call SetupMonitFirewall multiple times to simulate agent restarts
+			for i := 0; i < 3; i++ {
+				err := manager.SetupMonitFirewall()
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			// Verify that all FlushChain calls were on monit_access, never on monit_access_jobs
+			flushCount := fakeConn.FlushChainCallCount()
+			Expect(flushCount).To(Equal(3)) // Once per call
+
+			for i := 0; i < flushCount; i++ {
+				flushedChain := fakeConn.FlushChainArgsForCall(i)
+				Expect(flushedChain.Name).To(Equal("monit_access"),
+					"FlushChain should only be called on monit_access, not monit_access_jobs")
+			}
+		})
+
+		Context("when called multiple times", func() {
+			It("flushes monit chain each time to prevent duplicate rules", func() {
+				err := manager.SetupMonitFirewall()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+
+				err = manager.SetupMonitFirewall()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(2))
+
+				// Both flush calls should be on the monit chain, not the jobs chain
+				Expect(fakeConn.FlushChainArgsForCall(0).Name).To(Equal("monit_access"))
+				Expect(fakeConn.FlushChainArgsForCall(1).Name).To(Equal("monit_access"))
+			})
 		})
 
 		Context("when Flush fails", func() {
