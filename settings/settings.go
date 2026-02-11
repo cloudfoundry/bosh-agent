@@ -178,9 +178,10 @@ func (s Settings) GetBlobstore() Blobstore {
 }
 
 func (s Settings) GetNtpServers() []string {
-	if len(s.Env.Bosh.NTP) > 0 {
+	if s.Env.Bosh.NTP != nil {
 		return s.Env.Bosh.NTP
 	}
+
 	return s.NTP
 }
 
@@ -291,7 +292,7 @@ type BoshEnv struct {
 	JobDir                JobDir      `json:"job_dir"`
 	RunDir                RunDir      `json:"run_dir"`
 	Blobstores            []Blobstore `json:"blobstores"`
-	NTP                   []string    `json:"ntp"`
+	NTP                   []string    `json:"ntp,omitempty"`
 	Parallel              *int        `json:"parallel"`
 }
 
