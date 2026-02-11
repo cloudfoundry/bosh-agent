@@ -1089,6 +1089,8 @@ var _ = Describe("Settings", func() {
 
 			ntpSetTwo := []string{"d", "e", "f"}
 
+			ntpSetThree := []string{}
+
 			DescribeTable("agent returning the right ntp configuration",
 				func(settingsNtp []string, envBoshNtp []string, expectedNtpServers []string) {
 					settings := Settings{
@@ -1117,6 +1119,16 @@ var _ = Describe("Settings", func() {
 					ntpSetOne,
 					ntpSetTwo,
 					ntpSetTwo),
+
+				Entry("setting.ntp is present and env.bosh.ntp is present but with empty value because we want to clear ntp servers",
+					ntpSetTwo,
+					ntpSetThree,
+					ntpSetThree),
+
+				Entry("setting.ntp is present and env.bosh.ntp is present but with empty value because we want to clear ntp servers",
+					nil,
+					ntpSetThree,
+					ntpSetThree),
 
 				Entry("setting.ntp and env.bosh.ntp both are missing",
 					nil,
