@@ -274,7 +274,6 @@ jobs:
         params:
           build: bosh-agent-ci/ci/docker/
           build_args_file: docker-build-args/docker-build-args.json
-          load_base: golang-release-image
 
   - name: test-unit
     plan:
