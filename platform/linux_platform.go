@@ -89,6 +89,9 @@ type LinuxOptions struct {
 	// example: "pattern": "^(disk-.+)$", "replacement": "google-${1}",
 	DiskIDTransformPattern     string
 	DiskIDTransformReplacement string
+
+	// Base path for LUN-based symlink resolution (e.g., "/dev/disk/azure/data/by-lun").
+	LunDeviceSymlinkPath string
 }
 
 type linux struct {
@@ -1576,23 +1579,29 @@ func (p linux) findRootDevicePathAndNumber() (string, int, error) {
 			rootPartition := strings.Trim(stdout, "\n")
 			p.logger.Debug(logTag, "Symlink is: `%s'", rootPartition)
 
-			validNVMeRootPartition := regexp.MustCompile(`^/dev/[a-z]+\dn\dp\d$`)
+			validNVMeRootPartition := regexp.MustCompile(`^(/dev/[a-z]+\d+n\d+)p(\d+)$`)
 			validSCSIRootPartition := regexp.MustCompile(`^/dev/[a-z]+\d$`)
 
-			isValidNVMePath := validNVMeRootPartition.MatchString(rootPartition)
+			nvmeMatches := validNVMeRootPartition.FindStringSubmatch(rootPartition)
 			isValidSCSIPath := validSCSIRootPartition.MatchString(rootPartition)
-			if !isValidNVMePath && !isValidSCSIPath {
+			if nvmeMatches == nil && !isValidSCSIPath {
 				return "", 0, bosherr.Errorf("Root partition has an invalid name%s", rootPartition)
 			}
 
-			devPath := rootPartition[:len(rootPartition)-1]
-			if isValidNVMePath {
-				devPath = rootPartition[:len(rootPartition)-2]
-			}
-
-			devNum, err := strconv.Atoi(rootPartition[len(rootPartition)-1:])
-			if err != nil {
-				return "", 0, bosherr.WrapError(err, "Parsing device number failed")
+			var devPath string
+			var devNum int
+			if nvmeMatches != nil {
+				devPath = nvmeMatches[1]
+				devNum, err = strconv.Atoi(nvmeMatches[2])
+				if err != nil {
+					return "", 0, bosherr.WrapError(err, "Parsing NVMe partition number failed")
+				}
+			} else {
+				devPath = rootPartition[:len(rootPartition)-1]
+				devNum, err = strconv.Atoi(rootPartition[len(rootPartition)-1:])
+				if err != nil {
+					return "", 0, bosherr.WrapError(err, "Parsing device number failed")
+				}
 			}
 
 			return devPath, devNum, nil
