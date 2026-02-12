@@ -20,6 +20,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -772,6 +773,14 @@ func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupFirewall() error {
+	return nil
+}
+
 func (p WindowsPlatform) Shutdown() error {
+	return nil
+}
+
+func (p WindowsPlatform) GetNatsFirewallHook() firewall.NatsFirewallHook {
 	return nil
 }

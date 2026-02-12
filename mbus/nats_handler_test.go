@@ -18,6 +18,7 @@ import (
 	boshhandler "github.com/cloudfoundry/bosh-agent/v2/handler"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus"
 	"github.com/cloudfoundry/bosh-agent/v2/mbus/mbusfakes"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall/firewallfakes"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/platformfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 	fakesettings "github.com/cloudfoundry/bosh-agent/v2/settings/fakes"
@@ -405,6 +406,54 @@ func init() { //nolint:funlen,gochecknoinits
 						Expect(options.TLSConfig.RootCAs).To(BeNil())
 						Expect(options.TLSConfig.Certificates[0]).To(Equal(clientCert))
 					})
+				})
+			})
+
+			Context("Firewall hook", func() {
+				var fakeFirewallHook *firewallfakes.FakeNatsFirewallHook
+
+				BeforeEach(func() {
+					fakeFirewallHook = &firewallfakes.FakeNatsFirewallHook{}
+					platform.GetNatsFirewallHookReturns(fakeFirewallHook)
+				})
+
+				It("calls GetNatsFirewallHook on Start", func() {
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).NotTo(HaveOccurred())
+					defer handler.Stop()
+
+					Expect(platform.GetNatsFirewallHookCallCount()).To(BeNumerically(">=", 1))
+				})
+
+				It("calls BeforeConnect with the mbus URL before initial connection", func() {
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).NotTo(HaveOccurred())
+					defer handler.Stop()
+
+					Expect(fakeFirewallHook.BeforeConnectCallCount()).To(Equal(1))
+					mbusURL := fakeFirewallHook.BeforeConnectArgsForCall(0)
+					Expect(mbusURL).To(Equal("nats://fake-username:fake-password@127.0.0.1:1234"))
+				})
+
+				It("does not fail if hook returns nil", func() {
+					platform.GetNatsFirewallHookReturns(nil)
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).NotTo(HaveOccurred())
+					defer handler.Stop()
+				})
+
+				It("logs warning but does not fail if BeforeConnect returns error", func() {
+					fakeFirewallHook.BeforeConnectReturns(errors.New("firewall update failed"))
+					loggerOutBuf = bytes.NewBufferString("")
+					logger = boshlog.NewWriterLogger(boshlog.LevelWarn, loggerOutBuf)
+					handler = mbus.NewNatsHandler(settingsService, connector, logger, platform)
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).NotTo(HaveOccurred())
+					defer handler.Stop()
+
+					Expect(loggerOutBuf.String()).To(ContainSubstring("Failed to update NATS firewall rules"))
 				})
 			})
 		})
