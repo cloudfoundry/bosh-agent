@@ -27,7 +27,7 @@ RUN wget -nv https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-l
 RUN wget -nv https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/${CREDHUB_CLI_VERSION}/credhub-linux-amd64-${CREDHUB_CLI_VERSION}.tgz -O - | \
     tar -zx --directory=/usr/local/bin
 
-COPY --from=bosh/golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
+COPY --from=ghcr.io/cloudfoundry/bosh/golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 RUN useradd --create-home --shell /bin/bash bosh
