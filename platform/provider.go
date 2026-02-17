@@ -153,7 +153,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	if options.Linux.LunDeviceSymlinkPath != "" {
 		symlinkLunResolver := devicepathresolver.NewSymlinkLunDevicePathResolver(
 			options.Linux.LunDeviceSymlinkPath,
-			50000*time.Millisecond, fs, logger,
+			50*time.Second, fs, logger,
 		)
 		devicePathResolver = devicepathresolver.NewFallbackDevicePathResolver(symlinkLunResolver, devicePathResolver, logger)
 	}
