@@ -22,10 +22,17 @@ type Manager interface {
 	// Only root (UID 0) is allowed to connect.
 	SetupMonitFirewall() error
 
+	// EnableMonitAccess enables monit access by adding firewall rules.
+	// It first tries to use cgroup-based matching, then falls back to UID-based matching.
+	EnableMonitAccess() error
+
 	// SetupNATSFirewall creates firewall rules to protect NATS.
 	// Only root (UID 0) is allowed to connect to the resolved NATS address.
 	// This method resolves DNS and should be called before each connection attempt.
 	SetupNATSFirewall(mbusURL string) error
+
+	// Cleanup closes the nftables connection.
+	Cleanup() error
 }
 
 // NatsFirewallHook is called by the NATS handler before connection/reconnection.

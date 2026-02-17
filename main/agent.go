@@ -77,18 +77,19 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
+	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
+	logger := newSignalableLogger(asyncLog)
+
 	if len(os.Args) > 1 {
 		switch cmd := os.Args[1]; cmd {
 		case "compile":
 			compileTarball(cmd, os.Args[2:])
 			return
 		case "enable-monit-access":
-			monitaccess.EnableMonitAccess(cmd, os.Args[2:])
+			monitaccess.EnableMonitAccess(logger, cmd, os.Args[2:])
 			return
 		}
 	}
-	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
-	logger := newSignalableLogger(asyncLog)
 
 	exitCode := 0
 	if err := startAgent(logger); err != nil {

@@ -11,62 +11,45 @@
 package monitaccess
 
 import (
-	"fmt"
+	"errors"
 	"os"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func EnableMonitAccess(command string, args []string) {
+func EnableMonitAccess(logger boshlog.Logger, command string, args []string) {
+	logger.UseTags([]boshlog.LogTag{{Name: "monit-access", LogLevel: boshlog.LevelDebug}})
+
 	// Validate nftables mode: verify if nftables is available
 	if len(args) > 1 && args[0] == "--validate-nftables-present" {
-		if isNftablesAvailable() {
-			os.Exit(0)
+		mgr, err := firewall.NewNftablesFirewall(logger)
+		if err != nil {
+			os.Exit(1)
 		}
-		os.Exit(1)
-	}
-
-	// 1. Check if jobs chain exists
-	chainExists, err := jobsChainExists()
-	if err != nil {
-		fmt.Printf("enable-monit-access: Failed to check if jobs chain exists: %v\n", err)
-		os.Exit(1)
-	}
-
-	if !chainExists {
-		fmt.Println("enable-monit-access: monit_access_jobs chain not found (old stemcell), skipping")
+		defer mgr.Cleanup()
 		os.Exit(0)
 	}
 
-	// Setup mode: add firewall rule
-	fmt.Println("enable-monit-access: Setting up monit firewall rule")
-
-	// 2. Try cgroup-based rule first (better isolation)
-	cgroupPath, err := getCurrentCgroupPath()
-	if err == nil && isCgroupAccessible(cgroupPath) {
-		inodeID, err := getCgroupInodeID(cgroupPath)
-		if err == nil {
-			fmt.Printf("enable-monit-access: Using cgroup rule for: %s (inode: %d)\n", cgroupPath, inodeID)
-
-			if err := addCgroupRule(inodeID, cgroupPath); err == nil {
-				fmt.Println("enable-monit-access: Successfully added cgroup-based rule")
-				os.Exit(0)
-			} else {
-				fmt.Printf("enable-monit-access: Failed to add cgroup rule: %v\n", err)
-			}
-		} else {
-			fmt.Printf("enable-monit-access: Failed to get cgroup inode ID: %v\n", err)
+	mgr, err := firewall.NewNftablesFirewall(logger)
+	if err != nil {
+		if errors.Is(err, firewall.ErrMonitJobsChainNotFound) {
+			logger.Info(command, "monit_access_jobs chain not found (old stemcell), skipping")
+			os.Exit(0)
 		}
-	} else if err != nil {
-		fmt.Printf("enable-monit-access: Could not detect cgroup: %v\n", err)
+		logger.Error(command, "Failed to create firewall manager: %v", err)
+		os.Exit(1)
 	}
+	defer mgr.Cleanup()
 
-	// 3. Fallback to UID-based rule
-	uid := uint32(os.Getuid())
-	fmt.Printf("enable-monit-access: Falling back to UID rule for UID: %d\n", uid)
+	// Setup mode: add firewall rule
+	logger.Info(command, "Setting up monit firewall rule")
 
-	if err := addUIDRule(uid); err != nil {
-		fmt.Fprintf(os.Stderr, "enable-monit-access: FAILED to add firewall rule: %v\n", err)
+	err = mgr.EnableMonitAccess()
+	if err != nil {
+		logger.Error(command, "Failed to enable monit access: %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("enable-monit-access: Successfully added UID-based rule")
+	logger.Info(command, "Successfully added monit access rule")
 }
