@@ -8,6 +8,26 @@ import (
 )
 
 type FakeManager struct {
+	CleanupStub        func() error
+	cleanupMutex       sync.RWMutex
+	cleanupArgsForCall []struct {
+	}
+	cleanupReturns struct {
+		result1 error
+	}
+	cleanupReturnsOnCall map[int]struct {
+		result1 error
+	}
+	EnableMonitAccessStub        func() error
+	enableMonitAccessMutex       sync.RWMutex
+	enableMonitAccessArgsForCall []struct {
+	}
+	enableMonitAccessReturns struct {
+		result1 error
+	}
+	enableMonitAccessReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupMonitFirewallStub        func() error
 	setupMonitFirewallMutex       sync.RWMutex
 	setupMonitFirewallArgsForCall []struct {
@@ -31,6 +51,112 @@ type FakeManager struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakeManager) Cleanup() error {
+	fake.cleanupMutex.Lock()
+	ret, specificReturn := fake.cleanupReturnsOnCall[len(fake.cleanupArgsForCall)]
+	fake.cleanupArgsForCall = append(fake.cleanupArgsForCall, struct {
+	}{})
+	stub := fake.CleanupStub
+	fakeReturns := fake.cleanupReturns
+	fake.recordInvocation("Cleanup", []interface{}{})
+	fake.cleanupMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) CleanupCallCount() int {
+	fake.cleanupMutex.RLock()
+	defer fake.cleanupMutex.RUnlock()
+	return len(fake.cleanupArgsForCall)
+}
+
+func (fake *FakeManager) CleanupCalls(stub func() error) {
+	fake.cleanupMutex.Lock()
+	defer fake.cleanupMutex.Unlock()
+	fake.CleanupStub = stub
+}
+
+func (fake *FakeManager) CleanupReturns(result1 error) {
+	fake.cleanupMutex.Lock()
+	defer fake.cleanupMutex.Unlock()
+	fake.CleanupStub = nil
+	fake.cleanupReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeManager) CleanupReturnsOnCall(i int, result1 error) {
+	fake.cleanupMutex.Lock()
+	defer fake.cleanupMutex.Unlock()
+	fake.CleanupStub = nil
+	if fake.cleanupReturnsOnCall == nil {
+		fake.cleanupReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanupReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeManager) EnableMonitAccess() error {
+	fake.enableMonitAccessMutex.Lock()
+	ret, specificReturn := fake.enableMonitAccessReturnsOnCall[len(fake.enableMonitAccessArgsForCall)]
+	fake.enableMonitAccessArgsForCall = append(fake.enableMonitAccessArgsForCall, struct {
+	}{})
+	stub := fake.EnableMonitAccessStub
+	fakeReturns := fake.enableMonitAccessReturns
+	fake.recordInvocation("EnableMonitAccess", []interface{}{})
+	fake.enableMonitAccessMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) EnableMonitAccessCallCount() int {
+	fake.enableMonitAccessMutex.RLock()
+	defer fake.enableMonitAccessMutex.RUnlock()
+	return len(fake.enableMonitAccessArgsForCall)
+}
+
+func (fake *FakeManager) EnableMonitAccessCalls(stub func() error) {
+	fake.enableMonitAccessMutex.Lock()
+	defer fake.enableMonitAccessMutex.Unlock()
+	fake.EnableMonitAccessStub = stub
+}
+
+func (fake *FakeManager) EnableMonitAccessReturns(result1 error) {
+	fake.enableMonitAccessMutex.Lock()
+	defer fake.enableMonitAccessMutex.Unlock()
+	fake.EnableMonitAccessStub = nil
+	fake.enableMonitAccessReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeManager) EnableMonitAccessReturnsOnCall(i int, result1 error) {
+	fake.enableMonitAccessMutex.Lock()
+	defer fake.enableMonitAccessMutex.Unlock()
+	fake.EnableMonitAccessStub = nil
+	if fake.enableMonitAccessReturnsOnCall == nil {
+		fake.enableMonitAccessReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.enableMonitAccessReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeManager) SetupMonitFirewall() error {

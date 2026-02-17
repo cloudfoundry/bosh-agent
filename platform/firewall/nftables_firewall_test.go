@@ -3,8 +3,11 @@
 package firewall_test
 
 import (
+	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -155,6 +158,157 @@ var _ = Describe("NftablesFirewall", func() {
 				err := manager.SetupMonitFirewall()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Flushing nftables rules"))
+			})
+		})
+	})
+
+	Describe("EnableMonitAccess", func() {
+		var boshTable *nftables.Table
+
+		BeforeEach(func() {
+			boshTable = &nftables.Table{
+				Name:   "bosh_agent",
+				Family: nftables.TableFamilyINet,
+			}
+		})
+
+		Context("when the jobs chain exists", func() {
+			BeforeEach(func() {
+				fakeConn.ListTablesReturns([]*nftables.Table{boshTable}, nil)
+				fakeConn.ListChainsReturns([]*nftables.Chain{
+					{
+						Name:  "monit_access_jobs",
+						Table: boshTable,
+					},
+				}, nil)
+			})
+
+			It("adds a rule and flushes", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				Expect(fakeConn.FlushCallCount()).To(Equal(1))
+			})
+
+			It("adds the rule to the monit_access_jobs chain", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				rule := fakeConn.AddRuleArgsForCall(0)
+				fmt.Printf("rule: %+v\n", rule)
+				Expect(rule.Chain.Name).To(Equal("monit_access_jobs"))
+			})
+
+			It("adds a rule targeting loopback and monit port", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).NotTo(HaveOccurred())
+
+				rule := fakeConn.AddRuleArgsForCall(0)
+				hasAcceptVerdict := false
+				for _, e := range rule.Exprs {
+					if verdict, ok := e.(*expr.Verdict); ok {
+						if verdict.Kind == expr.VerdictAccept {
+							hasAcceptVerdict = true
+						}
+					}
+				}
+				Expect(hasAcceptVerdict).To(BeTrue(), "rule should have an accept verdict")
+			})
+
+			Context("when the rule already exists (idempotency)", func() {
+				It("does not add a duplicate UID rule", func() {
+					// Simulate an existing UID rule matching the current UID
+					uid := uint32(os.Getuid())
+					uidBytes := make([]byte, 4)
+					binary.NativeEndian.PutUint32(uidBytes, uid)
+
+					existingRule := &nftables.Rule{
+						Exprs: []expr.Any{
+							&expr.Meta{Key: expr.MetaKeySKUID, Register: 1},
+							&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: uidBytes},
+						},
+					}
+
+					// First call to GetRules is from cleanupStaleJobRules (cgroup path),
+					// subsequent calls check for existing rules.
+					// The UID fallback path calls GetRules to check for duplicates.
+					fakeConn.GetRulesReturns([]*nftables.Rule{existingRule}, nil)
+
+					err := manager.EnableMonitAccess()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
+					Expect(fakeConn.FlushCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("when Flush fails", func() {
+				It("returns an error", func() {
+					fakeConn.FlushReturns(errors.New("flush failed"))
+
+					err := manager.EnableMonitAccess()
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("flush"))
+				})
+			})
+		})
+
+		Context("when listing tables fails", func() {
+			BeforeEach(func() {
+				fakeConn.ListTablesReturns(nil, errors.New("listing tables failed"))
+			})
+
+			It("returns an error", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to check if jobs chain exists"))
+			})
+		})
+
+		Context("when the bosh_agent table does not exist", func() {
+			BeforeEach(func() {
+				fakeConn.ListTablesReturns([]*nftables.Table{
+					{Name: "some_other_table", Family: nftables.TableFamilyINet},
+				}, nil)
+			})
+
+			It("returns bosh_agent table not found error", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("bosh_agent table not found"))
+			})
+
+			It("does not add any rules", func() {
+				_ = manager.EnableMonitAccess()
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("when listing chains fails", func() {
+			BeforeEach(func() {
+				fakeConn.ListTablesReturns([]*nftables.Table{boshTable}, nil)
+				fakeConn.ListChainsReturns(nil, errors.New("listing chains failed"))
+			})
+
+			It("returns an error", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Failed to check if jobs chain exists"))
+				Expect(err.Error()).To(ContainSubstring("listing chains"))
+			})
+		})
+
+		Context("when the table does not have the monit_access_jobs chain", func() {
+			BeforeEach(func() {
+				fakeConn.ListTablesReturns([]*nftables.Table{boshTable}, nil)
+				fakeConn.ListChainsReturns([]*nftables.Chain{}, nil)
+			})
+
+			It("returns monit_access_jobs chain not found error", func() {
+				err := manager.EnableMonitAccess()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("monit_access_jobs chain not found"))
 			})
 		})
 	})
