@@ -10,13 +10,12 @@ import (
 	"github.com/google/nftables/expr"
 	"github.com/google/nftables/userdata"
 	"golang.org/x/sys/unix"
+
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 )
 
 const (
-	TableName          = "bosh_agent"
-	MonitJobsChainName = "monit_access_jobs"
-	MonitPort          = 2822
-	LogPrefix          = "bosh-monit-access: "
+	LogPrefix = "monit-access: "
 )
 
 // isNftablesAvailable checks if the nftables tool is available.
@@ -46,7 +45,7 @@ func jobsChainExists() (bool, error) {
 
 	var boshTable *nftables.Table
 	for _, t := range tables {
-		if t.Name == TableName && t.Family == nftables.TableFamilyINet {
+		if t.Name == firewall.TableName && t.Family == nftables.TableFamilyINet {
 			boshTable = t
 			break
 		}
@@ -62,7 +61,7 @@ func jobsChainExists() (bool, error) {
 	}
 
 	for _, c := range chains {
-		if c.Table.Name == TableName && c.Name == MonitJobsChainName {
+		if c.Table.Name == firewall.TableName && c.Name == firewall.MonitJobsChainName {
 			return true, nil
 		}
 	}
@@ -82,11 +81,11 @@ func addCgroupRule(inodeID uint64, cgroupPath string) error {
 
 	table := &nftables.Table{
 		Family: nftables.TableFamilyINet,
-		Name:   TableName,
+		Name:   firewall.TableName,
 	}
 
 	chain := &nftables.Chain{
-		Name:  MonitJobsChainName,
+		Name:  firewall.MonitJobsChainName,
 		Table: table,
 	}
 
@@ -120,7 +119,7 @@ func addCgroupRule(inodeID uint64, cgroupPath string) error {
 	// socket cgroupv2 level 2 <inode-id> ip daddr 127.0.0.1 tcp dport 2822 log prefix "..." accept
 	exprs := buildCgroupMatchExprs(inodeID)
 	exprs = append(exprs, buildLoopbackDestExprs()...)
-	exprs = append(exprs, buildTCPDestPortExprs(MonitPort)...)
+	exprs = append(exprs, buildTCPDestPortExprs(firewall.MonitPort)...)
 	exprs = append(exprs, buildLogExpr(LogPrefix+"cgroup match: ")...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
 
@@ -155,11 +154,11 @@ func addUIDRule(uid uint32) error {
 
 	table := &nftables.Table{
 		Family: nftables.TableFamilyINet,
-		Name:   TableName,
+		Name:   firewall.TableName,
 	}
 
 	chain := &nftables.Chain{
-		Name:  MonitJobsChainName,
+		Name:  firewall.MonitJobsChainName,
 		Table: table,
 	}
 
@@ -178,7 +177,7 @@ func addUIDRule(uid uint32) error {
 	// meta skuid <uid> ip daddr 127.0.0.1 tcp dport 2822 log prefix "..." accept
 	exprs := buildUIDMatchExprs(uid)
 	exprs = append(exprs, buildLoopbackDestExprs()...)
-	exprs = append(exprs, buildTCPDestPortExprs(MonitPort)...)
+	exprs = append(exprs, buildTCPDestPortExprs(firewall.MonitPort)...)
 	exprs = append(exprs, buildLogExpr(fmt.Sprintf(LogPrefix+"UID %d match: ", uid))...)
 	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
 
