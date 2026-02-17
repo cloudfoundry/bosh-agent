@@ -24,9 +24,6 @@ func EnableMonitAccess(command string, args []string) {
 		os.Exit(1)
 	}
 
-	// Setup mode: add firewall rule
-	fmt.Println("enable-monit-access: Setting up monit firewall rule")
-
 	// 1. Check if jobs chain exists
 	chainExists, err := jobsChainExists()
 	if err != nil {
@@ -34,10 +31,13 @@ func EnableMonitAccess(command string, args []string) {
 		os.Exit(1)
 	}
 
-	if chainExists {
-		fmt.Println("enable-monit-access: monit_access_jobs chain found, skipping")
+	if !chainExists {
+		fmt.Println("enable-monit-access: monit_access_jobs chain not found (old stemcell), skipping")
 		os.Exit(0)
 	}
+
+	// Setup mode: add firewall rule
+	fmt.Println("enable-monit-access: Setting up monit firewall rule")
 
 	// 2. Try cgroup-based rule first (better isolation)
 	cgroupPath, err := getCurrentCgroupPath()
