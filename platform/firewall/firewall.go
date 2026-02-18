@@ -13,6 +13,22 @@
 // fails in nested container environments due to cgroup filesystem bind-mount issues.
 package firewall
 
+import "fmt"
+
+const (
+	TableName            = "bosh_agent"
+	MonitChainName       = "monit_access"
+	MonitJobsChainName   = "monit_access_jobs"
+	NATSChainName        = "nats_access"
+	MonitPort            = 2822
+	MonitAccessLogPrefix = "bosh-monit-access: "
+)
+
+var (
+	ErrMonitJobsChainNotFound = fmt.Errorf("%s chain not found", MonitJobsChainName)
+	ErrBoshTableNotFound      = fmt.Errorf("%s table not found", TableName)
+)
+
 // Manager handles firewall setup
 //
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate

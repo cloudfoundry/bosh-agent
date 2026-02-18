@@ -277,10 +277,6 @@ var _ = Describe("NftablesFirewall", func() {
 				err := manager.EnableMonitAccess()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bosh_agent table not found"))
-			})
-
-			It("does not add any rules", func() {
-				_ = manager.EnableMonitAccess()
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 			})
 		})

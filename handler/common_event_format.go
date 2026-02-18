@@ -53,6 +53,7 @@ func (cef concreteCommonEventFormat) ProduceHTTPRequestEventLog(request *http.Re
 
 		buffer.WriteString(extension)
 		fmt.Fprintf(&buffer, "cs4=%s cs4Label=statusReason", respBody)
+
 		extension = buffer.String()
 	}
 

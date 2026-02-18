@@ -3,18 +3,17 @@
 //
 // Usage:
 //
-//	bosh-agent enable-monit-access --check    # Check if new firewall is available (exit 0 = yes)
-//	bosh-agent enable-monit-access            # Add firewall rule (cgroup preferred, UID fallback)
+//	bosh-agent enable-monit-access --validate-nftables-present    # Validates if new firewall is available (exit 0 = yes)
+//	bosh-agent enable-monit-access                                # Add firewall rule (cgroup preferred, UID fallback)
 //
 // This binary serves as a replacement for the complex bash firewall setup logic
 // that was previously in job service scripts.
-package monitaccess
+package firewall
 
 import (
 	"errors"
 	"os"
 
-	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
@@ -22,25 +21,25 @@ func EnableMonitAccess(logger boshlog.Logger, command string, args []string) {
 	logger.UseTags([]boshlog.LogTag{{Name: "monit-access", LogLevel: boshlog.LevelDebug}})
 
 	// Validate nftables mode: verify if nftables is available
-	if len(args) > 1 && args[0] == "--validate-nftables-present" {
-		mgr, err := firewall.NewNftablesFirewall(logger)
+	if len(args) > 0 && args[0] == "--validate-nftables-present" {
+		mgr, err := NewNftablesFirewall(logger)
 		if err != nil {
 			os.Exit(1)
 		}
-		defer mgr.Cleanup()
+		defer mgr.Cleanup() //nolint:errcheck
 		os.Exit(0)
 	}
 
-	mgr, err := firewall.NewNftablesFirewall(logger)
+	mgr, err := NewNftablesFirewall(logger)
 	if err != nil {
-		if errors.Is(err, firewall.ErrMonitJobsChainNotFound) {
+		if errors.Is(err, ErrMonitJobsChainNotFound) {
 			logger.Info(command, "monit_access_jobs chain not found (old stemcell), skipping")
 			os.Exit(0)
 		}
 		logger.Error(command, "Failed to create firewall manager: %v", err)
 		os.Exit(1)
 	}
-	defer mgr.Cleanup()
+	defer mgr.Cleanup() //nolint:errcheck
 
 	// Setup mode: add firewall rule
 	logger.Info(command, "Setting up monit firewall rule")

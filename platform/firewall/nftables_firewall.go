@@ -19,20 +19,6 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const (
-	TableName            = "bosh_agent"
-	MonitChainName       = "monit_access"
-	MonitJobsChainName   = "monit_access_jobs"
-	NATSChainName        = "nats_access"
-	MonitPort            = 2822
-	MonitAccessLogPrefix = "bosh-monit-access: "
-)
-
-var (
-	ErrMonitJobsChainNotFound = fmt.Errorf("%s chain not found", MonitJobsChainName)
-	ErrBoshTableNotFound      = fmt.Errorf("%s table not found", TableName)
-)
-
 // NftablesConn abstracts the nftables connection for testing
 //
 //counterfeiter:generate -header ./firewallfakes/linux_build_constraint.txt . NftablesConn
