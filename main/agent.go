@@ -12,8 +12,8 @@ import (
 
 	boshapp "github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/agentlogger"
-	"github.com/cloudfoundry/bosh-agent/v2/monitaccess"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 )
 
 const mainLogTag = "main"
@@ -86,7 +86,7 @@ func main() {
 			compileTarball(cmd, os.Args[2:])
 			return
 		case "enable-monit-access":
-			monitaccess.EnableMonitAccess(logger, cmd, os.Args[2:])
+			firewall.EnableMonitAccess(logger, cmd, os.Args[2:])
 			return
 		}
 	}
