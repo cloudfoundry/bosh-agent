@@ -52,7 +52,7 @@ func (cef concreteCommonEventFormat) ProduceHTTPRequestEventLog(request *http.Re
 		var buffer bytes.Buffer
 
 		buffer.WriteString(extension)
-		buffer.WriteString(fmt.Sprintf("cs4=%s cs4Label=statusReason", respBody))
+		fmt.Fprintf(&buffer, "cs4=%s cs4Label=statusReason", respBody)
 		extension = buffer.String()
 	}
 
@@ -73,7 +73,7 @@ func (cef concreteCommonEventFormat) ProduceNATSRequestEventLog(addr string, por
 		var buffer bytes.Buffer
 
 		buffer.WriteString(extension)
-		buffer.WriteString(fmt.Sprintf("cs1=%s cs1Label=statusReason", respBody))
+		fmt.Fprintf(&buffer, "cs1=%s cs1Label=statusReason", respBody)
 		extension = buffer.String()
 	}
 
