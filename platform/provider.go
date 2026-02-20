@@ -150,6 +150,14 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewIdentityDevicePathResolver()
 	}
 
+	if options.Linux.LunDeviceSymlinkPath != "" {
+		symlinkLunResolver := devicepathresolver.NewSymlinkLunDevicePathResolver(
+			options.Linux.LunDeviceSymlinkPath,
+			50*time.Second, fs, logger,
+		)
+		devicePathResolver = devicepathresolver.NewFallbackDevicePathResolver(symlinkLunResolver, devicePathResolver, logger)
+	}
+
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
