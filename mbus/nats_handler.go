@@ -99,14 +99,29 @@ func NewNatsHandler(
 func (h *natsHandler) arpClean() {
 	connectionInfo, err := h.getConnectionInfo()
 	if err != nil {
-		h.logger.Error(h.logTag, "%v", bosherr.WrapError(err, "Getting connection info"))
+		h.logger.Error(h.logTag, "Failed to get connection info for ARP clean: %v", err)
+		return
 	}
-	err = h.platform.DeleteARPEntryWithIP(connectionInfo.IP)
-	if err != nil {
+	if err := h.platform.DeleteARPEntryWithIP(connectionInfo.IP); err != nil {
 		h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err)
 	}
+}
 
-	h.logger.Debug(h.logTag, "Cleaned ip-mac address cache for: %s.", connectionInfo.IP)
+// updateFirewallForNATS calls the firewall hook to update NATS rules before connection/reconnection.
+// This allows DNS to be re-resolved, supporting HA failover where the director may have moved.
+func (h *natsHandler) updateFirewallForNATS() {
+	hook := h.platform.GetNatsFirewallHook()
+	if hook == nil {
+		return
+	}
+
+	settings := h.settingsService.GetSettings()
+	mbusURL := settings.GetMbusURL()
+
+	if err := hook.BeforeConnect(mbusURL); err != nil {
+		// Log but don't fail - firewall update failure shouldn't prevent connection attempt
+		h.logger.Warn(h.logTag, "Failed to update NATS firewall rules: %v", err)
+	}
 }
 
 func (h *natsHandler) Run(handlerFunc boshhandler.Func) error {
@@ -131,11 +146,21 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 	if net.ParseIP(connectionInfo.IP) != nil {
 		h.arpClean()
 	}
+
+	// Update firewall rules before initial connection
+	h.updateFirewallForNATS()
+
 	var natsOptions = []nats.Option{
 		nats.RetryOnFailedConnect(true),
 		nats.DisconnectErrHandler(func(c *nats.Conn, err error) {
-			h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
+			if err != nil {
+				h.logger.Debug(natsHandlerLogTag, "Nats disconnected with Error: %v", err.Error())
+			} else {
+				h.logger.Debug(natsHandlerLogTag, "Nats disconnected")
+			}
 			h.logger.Debug(natsHandlerLogTag, "Attempting to reconnect: %v", c.IsReconnecting())
+			// Update firewall rules before reconnection attempts (allows DNS re-resolution)
+			h.updateFirewallForNATS()
 			for c.IsReconnecting() {
 				h.arpClean()
 				h.logger.Debug(natsHandlerLogTag, "Waiting to reconnect to nats.. Current attempt: %v, Connected: %v", c.Reconnects, c.IsConnected())
@@ -146,7 +171,11 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 			h.logger.Debug(natsHandlerLogTag, "Reconnected to %v", c.ConnectedAddr())
 		}),
 		nats.ClosedHandler(func(c *nats.Conn) {
-			h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", c.LastError().Error())
+			if err := c.LastError(); err != nil {
+				h.logger.Debug(natsHandlerLogTag, "Connection Closed with: %v", err.Error())
+			} else {
+				h.logger.Debug(natsHandlerLogTag, "Connection Closed")
+			}
 		}),
 		nats.ErrorHandler(func(c *nats.Conn, s *nats.Subscription, err error) {
 			h.logger.Debug(natsHandlerLogTag, err.Error())
