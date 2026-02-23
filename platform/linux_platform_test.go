@@ -958,6 +958,63 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
 		})
 	})
 
+	Describe("SetupDynamicDisk", func() {
+		BeforeEach(func() {
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+		})
+
+		It("sets up dynamic disk symlink", func() {
+			err := platform.SetupDynamicDisk(boshsettings.DiskSettings{ID: "diskID", Path: "/dev/sdb"})
+			Expect(err).NotTo(HaveOccurred())
+
+			sysStats := fs.GetFileTestStat("/fake-dir/data/dynamic_disks/diskID")
+			Expect(sysStats).ToNot(BeNil())
+			Expect(sysStats.FileType).To(Equal(fakesys.FakeFileTypeSymlink))
+			Expect(sysStats.SymlinkTarget).To(Equal("/dev/sdb"))
+		})
+
+		It("returns error if resolving device path fails", func() {
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return "", false, errors.New("fake-get-real-device-path-err")
+			}
+
+			err := platform.SetupDynamicDisk(boshsettings.DiskSettings{ID: "diskID", Path: "/dev/sdb"})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+		})
+
+		It("returns error if resolving device path times out", func() {
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return "", true, nil
+			}
+
+			err := platform.SetupDynamicDisk(boshsettings.DiskSettings{ID: "diskID", Path: "/dev/sdb"})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Timed out resolving device path for diskID"))
+		})
+	})
+
+	Describe("CleanupDynamicDisk", func() {
+		BeforeEach(func() {
+			devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+				return diskSettings.Path, false, nil
+			}
+		})
+
+		It("removes dynamic disk symlink", func() {
+			err := platform.SetupDynamicDisk(boshsettings.DiskSettings{ID: "diskID", Path: "/dev/sdb"})
+			Expect(err).NotTo(HaveOccurred())
+
+			err = platform.CleanupDynamicDisk("diskID")
+			Expect(err).NotTo(HaveOccurred())
+
+			sysStats := fs.GetFileTestStat("/fake-dir/data/dynamic_disks/diskID")
+			Expect(sysStats).To(BeNil())
+		})
+	})
+
 	Describe("SetupEphemeralDiskWithPath", func() {
 		var (
 			labelPrefix         string
@@ -1882,7 +1939,18 @@ Number  Start   End     Size    File system  Name             Flags
 			Expect(sysLogStats).ToNot(BeNil())
 			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0755)))
-			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/packages"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/packages"}))
+		})
+
+		It("creates dynamic disks directory in data directory", func() {
+			err := platform.SetupDataDir(boshsettings.JobDir{}, boshsettings.RunDir{})
+			Expect(err).NotTo(HaveOccurred())
+
+			sysLogStats := fs.GetFileTestStat("/fake-dir/data/dynamic_disks")
+			Expect(sysLogStats).ToNot(BeNil())
+			Expect(sysLogStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
+			Expect(sysLogStats.FileMode).To(Equal(os.FileMode(0700)))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/dynamic_disks"}))
 		})
 
 		Context("when a tmpfs for the sensitive directories is requested", func() {
@@ -2060,7 +2128,7 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(sysRunStats).ToNot(BeNil())
 				Expect(sysRunStats.FileType).To(Equal(fakesys.FakeFileTypeDir))
 				Expect(sysRunStats.FileMode).To(Equal(os.FileMode(0750)))
-				Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
+				Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"chown", "root:vcap", "/fake-dir/data/sys/run"}))
 			})
 
 			It("mounts tmpfs to sys/run", func() {

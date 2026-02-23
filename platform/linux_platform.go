@@ -781,6 +781,32 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	return nil
 }
 
+func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
+	devicePath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting dynamic disk real device path")
+	}
+	if timedOut {
+		return bosherr.WrapErrorf(err, "Timed out resolving device path for %s", diskSetting.ID)
+	}
+
+	symlinkDestination := filepath.Join(p.dirProvider.DataDynamicDisksDir(), diskSetting.ID)
+	if err := p.fs.Symlink(devicePath, symlinkDestination); err != nil {
+		return bosherr.WrapError(err, "Symlinking dynamic disk real device path")
+	}
+
+	return nil
+}
+
+func (p linux) CleanupDynamicDisk(diskCID string) error {
+	symlinkDestination := filepath.Join(p.dirProvider.DataDynamicDisksDir(), diskCID)
+	if err := p.fs.RemoveAll(symlinkDestination); err != nil {
+		return bosherr.WrapError(err, "Removing dynamic disk symlink")
+	}
+
+	return nil
+}
+
 func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 
@@ -806,6 +832,12 @@ func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsetting
 	err = p.fs.MkdirAll(jobsDir, jobsDirPermissions)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", jobsDir)
+	}
+
+	dynamicDisksDir := p.dirProvider.DataDynamicDisksDir()
+	err = p.fs.MkdirAll(dynamicDisksDir, persistentDiskPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", dynamicDisksDir)
 	}
 
 	sensitiveDir := p.dirProvider.SensitiveBlobsDir()
@@ -836,6 +868,11 @@ func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsetting
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sensitiveDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chown %s", sensitiveDir)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dynamicDisksDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", dynamicDisksDir)
 	}
 
 	packagesDir := p.dirProvider.PkgDir()
