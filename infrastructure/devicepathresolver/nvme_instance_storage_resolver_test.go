@@ -9,25 +9,22 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
-	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 var _ = Describe("AWSNVMeInstanceStorageResolver", func() {
 	var (
-		resolver               InstanceStorageResolver
-		fakeFS                 *fakesys.FakeFileSystem
-		fakeDevicePathResolver *fakedpresolv.FakeDevicePathResolver
-		logger                 boshlog.Logger
+		resolver InstanceStorageResolver
+		fakeFS   *fakesys.FakeFileSystem
+		logger   boshlog.Logger
 	)
 	BeforeEach(func() {
 		if runtime.GOOS != "linux" {
 			Skip("Only supported on Linux")
 		}
 		fakeFS = fakesys.NewFakeFileSystem()
-		fakeDevicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		resolver = NewAWSNVMeInstanceStorageResolver(fakeFS, fakeDevicePathResolver, logger, "", "")
+		resolver = NewAWSNVMeInstanceStorageResolver(fakeFS, logger, "", "")
 	})
 	Describe("DiscoverInstanceStorage", func() {
 		Context("when devices are NVMe", func() {
