@@ -10,40 +10,65 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
-type awsNVMeInstanceStorageResolver struct {
-	fs                 boshsys.FileSystem
-	devicePathResolver DevicePathResolver
-	logger             boshlog.Logger
-	logTag             string
-	ebsSymlinkPattern  string
-	nvmeDevicePattern  string
+// Known symlink patterns for different cloud providers
+const (
+	// AWS EBS volumes create symlinks with this pattern
+	AWSEBSSymlinkPattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
+	// Default NVMe device pattern
+	DefaultNVMeDevicePattern = "/dev/nvme*n1"
+)
+
+// nvmeSymlinkFilteringResolver discovers NVMe instance storage by filtering out
+// IaaS-managed volumes identified via symlinks. This generic resolver works for
+// any cloud provider that creates symlinks for their managed volumes.
+type nvmeSymlinkFilteringResolver struct {
+	fs                        boshsys.FileSystem
+	logger                    boshlog.Logger
+	logTag                    string
+	managedDiskSymlinkPattern string
+	nvmeDevicePattern         string
 }
 
+// NewNVMeSymlinkFilteringResolver creates a generic resolver that discovers
+// instance storage by filtering out managed volumes identified via symlinks.
+// This works for AWS (EBS).
+func NewNVMeSymlinkFilteringResolver(
+	fs boshsys.FileSystem,
+	logger boshlog.Logger,
+	managedDiskSymlinkPattern string,
+	nvmeDevicePattern string,
+) InstanceStorageResolver {
+	if managedDiskSymlinkPattern == "" {
+		managedDiskSymlinkPattern = AWSEBSSymlinkPattern
+	}
+	if nvmeDevicePattern == "" {
+		nvmeDevicePattern = DefaultNVMeDevicePattern
+	}
+
+	return &nvmeSymlinkFilteringResolver{
+		fs:                        fs,
+		logger:                    logger,
+		logTag:                    "NVMeSymlinkFilteringResolver",
+		managedDiskSymlinkPattern: managedDiskSymlinkPattern,
+		nvmeDevicePattern:         nvmeDevicePattern,
+	}
+}
+
+// NewAWSNVMeInstanceStorageResolver creates a resolver for AWS NVMe instances.
+// Deprecated: Use NewNVMeSymlinkFilteringResolver with AWSEBSSymlinkPattern instead.
 func NewAWSNVMeInstanceStorageResolver(
 	fs boshsys.FileSystem,
-	devicePathResolver DevicePathResolver,
 	logger boshlog.Logger,
 	ebsSymlinkPattern string,
 	nvmeDevicePattern string,
 ) InstanceStorageResolver {
 	if ebsSymlinkPattern == "" {
-		ebsSymlinkPattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
+		ebsSymlinkPattern = AWSEBSSymlinkPattern
 	}
-	if nvmeDevicePattern == "" {
-		nvmeDevicePattern = "/dev/nvme*n1"
-	}
-
-	return &awsNVMeInstanceStorageResolver{
-		fs:                 fs,
-		devicePathResolver: devicePathResolver,
-		logger:             logger,
-		logTag:             "AWSNVMeInstanceStorageResolver",
-		ebsSymlinkPattern:  ebsSymlinkPattern,
-		nvmeDevicePattern:  nvmeDevicePattern,
-	}
+	return NewNVMeSymlinkFilteringResolver(fs, logger, ebsSymlinkPattern, nvmeDevicePattern)
 }
 
-func (r *awsNVMeInstanceStorageResolver) DiscoverInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
+func (r *nvmeSymlinkFilteringResolver) DiscoverInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
 	if len(devices) == 0 {
 		return []string{}, nil
 	}
@@ -55,30 +80,32 @@ func (r *awsNVMeInstanceStorageResolver) DiscoverInstanceStorage(devices []boshs
 
 	r.logger.Debug(r.logTag, "Found NVMe devices: %v", allNvmeDevices)
 
-	ebsSymlinks, err := r.fs.Glob(r.ebsSymlinkPattern)
+	managedDiskSymlinks, err := r.fs.Glob(r.managedDiskSymlinkPattern)
 	if err != nil {
-		return nil, bosherr.WrapError(err, "Globbing EBS symlinks")
+		return nil, bosherr.WrapError(err, "Globbing managed disk symlinks")
 	}
 
-	ebsDevices := make(map[string]bool)
-	for _, symlink := range ebsSymlinks {
+	// Build a map of managed disk device paths to exclude
+	managedDevices := make(map[string]bool)
+	for _, symlink := range managedDiskSymlinks {
 		absPath, err := r.fs.ReadAndFollowLink(symlink)
 		if err != nil {
 			r.logger.Debug(r.logTag, "Could not resolve symlink %s: %s", symlink, err.Error())
 			continue
 		}
 
-		r.logger.Debug(r.logTag, "EBS volume: %s -> %s", symlink, absPath)
-		ebsDevices[absPath] = true
+		r.logger.Debug(r.logTag, "Managed disk: %s -> %s", symlink, absPath)
+		managedDevices[absPath] = true
 	}
 
+	// Instance storage = all NVMe devices minus managed disks
 	var instanceStorage []string
 	for _, devicePath := range allNvmeDevices {
-		if !ebsDevices[devicePath] {
+		if !managedDevices[devicePath] {
 			instanceStorage = append(instanceStorage, devicePath)
 			r.logger.Info(r.logTag, "Discovered instance storage: %s", devicePath)
 		} else {
-			r.logger.Debug(r.logTag, "Excluding EBS volume: %s", devicePath)
+			r.logger.Debug(r.logTag, "Excluding managed disk: %s", devicePath)
 		}
 	}
 

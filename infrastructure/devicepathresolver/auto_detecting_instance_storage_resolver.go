@@ -11,18 +11,18 @@ import (
 
 // autoDetectingInstanceStorageResolver automatically detects whether to use
 // NVMe-specific logic or identity resolution based on device paths from the CPI.
-// If any device path starts with "/dev/nvme", it uses AWS NVMe discovery logic.
+// If any device path starts with "/dev/nvme", it uses symlink-based NVMe discovery.
 // Otherwise, it uses the CPI-provided paths directly (identity resolution).
 type autoDetectingInstanceStorageResolver struct {
-	fs                  boshsys.FileSystem
-	devicePathResolver  DevicePathResolver
-	logger              boshlog.Logger
-	ebsSymlinkPattern   string
-	nvmeDevicePattern   string
-	awsNVMeResolver     InstanceStorageResolver
-	identityResolver    InstanceStorageResolver
-	resolverInitialized bool
-	useNVMeResolver     bool
+	fs                        boshsys.FileSystem
+	devicePathResolver        DevicePathResolver
+	logger                    boshlog.Logger
+	managedDiskSymlinkPattern string
+	nvmeDevicePattern         string
+	nvmeResolver              InstanceStorageResolver
+	identityResolver          InstanceStorageResolver
+	resolverInitialized       bool
+	useNVMeResolver           bool
 }
 
 // NewAutoDetectingInstanceStorageResolver creates a resolver that automatically
@@ -31,23 +31,23 @@ func NewAutoDetectingInstanceStorageResolver(
 	fs boshsys.FileSystem,
 	devicePathResolver DevicePathResolver,
 	logger boshlog.Logger,
-	ebsSymlinkPattern string,
+	managedDiskSymlinkPattern string,
 	nvmeDevicePattern string,
 ) InstanceStorageResolver {
-	if ebsSymlinkPattern == "" {
-		ebsSymlinkPattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
+	if managedDiskSymlinkPattern == "" {
+		managedDiskSymlinkPattern = AWSEBSSymlinkPattern
 	}
 	if nvmeDevicePattern == "" {
-		nvmeDevicePattern = "/dev/nvme*n1"
+		nvmeDevicePattern = DefaultNVMeDevicePattern
 	}
 
 	return &autoDetectingInstanceStorageResolver{
-		fs:                  fs,
-		devicePathResolver:  devicePathResolver,
-		logger:              logger,
-		ebsSymlinkPattern:   ebsSymlinkPattern,
-		nvmeDevicePattern:   nvmeDevicePattern,
-		resolverInitialized: false,
+		fs:                        fs,
+		devicePathResolver:        devicePathResolver,
+		logger:                    logger,
+		managedDiskSymlinkPattern: managedDiskSymlinkPattern,
+		nvmeDevicePattern:         nvmeDevicePattern,
+		resolverInitialized:       false,
 	}
 }
 
@@ -62,12 +62,11 @@ func (r *autoDetectingInstanceStorageResolver) DiscoverInstanceStorage(devices [
 
 		if r.useNVMeResolver {
 			r.logger.Info("AutoDetectingInstanceStorageResolver",
-				"Detected NVMe device paths from CPI - using AWS NVMe instance storage discovery")
-			r.awsNVMeResolver = NewAWSNVMeInstanceStorageResolver(
+				"Detected NVMe device paths from CPI - using symlink-based NVMe instance storage discovery")
+			r.nvmeResolver = NewNVMeSymlinkFilteringResolver(
 				r.fs,
-				r.devicePathResolver,
 				r.logger,
-				r.ebsSymlinkPattern,
+				r.managedDiskSymlinkPattern,
 				r.nvmeDevicePattern,
 			)
 		} else {
@@ -80,7 +79,7 @@ func (r *autoDetectingInstanceStorageResolver) DiscoverInstanceStorage(devices [
 	}
 
 	if r.useNVMeResolver {
-		return r.awsNVMeResolver.DiscoverInstanceStorage(devices)
+		return r.nvmeResolver.DiscoverInstanceStorage(devices)
 	}
 	return r.identityResolver.DiscoverInstanceStorage(devices)
 }
