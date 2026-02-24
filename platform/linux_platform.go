@@ -828,16 +828,12 @@ func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSetting
 // discoverNVMeInstanceStorage discovers NVMe instance storage by filtering out
 // IaaS-managed volumes (e.g., EBS on AWS, Managed Disks on Azure) using symlinks.
 // The patterns are configurable via LinuxOptions to support different cloud providers.
+// If InstanceStorageManagedVolumePattern is not configured, all NVMe devices are
+// considered instance storage (no filtering).
 func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
 	nvmePattern := p.options.InstanceStorageDevicePattern
 	if nvmePattern == "" {
 		nvmePattern = boshdpresolv.DefaultNVMeDevicePattern
-	}
-
-	managedVolumePattern := p.options.InstanceStorageManagedVolumePattern
-	if managedVolumePattern == "" {
-		// Default to AWS EBS pattern; other providers should configure their pattern
-		managedVolumePattern = boshdpresolv.AWSEBSSymlinkPattern
 	}
 
 	// Get all NVMe devices
@@ -848,14 +844,24 @@ func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) 
 
 	p.logger.Debug(logTag, "Found NVMe devices: %v", allNvmeDevices)
 
-	// Resolve managed disk symlinks to device paths (to exclude them)
-	managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(managedVolumePattern)
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
-	}
+	// Filter out managed volumes if pattern is configured
+	managedVolumePattern := p.options.InstanceStorageManagedVolumePattern
+	var instanceStorage []string
 
-	// Instance storage = all NVMe devices minus managed disks
-	instanceStorage := p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
+	if managedVolumePattern == "" {
+		// Resolve managed disk symlinks to device paths (to exclude them)
+		managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(managedVolumePattern)
+		if err != nil {
+			return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
+		}
+
+		// Instance storage = all NVMe devices minus managed disks
+		instanceStorage = p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
+	} else {
+		// No managed volume pattern configured - all NVMe devices are instance storage
+		p.logger.Debug(logTag, "No InstanceStorageManagedVolumePattern configured, using all NVMe devices as instance storage")
+		instanceStorage = allNvmeDevices
+	}
 
 	for _, devicePath := range instanceStorage {
 		p.logger.Info(logTag, "Discovered instance storage: %s", devicePath)
