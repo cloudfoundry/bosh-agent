@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -77,16 +78,12 @@ type LinuxOptions struct {
 	// possible values: virtio, scsi, iscsi, ""
 	DevicePathResolutionType string
 
-	// Strategy for discovering instance storage devices;
-	// possible values: aws-nvme, ""
-	InstanceStorageResolutionType string
-
 	// Pattern for identifying IaaS-managed volumes (e.g., EBS on AWS)
-	// Used with InstanceStorageResolutionType to filter out non-instance storage
+	// Used to filter out non-instance storage on NVMe systems
 	InstanceStorageManagedVolumePattern string
 
 	// Pattern for discovering all potential instance storage devices
-	// Used with InstanceStorageResolutionType for device enumeration
+	// Used for device enumeration on NVMe systems
 	InstanceStorageDevicePattern string
 
 	// Strategy for resolving ephemeral & persistent disk partitioners;
@@ -107,28 +104,28 @@ type LinuxOptions struct {
 }
 
 type linux struct {
-	fs                      boshsys.FileSystem
-	cmdRunner               boshsys.CmdRunner
-	collector               boshstats.Collector
-	compressor              boshcmd.Compressor
-	copier                  boshcmd.Copier
-	dirProvider             boshdirs.Provider
-	vitalsService           boshvitals.Service
-	cdutil                  cdrom.CDUtil
-	diskManager             boshdisk.Manager
-	netManager              boshnet.Manager
-	certManager             boshcert.Manager
-	monitRetryStrategy      boshretry.RetryStrategy
-	devicePathResolver      boshdpresolv.DevicePathResolver
-	instanceStorageResolver boshdpresolv.InstanceStorageResolver
-	options                 LinuxOptions
-	state                   *BootstrapState
-	logger                  boshlog.Logger
-	defaultNetworkResolver  boshsettings.DefaultNetworkResolver
-	uuidGenerator           boshuuid.Generator
-	auditLogger             AuditLogger
-	logsTarProvider         boshlogstarprovider.LogsTarProvider
-	serviceManager          servicemanager.ServiceManager
+	fs                     boshsys.FileSystem
+	cmdRunner              boshsys.CmdRunner
+	collector              boshstats.Collector
+	compressor             boshcmd.Compressor
+	copier                 boshcmd.Copier
+	dirProvider            boshdirs.Provider
+	vitalsService          boshvitals.Service
+	cdutil                 cdrom.CDUtil
+	diskManager            boshdisk.Manager
+	netManager             boshnet.Manager
+	certManager            boshcert.Manager
+	monitRetryStrategy     boshretry.RetryStrategy
+	devicePathResolver     boshdpresolv.DevicePathResolver
+	symlinkDeviceResolver  *boshdpresolv.SymlinkDeviceResolver
+	options                LinuxOptions
+	state                  *BootstrapState
+	logger                 boshlog.Logger
+	defaultNetworkResolver boshsettings.DefaultNetworkResolver
+	uuidGenerator          boshuuid.Generator
+	auditLogger            AuditLogger
+	logsTarProvider        boshlogstarprovider.LogsTarProvider
+	serviceManager         servicemanager.ServiceManager
 }
 
 func NewLinuxPlatform(
@@ -145,7 +142,7 @@ func NewLinuxPlatform(
 	certManager boshcert.Manager,
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
-	instanceStorageResolver boshdpresolv.InstanceStorageResolver,
+	symlinkDeviceResolver *boshdpresolv.SymlinkDeviceResolver,
 	state *BootstrapState,
 	options LinuxOptions,
 	logger boshlog.Logger,
@@ -156,28 +153,28 @@ func NewLinuxPlatform(
 	serviceManager servicemanager.ServiceManager,
 ) Platform {
 	return &linux{
-		fs:                      fs,
-		cmdRunner:               cmdRunner,
-		collector:               collector,
-		compressor:              compressor,
-		copier:                  copier,
-		dirProvider:             dirProvider,
-		vitalsService:           vitalsService,
-		cdutil:                  cdutil,
-		diskManager:             diskManager,
-		netManager:              netManager,
-		certManager:             certManager,
-		monitRetryStrategy:      monitRetryStrategy,
-		devicePathResolver:      devicePathResolver,
-		instanceStorageResolver: instanceStorageResolver,
-		state:                   state,
-		options:                 options,
-		logger:                  logger,
-		defaultNetworkResolver:  defaultNetworkResolver,
-		uuidGenerator:           uuidGenerator,
-		auditLogger:             auditLogger,
-		logsTarProvider:         logsTarProvider,
-		serviceManager:          serviceManager,
+		fs:                     fs,
+		cmdRunner:              cmdRunner,
+		collector:              collector,
+		compressor:             compressor,
+		copier:                 copier,
+		dirProvider:            dirProvider,
+		vitalsService:          vitalsService,
+		cdutil:                 cdutil,
+		diskManager:            diskManager,
+		netManager:             netManager,
+		certManager:            certManager,
+		monitRetryStrategy:     monitRetryStrategy,
+		devicePathResolver:     devicePathResolver,
+		symlinkDeviceResolver:  symlinkDeviceResolver,
+		state:                  state,
+		options:                options,
+		logger:                 logger,
+		defaultNetworkResolver: defaultNetworkResolver,
+		uuidGenerator:          uuidGenerator,
+		auditLogger:            auditLogger,
+		logsTarProvider:        logsTarProvider,
+		serviceManager:         serviceManager,
 	}
 }
 
@@ -749,7 +746,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 
 	p.logger.Info(logTag, "Setting up %d raw ephemeral disk(s)", len(devices))
 
-	instanceStorageDevices, err := p.instanceStorageResolver.DiscoverInstanceStorage(devices)
+	instanceStorageDevices, err := p.discoverInstanceStorageDevices(devices)
 	if err != nil {
 		return bosherr.WrapError(err, "Discovering instance storage devices")
 	}
@@ -800,6 +797,91 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 	}
 
 	return nil
+}
+
+// discoverInstanceStorageDevices finds the actual device paths for instance storage.
+// For NVMe devices (detected by /dev/nvme* paths from CPI), it uses symlink-based
+// filtering to exclude IaaS-managed volumes (e.g., EBS on AWS).
+// For non-NVMe devices, it uses the DevicePathResolver to resolve each device.
+func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSettings) ([]string, error) {
+	if len(devices) == 0 {
+		return []string{}, nil
+	}
+
+	// Detect if we're dealing with NVMe devices
+	isNVMe := false
+	for _, device := range devices {
+		if strings.HasPrefix(device.Path, "/dev/nvme") {
+			isNVMe = true
+			break
+		}
+	}
+
+	if isNVMe && p.symlinkDeviceResolver != nil {
+		return p.discoverNVMeInstanceStorage(devices)
+	}
+
+	// For non-NVMe devices, use the DevicePathResolver
+	return p.discoverIdentityInstanceStorage(devices)
+}
+
+// discoverNVMeInstanceStorage discovers NVMe instance storage by filtering out
+// IaaS-managed volumes (e.g., EBS on AWS, Managed Disks on Azure) using symlinks.
+// The patterns are configurable via LinuxOptions to support different cloud providers.
+func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
+	nvmePattern := p.options.InstanceStorageDevicePattern
+	if nvmePattern == "" {
+		nvmePattern = boshdpresolv.DefaultNVMeDevicePattern
+	}
+
+	managedVolumePattern := p.options.InstanceStorageManagedVolumePattern
+	if managedVolumePattern == "" {
+		// Default to AWS EBS pattern; other providers should configure their pattern
+		managedVolumePattern = boshdpresolv.AWSEBSSymlinkPattern
+	}
+
+	// Get all NVMe devices
+	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(nvmePattern)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
+	}
+
+	p.logger.Debug(logTag, "Found NVMe devices: %v", allNvmeDevices)
+
+	// Resolve managed disk symlinks to device paths (to exclude them)
+	managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(managedVolumePattern)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
+	}
+
+	// Instance storage = all NVMe devices minus managed disks
+	instanceStorage := p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
+
+	for _, devicePath := range instanceStorage {
+		p.logger.Info(logTag, "Discovered instance storage: %s", devicePath)
+	}
+
+	sort.Strings(instanceStorage)
+
+	if len(instanceStorage) != len(devices) {
+		return nil, bosherr.Errorf("Expected %d instance storage devices but discovered %d: %v",
+			len(devices), len(instanceStorage), instanceStorage)
+	}
+
+	return instanceStorage, nil
+}
+
+// discoverIdentityInstanceStorage uses the DevicePathResolver for each device.
+func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
+	paths := make([]string, len(devices))
+	for i, device := range devices {
+		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Getting device %s path", device)
+		}
+		paths[i] = realPath
+	}
+	return paths, nil
 }
 
 func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {
