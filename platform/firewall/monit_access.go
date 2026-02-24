@@ -3,8 +3,7 @@
 //
 // Usage:
 //
-//	bosh-agent enable-monit-access --validate-nftables-present    # Validates if new firewall is available (exit 0 = yes)
-//	bosh-agent enable-monit-access                                # Add firewall rule (cgroup preferred, UID fallback)
+//	bosh-agent enable-monit-access # Add firewall rule (cgroup preferred, UID fallback)
 //
 // This binary serves as a replacement for the complex bash firewall setup logic
 // that was previously in job service scripts.
@@ -17,18 +16,8 @@ import (
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func EnableMonitAccess(logger boshlog.Logger, command string, args []string) {
+func EnableMonitAccess(logger boshlog.Logger, command string) {
 	logger.UseTags([]boshlog.LogTag{{Name: "monit-access", LogLevel: boshlog.LevelDebug}})
-
-	// Validate nftables mode: verify if nftables is available
-	if len(args) > 0 && args[0] == "--validate-nftables-present" {
-		mgr, err := NewNftablesFirewall(logger)
-		if err != nil {
-			os.Exit(1)
-		}
-		defer mgr.Cleanup() //nolint:errcheck
-		os.Exit(0)
-	}
 
 	mgr, err := NewNftablesFirewall(logger)
 	if err != nil {

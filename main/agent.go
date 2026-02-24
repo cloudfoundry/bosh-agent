@@ -86,7 +86,7 @@ func main() {
 			compileTarball(cmd, os.Args[2:])
 			return
 		case "enable-monit-access":
-			firewall.EnableMonitAccess(logger, cmd, os.Args[2:])
+			firewall.EnableMonitAccess(logger, cmd)
 			return
 		}
 	}
