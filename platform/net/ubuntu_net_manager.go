@@ -116,11 +116,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 		if err != nil {
 			return err
 		}
-		err = SetupNatsFirewall(mbus)
-		if err != nil {
-			return bosherr.WrapError(err, "Setting up Nats Firewall")
-		}
-		net.logger.Info(UbuntuNetManagerLogTag, "Successfully set up outgoing nats api firewall")
 		return nil
 	}
 	staticConfigs, dhcpConfigs, dnsServers, err := net.ComputeNetworkConfig(networks)
@@ -184,11 +179,6 @@ func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 	}
 
 	go net.addressBroadcaster.BroadcastMACAddresses(append(staticAddressesWithoutVirtual, dynamicAddresses...))
-	err = SetupNatsFirewall(mbus)
-	if err != nil {
-		return bosherr.WrapError(err, "Setting up nats firewall")
-	}
-	net.logger.Info(UbuntuNetManagerLogTag, "Successfully set up outgoing nats api firewall")
 	return nil
 }
 func (net UbuntuNetManager) ComputeNetworkConfig(networks boshsettings.Networks) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, []string, error) {

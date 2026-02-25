@@ -183,6 +183,10 @@ func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 		}
 	}
 
+	if err = boot.platform.SetupFirewall(); err != nil {
+		return bosherr.WrapError(err, "Setting up firewall")
+	}
+
 	if err = boot.platform.SetupMonitUser(); err != nil {
 		return bosherr.WrapError(err, "Setting up monit user")
 	}

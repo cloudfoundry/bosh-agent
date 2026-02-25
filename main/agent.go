@@ -13,6 +13,7 @@ import (
 	boshapp "github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 )
 
 const mainLogTag = "main"
@@ -76,15 +77,19 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
+	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
+	logger := newSignalableLogger(asyncLog)
+
 	if len(os.Args) > 1 {
 		switch cmd := os.Args[1]; cmd {
 		case "compile":
 			compileTarball(cmd, os.Args[2:])
 			return
+		case "enable-monit-access":
+			firewall.EnableMonitAccess(logger, cmd)
+			return
 		}
 	}
-	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
-	logger := newSignalableLogger(asyncLog)
 
 	exitCode := 0
 	if err := startAgent(logger); err != nil {

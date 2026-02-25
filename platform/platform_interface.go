@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 
 	boshcmd "github.com/cloudfoundry/bosh-utils/fileutil"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -77,6 +78,7 @@ type Platform interface {
 	SetupLoggingAndAuditing() (err error)
 	SetupOptDir() (err error)
 	SetupRecordsJSONPermission(path string) error
+	SetupFirewall() error
 
 	// Disk management
 	AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) error
@@ -110,4 +112,9 @@ type Platform interface {
 	RemoveStaticLibraries(packageFileListPath string) error
 
 	Shutdown() error
+
+	// Firewall management
+	// GetNatsFirewallHook returns a hook that is called before NATS connection/reconnection
+	// to update firewall rules with resolved DNS. Returns nil if firewall is not supported.
+	GetNatsFirewallHook() firewall.NatsFirewallHook
 }
