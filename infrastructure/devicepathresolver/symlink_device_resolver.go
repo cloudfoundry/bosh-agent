@@ -7,7 +7,12 @@ import (
 )
 
 const (
+	// NVMeDevicePattern is a glob pattern matching NVMe namespace devices.
 	NVMeDevicePattern = "/dev/nvme*n1"
+
+	// NVMeDevicePathPrefix is the common prefix for NVMe device paths.
+	// Used to detect if a device path is an NVMe device.
+	NVMeDevicePathPrefix = "/dev/nvme"
 )
 
 type SymlinkDeviceResolver struct {

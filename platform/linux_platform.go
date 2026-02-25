@@ -800,69 +800,62 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 }
 
 // discoverInstanceStorageDevices finds the actual device paths for instance storage.
-// For NVMe devices (detected by /dev/nvme* paths from CPI), it uses symlink-based
+// For NVMe devices with a configured managed volume pattern, it uses symlink-based
 // filtering to exclude IaaS-managed volumes (e.g., EBS on AWS).
-// For non-NVMe devices, it uses the DevicePathResolver to resolve each device.
+// Otherwise, it uses the DevicePathResolver to resolve each device directly.
 func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSettings) ([]string, error) {
 	if len(devices) == 0 {
 		return []string{}, nil
 	}
 
-	// Detect if we're dealing with NVMe devices
-	isNVMe := false
-	for _, device := range devices {
-		if strings.HasPrefix(device.Path, "/dev/nvme") {
-			isNVMe = true
-			break
-		}
-	}
-
-	if isNVMe && p.symlinkDeviceResolver != nil {
+	// Use NVMe symlink filtering if:
+	// 1. A managed volume pattern is configured (tells us what to exclude)
+	// 2. The CPI reports NVMe device paths
+	// 3. The symlink resolver is available
+	if p.options.InstanceStorageManagedVolumePattern != "" &&
+		p.symlinkDeviceResolver != nil &&
+		p.hasNVMeDevices(devices) {
 		return p.discoverNVMeInstanceStorage(devices)
 	}
 
-	// For non-NVMe devices, use the DevicePathResolver
 	return p.discoverIdentityInstanceStorage(devices)
+}
+
+// hasNVMeDevices checks if any device path from the CPI is an NVMe device.
+func (p linux) hasNVMeDevices(devices []boshsettings.DiskSettings) bool {
+	for _, device := range devices {
+		if strings.HasPrefix(device.Path, boshdpresolv.NVMeDevicePathPrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // discoverNVMeInstanceStorage discovers NVMe instance storage by filtering out
 // IaaS-managed volumes (e.g., EBS on AWS, Managed Disks on Azure) using symlinks.
-// The patterns are configurable via LinuxOptions to support different cloud providers.
-// If InstanceStorageManagedVolumePattern is not configured, all NVMe devices are
-// considered instance storage (no filtering).
 func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
-	// Get all NVMe devices
-	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(boshdpresolv.NVMeDevicePattern)
+	nvmePattern := p.options.InstanceStorageDevicePattern
+	if nvmePattern == "" {
+		nvmePattern = boshdpresolv.NVMeDevicePattern
+	}
+
+	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(nvmePattern)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
 	}
-
 	p.logger.Debug(logTag, "Found NVMe devices: %v", allNvmeDevices)
 
-	// Filter out managed volumes if pattern is configured
-	managedVolumePattern := p.options.InstanceStorageManagedVolumePattern
-	var instanceStorage []string
-
-	if managedVolumePattern == "" {
-		// Resolve managed disk symlinks to device paths (to exclude them)
-		managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(managedVolumePattern)
-		if err != nil {
-			return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
-		}
-
-		// Instance storage = all NVMe devices minus managed disks
-		instanceStorage = p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
-	} else {
-		// No managed volume pattern configured - all NVMe devices are instance storage
-		p.logger.Debug(logTag, "No InstanceStorageManagedVolumePattern configured, using all NVMe devices as instance storage")
-		instanceStorage = allNvmeDevices
+	managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(p.options.InstanceStorageManagedVolumePattern)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
 	}
+
+	instanceStorage := p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
+	sort.Strings(instanceStorage)
 
 	for _, devicePath := range instanceStorage {
 		p.logger.Info(logTag, "Discovered instance storage: %s", devicePath)
 	}
-
-	sort.Strings(instanceStorage)
 
 	if len(instanceStorage) != len(devices) {
 		return nil, bosherr.Errorf("Expected %d instance storage devices but discovered %d: %v",
