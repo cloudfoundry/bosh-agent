@@ -831,13 +831,8 @@ func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSetting
 // If InstanceStorageManagedVolumePattern is not configured, all NVMe devices are
 // considered instance storage (no filtering).
 func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
-	nvmePattern := p.options.InstanceStorageDevicePattern
-	if nvmePattern == "" {
-		nvmePattern = boshdpresolv.DefaultNVMeDevicePattern
-	}
-
 	// Get all NVMe devices
-	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(nvmePattern)
+	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(boshdpresolv.NVMeDevicePattern)
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
 	}

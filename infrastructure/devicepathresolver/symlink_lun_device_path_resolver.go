@@ -14,7 +14,7 @@ import (
 type SymlinkLunDevicePathResolver struct {
 	diskWaitTimeout time.Duration
 	basePath        string
-	symlinkResolver *SymlinkDeviceResolver
+	fs              boshsys.FileSystem
 
 	logTag string
 	logger boshlog.Logger
@@ -29,7 +29,7 @@ func NewSymlinkLunDevicePathResolver(
 	return SymlinkLunDevicePathResolver{
 		basePath:        basePath,
 		diskWaitTimeout: diskWaitTimeout,
-		symlinkResolver: NewSymlinkDeviceResolver(fs, logger),
+		fs:              fs,
 
 		logTag: "symlinkLunResolver",
 		logger: logger,
@@ -44,11 +44,26 @@ func (r SymlinkLunDevicePathResolver) GetRealDevicePath(diskSettings boshsetting
 	lunSymlink := path.Join(r.basePath, diskSettings.Lun)
 	r.logger.Debug(r.logTag, "Looking up LUN symlink '%s'", lunSymlink)
 
-	realPath, err := r.symlinkResolver.WaitForSymlink(lunSymlink, r.diskWaitTimeout)
-	if err != nil {
-		return "", true, err
-	}
+	stopAfter := time.Now().Add(r.diskWaitTimeout)
 
-	r.logger.Debug(r.logTag, "Resolved LUN symlink '%s' to real path '%s'", lunSymlink, realPath)
-	return realPath, false, nil
+	for {
+		if time.Now().After(stopAfter) {
+			return "", true, bosherr.Errorf("Timed out waiting for symlink '%s' to resolve", lunSymlink)
+		}
+
+		realPath, err := r.fs.ReadAndFollowLink(lunSymlink)
+		if err != nil {
+			r.logger.Debug(r.logTag, "Symlink '%s' not yet available: %s", lunSymlink, err.Error())
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		if r.fs.FileExists(realPath) {
+			r.logger.Debug(r.logTag, "Resolved LUN symlink '%s' to real path '%s'", lunSymlink, realPath)
+			return realPath, false, nil
+		}
+
+		r.logger.Debug(r.logTag, "Real path '%s' does not yet exist", realPath)
+		time.Sleep(100 * time.Millisecond)
+	}
 }

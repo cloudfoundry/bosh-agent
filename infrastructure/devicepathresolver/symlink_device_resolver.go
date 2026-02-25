@@ -1,44 +1,15 @@
 package devicepathresolver
 
 import (
-	"time"
-
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
-// Cloud provider symlink patterns for managed volume identification.
-// These patterns identify IaaS-managed volumes (EBS, Azure Managed Disks, etc.)
-// that should be excluded when discovering instance/ephemeral storage.
 const (
-	// AWSEBSSymlinkPattern identifies AWS EBS volumes via NVMe symlinks.
-	// EBS volumes on Nitro instances appear as NVMe devices with these symlinks.
-	AWSEBSSymlinkPattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
-
-	// AzureManagedDiskSymlinkPattern identifies Azure managed disks via LUN symlinks.
-	AzureManagedDiskSymlinkPattern = "/dev/disk/azure/scsi1/lun*"
-
-	// GCPPersistentDiskSymlinkPattern identifies GCP persistent disks.
-	// GCP uses google-* symlinks for attached persistent disks.
-	GCPPersistentDiskSymlinkPattern = "/dev/disk/by-id/google-*"
+	NVMeDevicePattern = "/dev/nvme*n1"
 )
 
-// Cloud provider symlink base paths for LUN-based device resolution.
-const (
-	// AzureLunSymlinkBasePath is the base path for Azure LUN symlinks.
-	// Used by SymlinkLunDevicePathResolver for Azure NVMe disk resolution.
-	AzureLunSymlinkBasePath = "/dev/disk/azure/data/by-lun"
-)
-
-// Default device patterns for NVMe instance storage discovery.
-const (
-	// DefaultNVMeDevicePattern matches NVMe namespace devices.
-	DefaultNVMeDevicePattern = "/dev/nvme*n1"
-)
-
-// SymlinkDeviceResolver provides common symlink resolution functionality
-// used by both AWS (for filtering out EBS) and Azure (for finding LUN devices).
 type SymlinkDeviceResolver struct {
 	fs     boshsys.FileSystem
 	logger boshlog.Logger
@@ -78,33 +49,6 @@ func (r *SymlinkDeviceResolver) ResolveSymlinksToDevices(symlinkPattern string) 
 	}
 
 	return result, nil
-}
-
-// WaitForSymlink waits for a symlink to appear and resolves it to a device path.
-// This is useful for Azure LUN resolution where disks may not be immediately available.
-func (r *SymlinkDeviceResolver) WaitForSymlink(symlinkPath string, timeout time.Duration) (string, error) {
-	stopAfter := time.Now().Add(timeout)
-
-	for {
-		if time.Now().After(stopAfter) {
-			return "", bosherr.Errorf("Timed out waiting for symlink '%s' to resolve", symlinkPath)
-		}
-
-		realPath, err := r.fs.ReadAndFollowLink(symlinkPath)
-		if err != nil {
-			r.logger.Debug(r.logTag, "Symlink '%s' not yet available: %s", symlinkPath, err.Error())
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-
-		if r.fs.FileExists(realPath) {
-			r.logger.Debug(r.logTag, "Resolved symlink '%s' to real path '%s'", symlinkPath, realPath)
-			return realPath, nil
-		}
-
-		r.logger.Debug(r.logTag, "Real path '%s' does not yet exist", realPath)
-		time.Sleep(100 * time.Millisecond)
-	}
 }
 
 // GetDevicesByPattern returns all devices matching the given pattern.
