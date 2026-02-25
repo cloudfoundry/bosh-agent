@@ -12,13 +12,13 @@ import (
 )
 
 var _ = Describe("nats firewall", func() {
-
 	Context("ipv4", func() {
 		BeforeEach(func() {
 			// restore original settings of bosh from initial deploy of this VM.
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
 		})
+
 		It("sets up the outgoing nats firewall", func() {
 			format.MaxLength = 0
 
@@ -26,7 +26,7 @@ var _ = Describe("nats firewall", func() {
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
-			}, 300).Should(ContainSubstring("UbuntuNetManager"))
+			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
 			output, err := testEnvironment.RunCommand("sudo iptables -t mangle -L")
 			Expect(err).To(BeNil())
@@ -60,7 +60,7 @@ var _ = Describe("nats firewall", func() {
 						"blobstore_path": "/var/vcap/data",
 					},
 				},
-				Mbus: "mbus://[2001:db8::1]:8080",
+				Mbus: "nats://[2001:db8::1]:4222",
 				Disks: settings.Disks{
 					Ephemeral: "/dev/sdh",
 				},
@@ -74,14 +74,23 @@ var _ = Describe("nats firewall", func() {
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("sets up the outgoing nats for firewall  ipv6 ", func() {
+		AfterEach(func() {
+			err := testEnvironment.DetachDevice("/dev/sdh")
+			Expect(err).ToNot(HaveOccurred())
+			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -m cgroup --cgroup 2958295042 -j ACCEPT --wait")
+			Expect(err).To(BeNil())
+			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -j DROP --wait")
+			Expect(err).To(BeNil())
+		})
+
+		It("sets up the outgoing nats for firewall ipv6", func() {
 			format.MaxLength = 0
 
 			// Wait a maximum of 300 seconds
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
-			}, 300).Should(ContainSubstring("UbuntuNetManager"))
+			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
 			output, err := testEnvironment.RunCommand("sudo ip6tables -t mangle -L")
 			Expect(err).To(BeNil())
@@ -91,15 +100,6 @@ var _ = Describe("nats firewall", func() {
 			Expect(output).To(MatchRegexp("DROP *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt"))
 
 			Expect(output).To(MatchRegexp("2001:db8::1"))
-
-		})
-		AfterEach(func() {
-			err := testEnvironment.DetachDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -m cgroup --cgroup 2958295042 -j ACCEPT --wait")
-			Expect(err).To(BeNil())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -j DROP --wait")
-			Expect(err).To(BeNil())
 		})
 	})
 })
