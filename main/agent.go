@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -80,13 +81,16 @@ func main() {
 	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
 	logger := newSignalableLogger(asyncLog)
 
+	switch binaryName(os.Args[0]) {
+	case "bosh-enable-monit-access":
+		firewall.EnableMonitAccess(logger, "enable-monit-access")
+		return
+	}
+
 	if len(os.Args) > 1 {
 		switch cmd := os.Args[1]; cmd {
 		case "compile":
 			compileTarball(cmd, os.Args[2:])
-			return
-		case "enable-monit-access":
-			firewall.EnableMonitAccess(logger, cmd)
 			return
 		}
 	}
@@ -100,6 +104,10 @@ func main() {
 		logger.Error(mainLogTag, "Setting logger flush timeout failed: %s", err)
 	}
 	os.Exit(exitCode)
+}
+
+func binaryName(argv0 string) string {
+	return filepath.Base(argv0)
 }
 
 func newSignalableLogger(logger logger.Logger) logger.Logger {
