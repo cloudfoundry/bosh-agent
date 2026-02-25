@@ -77,6 +77,18 @@ type LinuxOptions struct {
 	// possible values: virtio, scsi, iscsi, ""
 	DevicePathResolutionType string
 
+	// Strategy for discovering instance storage devices;
+	// possible values: aws-nvme, ""
+	InstanceStorageResolutionType string
+
+	// Pattern for identifying IaaS-managed volumes (e.g., EBS on AWS)
+	// Used with InstanceStorageResolutionType to filter out non-instance storage
+	InstanceStorageManagedVolumePattern string
+
+	// Pattern for discovering all potential instance storage devices
+	// Used with InstanceStorageResolutionType for device enumeration
+	InstanceStorageDevicePattern string
+
 	// Strategy for resolving ephemeral & persistent disk partitioners;
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
@@ -95,27 +107,28 @@ type LinuxOptions struct {
 }
 
 type linux struct {
-	fs                     boshsys.FileSystem
-	cmdRunner              boshsys.CmdRunner
-	collector              boshstats.Collector
-	compressor             boshcmd.Compressor
-	copier                 boshcmd.Copier
-	dirProvider            boshdirs.Provider
-	vitalsService          boshvitals.Service
-	cdutil                 cdrom.CDUtil
-	diskManager            boshdisk.Manager
-	netManager             boshnet.Manager
-	certManager            boshcert.Manager
-	monitRetryStrategy     boshretry.RetryStrategy
-	devicePathResolver     boshdpresolv.DevicePathResolver
-	options                LinuxOptions
-	state                  *BootstrapState
-	logger                 boshlog.Logger
-	defaultNetworkResolver boshsettings.DefaultNetworkResolver
-	uuidGenerator          boshuuid.Generator
-	auditLogger            AuditLogger
-	logsTarProvider        boshlogstarprovider.LogsTarProvider
-	serviceManager         servicemanager.ServiceManager
+	fs                      boshsys.FileSystem
+	cmdRunner               boshsys.CmdRunner
+	collector               boshstats.Collector
+	compressor              boshcmd.Compressor
+	copier                  boshcmd.Copier
+	dirProvider             boshdirs.Provider
+	vitalsService           boshvitals.Service
+	cdutil                  cdrom.CDUtil
+	diskManager             boshdisk.Manager
+	netManager              boshnet.Manager
+	certManager             boshcert.Manager
+	monitRetryStrategy      boshretry.RetryStrategy
+	devicePathResolver      boshdpresolv.DevicePathResolver
+	instanceStorageResolver boshdpresolv.InstanceStorageResolver
+	options                 LinuxOptions
+	state                   *BootstrapState
+	logger                  boshlog.Logger
+	defaultNetworkResolver  boshsettings.DefaultNetworkResolver
+	uuidGenerator           boshuuid.Generator
+	auditLogger             AuditLogger
+	logsTarProvider         boshlogstarprovider.LogsTarProvider
+	serviceManager          servicemanager.ServiceManager
 }
 
 func NewLinuxPlatform(
@@ -132,6 +145,7 @@ func NewLinuxPlatform(
 	certManager boshcert.Manager,
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
+	instanceStorageResolver boshdpresolv.InstanceStorageResolver,
 	state *BootstrapState,
 	options LinuxOptions,
 	logger boshlog.Logger,
@@ -142,27 +156,28 @@ func NewLinuxPlatform(
 	serviceManager servicemanager.ServiceManager,
 ) Platform {
 	return &linux{
-		fs:                     fs,
-		cmdRunner:              cmdRunner,
-		collector:              collector,
-		compressor:             compressor,
-		copier:                 copier,
-		dirProvider:            dirProvider,
-		vitalsService:          vitalsService,
-		cdutil:                 cdutil,
-		diskManager:            diskManager,
-		netManager:             netManager,
-		certManager:            certManager,
-		monitRetryStrategy:     monitRetryStrategy,
-		devicePathResolver:     devicePathResolver,
-		state:                  state,
-		options:                options,
-		logger:                 logger,
-		defaultNetworkResolver: defaultNetworkResolver,
-		uuidGenerator:          uuidGenerator,
-		auditLogger:            auditLogger,
-		logsTarProvider:        logsTarProvider,
-		serviceManager:         serviceManager,
+		fs:                      fs,
+		cmdRunner:               cmdRunner,
+		collector:               collector,
+		compressor:              compressor,
+		copier:                  copier,
+		dirProvider:             dirProvider,
+		vitalsService:           vitalsService,
+		cdutil:                  cdutil,
+		diskManager:             diskManager,
+		netManager:              netManager,
+		certManager:             certManager,
+		monitRetryStrategy:      monitRetryStrategy,
+		devicePathResolver:      devicePathResolver,
+		instanceStorageResolver: instanceStorageResolver,
+		state:                   state,
+		options:                 options,
+		logger:                  logger,
+		defaultNetworkResolver:  defaultNetworkResolver,
+		uuidGenerator:           uuidGenerator,
+		auditLogger:             auditLogger,
+		logsTarProvider:         logsTarProvider,
+		serviceManager:          serviceManager,
 	}
 }
 
@@ -728,19 +743,24 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		return nil
 	}
 
-	p.logger.Info(logTag, "Setting up raw ephemeral disks")
+	if len(devices) == 0 {
+		return nil
+	}
 
-	for i, device := range devices {
-		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
-		if err != nil {
-			return bosherr.WrapError(err, "Getting real device path")
-		}
+	p.logger.Info(logTag, "Setting up %d raw ephemeral disk(s)", len(devices))
 
+	instanceStorageDevices, err := p.instanceStorageResolver.DiscoverInstanceStorage(devices)
+	if err != nil {
+		return bosherr.WrapError(err, "Discovering instance storage devices")
+	}
+
+	// Partition each discovered device
+	for i, devicePath := range instanceStorageDevices {
 		// check if device is already partitioned correctly
 		stdout, stderr, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"p",
 		)
 
@@ -748,21 +768,22 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
 			if !strings.Contains(stdout, "unrecognised disk label") &&
 				!strings.Contains(stderr, "unrecognised disk label") {
-				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+				return bosherr.WrapErrorf(err, "Checking partition on %s", devicePath)
 			}
 		}
 
 		if strings.Contains(stdout, "Partition Table: gpt") &&
 			strings.Contains(stdout, "raw-ephemeral-") {
+			p.logger.Info(logTag, "Device %s already partitioned, skipping", devicePath)
 			continue
 		}
 
 		// change to gpt partition type, change units to percentage, make partition with name and span from 0-100%
-		p.logger.Info(logTag, "Creating partition on `%s'", realPath)
+		p.logger.Info(logTag, "Creating partition on %s as raw-ephemeral-%d", devicePath, i)
 		_, _, _, err = p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"mklabel",
 			"gpt",
 			"unit",
@@ -774,7 +795,7 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		)
 
 		if err != nil {
-			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			return bosherr.WrapErrorf(err, "Creating partition on %s", devicePath)
 		}
 	}
 

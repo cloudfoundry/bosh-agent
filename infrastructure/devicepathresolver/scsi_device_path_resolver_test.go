@@ -42,7 +42,7 @@ var _ = Describe("scsiDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("fake-id-resolved-device-path"))
 
-				Expect(scsiIDDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+				Expect(scsiIDDevicePathResolver.GetRealDevicePathDiskSettings).To(ContainElement(diskSettings))
 			})
 		})
 
@@ -60,7 +60,7 @@ var _ = Describe("scsiDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("fake-volume-id-resolved-device-path"))
 
-				Expect(scsiVolumeIDDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+				Expect(scsiVolumeIDDevicePathResolver.GetRealDevicePathDiskSettings).To(ContainElement(diskSettings))
 			})
 		})
 
@@ -80,7 +80,7 @@ var _ = Describe("scsiDevicePathResolver", func() {
 					Expect(timeout).To(BeFalse())
 					Expect(realPath).To(Equal("fake-lun-resolved-device-path"))
 
-					Expect(scsiLunDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+					Expect(scsiLunDevicePathResolver.GetRealDevicePathDiskSettings).To(ContainElement(diskSettings))
 				})
 			})
 
