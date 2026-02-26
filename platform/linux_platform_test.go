@@ -1859,6 +1859,9 @@ Number  Start   End     Size    File system  Name             Flags
 
 		Context("NVMe instance storage discovery", func() {
 			BeforeEach(func() {
+				// Enable NVMe instance storage discovery by setting the managed volume pattern
+				options.InstanceStorageManagedVolumePattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
+
 				devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
 					return diskSettings.Path, false, nil
 				}
@@ -1866,19 +1869,6 @@ Number  Start   End     Size    File system  Name             Flags
 
 			It("discovers instance storage by excluding EBS volumes via symlinks", func() {
 				// Setup: 3 NVMe devices, 2 are EBS (nvme0n1, nvme1n1), 1 is instance storage (nvme2n1)
-				fs.GlobStub = func(pattern string) ([]string, error) {
-					switch pattern {
-					case "/dev/nvme*n1":
-						return []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"}, nil
-					case "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*":
-						return []string{
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
-							"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
-						}, nil
-					default:
-						return nil, nil
-					}
-				}
 
 				// Create the NVMe device files
 				err := fs.WriteFileString("/dev/nvme0n1", "")
@@ -1886,6 +1876,10 @@ Number  Start   End     Size    File system  Name             Flags
 				err = fs.WriteFileString("/dev/nvme1n1", "")
 				Expect(err).ToNot(HaveOccurred())
 				err = fs.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
 				// Create symlinks for EBS volumes
@@ -1916,12 +1910,20 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("returns error when no instance storage devices found but CPI expects some", func() {
+				// Create the NVMe device file
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
 				// All NVMe devices are EBS - no instance storage available
 				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1"})
 				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
 					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
 				})
-				err := fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
 				Expect(err).ToNot(HaveOccurred())
 
 				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
@@ -1940,13 +1942,25 @@ Number  Start   End     Size    File system  Name             Flags
 			})
 
 			It("skips symlinks that fail to resolve and continues", func() {
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
 				// Set up NVMe devices: nvme0n1 (EBS), nvme1n1 and nvme2n1 (instance storage)
 				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"})
 				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
 					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
 					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_broken", // broken symlink
 				})
-				err := fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
 				Expect(err).ToNot(HaveOccurred())
 				// Note: nvme-Amazon_Elastic_Block_Store_broken has no symlink target - it will be skipped
 

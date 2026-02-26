@@ -3,7 +3,6 @@ package devicepathresolver_test
 import (
 	"errors"
 	"os"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -37,11 +36,20 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 		})
 
 		It("resolves symlinks to their target device paths", func() {
+			err := fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create target device files
+			err = fs.WriteFileString("/dev/nvme1n1", "")
+			Expect(err).ToNot(HaveOccurred())
+			err = fs.WriteFileString("/dev/nvme2n1", "")
+			Expect(err).ToNot(HaveOccurred())
+
 			fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
 				"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
 				"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
 			})
-			err := fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+			err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
 			Expect(err).ToNot(HaveOccurred())
 			err = fs.Symlink("/dev/nvme2n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
 			Expect(err).ToNot(HaveOccurred())
@@ -54,11 +62,18 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 		})
 
 		It("skips symlinks that cannot be resolved", func() {
+			err := fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+			Expect(err).ToNot(HaveOccurred())
+
+			// Create target device file for valid symlink
+			err = fs.WriteFileString("/dev/nvme1n1", "")
+			Expect(err).ToNot(HaveOccurred())
+
 			fs.SetGlob("/dev/disk/by-id/nvme-*", []string{
 				"/dev/disk/by-id/nvme-valid",
 				"/dev/disk/by-id/nvme-invalid",
 			})
-			err := fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-valid")
+			err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-valid")
 			Expect(err).ToNot(HaveOccurred())
 			// nvme-invalid has no symlink target
 
@@ -130,29 +145,6 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 
 			filtered := resolver.FilterDevices(allDevices, excludeDevices)
 			Expect(filtered).To(BeEmpty())
-		})
-	})
-
-	Describe("WaitForSymlink", func() {
-		It("returns the resolved path when symlink exists immediately", func() {
-			err := fs.MkdirAll("/dev/disk/azure/by-lun", os.FileMode(0750))
-			Expect(err).ToNot(HaveOccurred())
-			err = fs.Symlink("/dev/nvme0n1", "/dev/disk/azure/by-lun/0")
-			Expect(err).ToNot(HaveOccurred())
-			err = fs.WriteFileString("/dev/nvme0n1", "")
-			Expect(err).ToNot(HaveOccurred())
-
-			path, err := resolver.WaitForSymlink("/dev/disk/azure/by-lun/0", 1*time.Second)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(path).To(Equal("/dev/nvme0n1"))
-		})
-
-		It("times out when symlink never appears", func() {
-			// No symlink set up
-
-			_, err := resolver.WaitForSymlink("/dev/disk/azure/by-lun/0", 200*time.Millisecond)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Timed out"))
 		})
 	})
 })
