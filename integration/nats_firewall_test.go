@@ -28,23 +28,21 @@ var _ = Describe("nats firewall", func() {
 				return logs
 			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			output, err := testEnvironment.RunCommand("sudo iptables -t mangle -L")
+			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
-			// Check iptables for inclusion of the nats_cgroup_id
-			Expect(output).To(MatchRegexp("ACCEPT *tcp  --  anywhere.*tcp dpt:4222 cgroup 2958295042"))
-			Expect(output).To(MatchRegexp("DROP *tcp  --  anywhere.*tcp dpt:4222"))
 
 			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
 
-			// check that we cannot access the director nats, -w2 == timeout 2 seconds
+			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, boshEnv))
+			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, boshEnv))
+
+			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", boshEnv))
 			Expect(err).NotTo(BeNil())
 			Expect(out).To(ContainSubstring("port 4222 (tcp) timed out"))
 
-			out, err = testEnvironment.RunCommand(fmt.Sprintf(`sudo sh -c '
-            echo $$ >> $(cat /proc/self/mounts | grep ^cgroup | grep net_cls | cut -f2 -d" ")/nats-api-access/tasks
-            nc %v 4222 -w2 -v'
-		`, boshEnv))
+			// root (UID 0) should be allowed through the firewall
+			out, err = testEnvironment.RunCommand(fmt.Sprintf("sudo nc %v 4222 -w2 -v", boshEnv))
 			Expect(out).To(MatchRegexp("INFO.*server_id.*version.*host.*"))
 			Expect(err).To(BeNil())
 		})
@@ -77,9 +75,7 @@ var _ = Describe("nats firewall", func() {
 		AfterEach(func() {
 			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -m cgroup --cgroup 2958295042 -j ACCEPT --wait")
-			Expect(err).To(BeNil())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -j DROP --wait")
+			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
 		})
 
@@ -92,14 +88,11 @@ var _ = Describe("nats firewall", func() {
 				return logs
 			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			output, err := testEnvironment.RunCommand("sudo ip6tables -t mangle -L")
+			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
 
-			// Check iptables for inclusion of the nats_cgroup_id
-			Expect(output).To(MatchRegexp("ACCEPT *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt cgroup 2958295042"))
-			Expect(output).To(MatchRegexp("DROP *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt"))
-
-			Expect(output).To(MatchRegexp("2001:db8::1"))
+			Expect(output).To(MatchRegexp(`meta skuid 0 ip6 daddr 2001:db8::1 tcp dport 4222 accept`))
+			Expect(output).To(MatchRegexp(`ip6 daddr 2001:db8::1 tcp dport 4222 drop`))
 		})
 	})
 })
