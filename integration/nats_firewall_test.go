@@ -17,6 +17,13 @@ var _ = Describe("nats firewall", func() {
 			// restore original settings of bosh from initial deploy of this VM.
 			_, err := testEnvironment.RunCommand("sudo cp /settings-backup/*.json /var/vcap/bosh/")
 			Expect(err).ToNot(HaveOccurred())
+
+			// Flush legacy iptables mangle rules left over from the initial agent deploy.
+			// The old agent used iptables cgroup-based rules in the mangle table; these
+			// conflict with the new nftables UID-based firewall and would drop traffic
+			// that doesn't match the old cgroup.
+			_, _ = testEnvironment.RunCommand("sudo iptables -t mangle -F")  //nolint:errcheck
+			_, _ = testEnvironment.RunCommand("sudo ip6tables -t mangle -F") //nolint:errcheck
 		})
 
 		It("sets up the outgoing nats firewall", func() {
