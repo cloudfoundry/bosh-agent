@@ -77,9 +77,7 @@ var _ = Describe("nats firewall", func() {
 		AfterEach(func() {
 			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -m cgroup --cgroup 2958295042 -j ACCEPT --wait")
-			Expect(err).To(BeNil())
-			_, err = testEnvironment.RunCommand("sudo ip6tables -t mangle -D POSTROUTING -d 2001:db8::1 -p tcp --dport 8080 -j DROP --wait")
+			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
 		})
 
@@ -92,14 +90,11 @@ var _ = Describe("nats firewall", func() {
 				return logs
 			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			output, err := testEnvironment.RunCommand("sudo ip6tables -t mangle -L")
+			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
 
-			// Check iptables for inclusion of the nats_cgroup_id
-			Expect(output).To(MatchRegexp("ACCEPT *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt cgroup 2958295042"))
-			Expect(output).To(MatchRegexp("DROP *tcp *anywhere *2001:db8::1 *tcp dpt:http-alt"))
-
-			Expect(output).To(MatchRegexp("2001:db8::1"))
+			Expect(output).To(MatchRegexp(`meta skuid 0 ip6 daddr 2001:db8::1 tcp dport 4222 accept`))
+			Expect(output).To(MatchRegexp(`ip6 daddr 2001:db8::1 tcp dport 4222 drop`))
 		})
 	})
 })
