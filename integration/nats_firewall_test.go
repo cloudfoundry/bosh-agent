@@ -22,26 +22,24 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats firewall", func() {
 			format.MaxLength = 0
 
-			// Wait a maximum of 300 seconds
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
 			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-			Expect(err).To(BeNil())
-
 			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
 
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, boshEnv))
-			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, boshEnv))
+			output, err := testEnvironment.RunCommand("sudo /home/agent_test_user/nftables-checker --table bosh_agent --chain nats_access")
+			Expect(err).To(BeNil())
+			Expect(output).To(MatchRegexp(`ACCEPT uid=0 dst=%s dport=4222`, boshEnv))
+			Expect(output).To(MatchRegexp(`DROP dst=%s dport=4222`, boshEnv))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", boshEnv))
 			Expect(err).NotTo(BeNil())
 			Expect(out).To(ContainSubstring("port 4222 (tcp) timed out"))
 
-			// root (UID 0) should be allowed through the firewall
+			// root (UID 0) is allowed through the nftables firewall
 			out, err = testEnvironment.RunCommand(fmt.Sprintf("sudo nc %v 4222 -w2 -v", boshEnv))
 			Expect(out).To(MatchRegexp("INFO.*server_id.*version.*host.*"))
 			Expect(err).To(BeNil())
@@ -75,24 +73,22 @@ var _ = Describe("nats firewall", func() {
 		AfterEach(func() {
 			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
+			_, err = testEnvironment.RunCommand("sudo /home/agent_test_user/nftables-checker --table bosh_agent --chain nats_access --flush")
 			Expect(err).To(BeNil())
 		})
 
 		It("sets up the outgoing nats for firewall ipv6", func() {
 			format.MaxLength = 0
 
-			// Wait a maximum of 300 seconds
 			Eventually(func() string {
 				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
 				return logs
 			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
 
-			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
+			output, err := testEnvironment.RunCommand("sudo /home/agent_test_user/nftables-checker --table bosh_agent --chain nats_access")
 			Expect(err).To(BeNil())
-
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip6 daddr 2001:db8::1 tcp dport 4222 accept`))
-			Expect(output).To(MatchRegexp(`ip6 daddr 2001:db8::1 tcp dport 4222 drop`))
+			Expect(output).To(ContainSubstring("ACCEPT uid=0 dst=2001:db8::1 dport=4222"))
+			Expect(output).To(ContainSubstring("DROP dst=2001:db8::1 dport=4222"))
 		})
 	})
 })
