@@ -18,9 +18,10 @@ type FakeManager struct {
 	cleanupReturnsOnCall map[int]struct {
 		result1 error
 	}
-	EnableMonitAccessStub        func() error
+	EnableMonitAccessStub        func(*uint32) error
 	enableMonitAccessMutex       sync.RWMutex
 	enableMonitAccessArgsForCall []struct {
+		arg1 *uint32
 	}
 	enableMonitAccessReturns struct {
 		result1 error
@@ -106,17 +107,18 @@ func (fake *FakeManager) CleanupReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeManager) EnableMonitAccess() error {
+func (fake *FakeManager) EnableMonitAccess(arg1 *uint32) error {
 	fake.enableMonitAccessMutex.Lock()
 	ret, specificReturn := fake.enableMonitAccessReturnsOnCall[len(fake.enableMonitAccessArgsForCall)]
 	fake.enableMonitAccessArgsForCall = append(fake.enableMonitAccessArgsForCall, struct {
-	}{})
+		arg1 *uint32
+	}{arg1})
 	stub := fake.EnableMonitAccessStub
 	fakeReturns := fake.enableMonitAccessReturns
-	fake.recordInvocation("EnableMonitAccess", []interface{}{})
+	fake.recordInvocation("EnableMonitAccess", []interface{}{arg1})
 	fake.enableMonitAccessMutex.Unlock()
 	if stub != nil {
-		return stub()
+		return stub(arg1)
 	}
 	if specificReturn {
 		return ret.result1
@@ -130,10 +132,17 @@ func (fake *FakeManager) EnableMonitAccessCallCount() int {
 	return len(fake.enableMonitAccessArgsForCall)
 }
 
-func (fake *FakeManager) EnableMonitAccessCalls(stub func() error) {
+func (fake *FakeManager) EnableMonitAccessCalls(stub func(*uint32) error) {
 	fake.enableMonitAccessMutex.Lock()
 	defer fake.enableMonitAccessMutex.Unlock()
 	fake.EnableMonitAccessStub = stub
+}
+
+func (fake *FakeManager) EnableMonitAccessArgsForCall(i int) *uint32 {
+	fake.enableMonitAccessMutex.RLock()
+	defer fake.enableMonitAccessMutex.RUnlock()
+	argsForCall := fake.enableMonitAccessArgsForCall[i]
+	return argsForCall.arg1
 }
 
 func (fake *FakeManager) EnableMonitAccessReturns(result1 error) {

@@ -83,7 +83,11 @@ func main() {
 
 	switch binaryName(os.Args[0]) {
 	case "bosh-enable-monit-access":
-		firewall.EnableMonitAccess(logger, "enable-monit-access")
+		uidArg := ""
+		if len(os.Args) > 1 {
+			uidArg = os.Args[1]
+		}
+		firewall.EnableMonitAccess(logger, "enable-monit-access", uidArg)
 		return
 	}
 
