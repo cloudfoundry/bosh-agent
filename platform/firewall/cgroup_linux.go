@@ -6,25 +6,30 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
+
+const cgroupLogTag = "cgroup"
 
 // getCurrentCgroupPath reads /proc/self/cgroup and extracts the cgroupv2 path.
 // Returns path WITHOUT leading slash (e.g., "system.slice/runc-bpm-galera-agent.scope")
 // to match the format used by the nft CLI.
-func getCurrentCgroupPath() (string, error) {
+func getCurrentCgroupPath(logger boshlog.Logger) (string, error) {
 	data, err := os.ReadFile("/proc/self/cgroup")
 	if err != nil {
 		return "", fmt.Errorf("reading /proc/self/cgroup: %w", err)
 	}
 
-	// Find line starting with "0::" (cgroupv2)
-	// Format: "0::/system.slice/runc-bpm-galera-agent.scope"
-	for _, line := range strings.Split(string(data), "\n") {
+	lines := strings.Split(string(data), "\n")
+	logger.Debug(cgroupLogTag, "/proc/self/cgroup contents: %v", lines)
+
+	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, "0::") {
 			path := strings.TrimPrefix(line, "0::")
-			// Strip leading slash to match Noble script format
 			path = strings.TrimPrefix(path, "/")
+			logger.Info(cgroupLogTag, "Detected cgroupv2 path: %s", path)
 			return path, nil
 		}
 	}
@@ -39,24 +44,21 @@ func getCurrentCgroupPath() (string, error) {
 // - Cgroup path doesn't exist in /sys/fs/cgroup
 // - Hybrid cgroup system (cgroupv2 mounted but no controllers delegated)
 // - Nested containers where cgroup path is different from host view
-func isCgroupAccessible(cgroupPath string) bool {
-	// Check if cgroup path exists
+func isCgroupAccessible(logger boshlog.Logger, cgroupPath string) bool {
 	fullPath := filepath.Join("/sys/fs/cgroup", cgroupPath)
 	if _, err := os.Stat(fullPath); err != nil {
-		fmt.Printf("bosh-monit-access: Cgroup path doesn't exist: %s\n", fullPath)
+		logger.Info(cgroupLogTag, "Cgroup path doesn't exist: %s", fullPath)
 		return false
 	}
 
-	// Check if this is a hybrid cgroup system (cgroupv2 mounted but no controllers)
-	// On hybrid systems, /sys/fs/cgroup/cgroup.controllers exists but is empty
 	controllers, err := os.ReadFile("/sys/fs/cgroup/cgroup.controllers")
 	if err != nil {
-		fmt.Printf("bosh-monit-access: Cannot read cgroup.controllers: %v\n", err)
+		logger.Info(cgroupLogTag, "Cannot read cgroup.controllers: %v", err)
 		return false
 	}
 
 	if len(strings.TrimSpace(string(controllers))) == 0 {
-		fmt.Println("bosh-monit-access: Hybrid cgroup system detected (no controllers in cgroupv2)")
+		logger.Info(cgroupLogTag, "Hybrid cgroup system detected (no controllers in cgroupv2)")
 		return false
 	}
 

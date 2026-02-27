@@ -5,7 +5,6 @@ package firewall_test
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 
@@ -197,7 +196,6 @@ var _ = Describe("NftablesFirewall", func() {
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 				rule := fakeConn.AddRuleArgsForCall(0)
-				fmt.Printf("rule: %+v\n", rule)
 				Expect(rule.Chain.Name).To(Equal("monit_access_jobs"))
 			})
 

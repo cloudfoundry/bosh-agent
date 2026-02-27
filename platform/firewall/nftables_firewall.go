@@ -181,8 +181,8 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 	}
 
 	// 2. Try cgroup-based rule first (better isolation)
-	cgroupPath, err := getCurrentCgroupPath()
-	if err == nil && isCgroupAccessible(cgroupPath) {
+	cgroupPath, err := getCurrentCgroupPath(f.logger)
+	if err == nil && isCgroupAccessible(f.logger, cgroupPath) {
 		inodeID, err := getCgroupInodeID(cgroupPath)
 		if err == nil {
 			f.logger.Info(f.logTag, "Using cgroup rule for: %s (inode: %d)", cgroupPath, inodeID)
@@ -429,7 +429,7 @@ func (f *NftablesFirewall) addUIDRule(uid uint32) error {
 	if err == nil {
 		for _, rule := range rules {
 			if ruleMatchesUID(rule, uid) {
-				fmt.Println("bosh-monit-access: UID rule already exists, skipping")
+				f.logger.Info(f.logTag, "UID rule already exists for UID %d, skipping", uid)
 				return nil
 			}
 		}
