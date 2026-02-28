@@ -3,7 +3,11 @@
 //
 // Usage:
 //
-//	bosh-agent enable-monit-access # Add firewall rule (cgroup preferred, UID fallback)
+//	bosh-enable-monit-access [<uid>]
+//
+// When a UID is provided, a UID-based rule is added for that user.
+// When no UID is provided, cgroup-based matching is tried first,
+// falling back to a UID-based rule for the current user.
 //
 // This binary serves as a replacement for the complex bash firewall setup logic
 // that was previously in job service scripts.
@@ -12,11 +16,12 @@ package firewall
 import (
 	"errors"
 	"os"
+	"strconv"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 )
 
-func EnableMonitAccess(logger boshlog.Logger, command string) {
+func EnableMonitAccess(logger boshlog.Logger, command string, uidArg string) {
 	logger.UseTags([]boshlog.LogTag{{Name: "monit-access", LogLevel: boshlog.LevelDebug}})
 
 	mgr, err := NewNftablesFirewall(logger)
@@ -30,10 +35,21 @@ func EnableMonitAccess(logger boshlog.Logger, command string) {
 	}
 	defer mgr.Cleanup() //nolint:errcheck
 
-	// Setup mode: add firewall rule
 	logger.Info(command, "Setting up monit firewall rule")
 
-	err = mgr.EnableMonitAccess()
+	var uid *uint32
+	if uidArg != "" {
+		parsed, err := strconv.ParseUint(uidArg, 10, 32)
+		if err != nil {
+			logger.Error(command, "Invalid UID argument %q: %v. Usage: %s [<uid>]", uidArg, err, command)
+			os.Exit(1)
+		}
+		u := uint32(parsed)
+		uid = &u
+		logger.Info(command, "UID argument provided: %d", *uid)
+	}
+
+	err = mgr.EnableMonitAccess(uid)
 	if err != nil {
 		logger.Error(command, "Failed to enable monit access: %v", err)
 		os.Exit(1)

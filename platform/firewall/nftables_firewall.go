@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net"
 	gonetURL "net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -172,7 +171,7 @@ func (f *NftablesFirewall) SetupMonitFirewall() error {
 	return nil
 }
 
-func (f *NftablesFirewall) EnableMonitAccess() error {
+func (f *NftablesFirewall) EnableMonitAccess(uid *uint32) error {
 	// 1. Check if jobs chain exists
 	err := f.getMonitJobsChainAndTable()
 	if err != nil {
@@ -200,11 +199,14 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 		f.logger.Error(f.logTag, "Could not detect cgroup: %v", err)
 	}
 
-	// 3. Fallback to UID-based rule
-	uid := uint32(os.Getuid())
-	f.logger.Info(f.logTag, "Falling back to UID rule for UID: %d", uid)
+	// 3. Fallback to UID-based rule if a UID was provided
+	if uid == nil {
+		return fmt.Errorf("cgroup matching failed and no UID was provided")
+	}
 
-	return f.addUIDRule(uid)
+	f.logger.Info(f.logTag, "Falling back to UID rule for UID: %d", *uid)
+
+	return f.addUIDRule(*uid)
 }
 
 // SetupNATSFirewall creates firewall rules to protect NATS.

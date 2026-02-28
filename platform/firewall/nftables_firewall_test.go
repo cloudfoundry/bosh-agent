@@ -6,7 +6,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"net"
-	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -172,7 +171,10 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		Context("when the jobs chain exists", func() {
+			var vcapUID uint32
+
 			BeforeEach(func() {
+				vcapUID = uint32(1000)
 				fakeConn.ListTablesReturns([]*nftables.Table{boshTable}, nil)
 				fakeConn.ListChainsReturns([]*nftables.Chain{
 					{
@@ -183,7 +185,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("adds a rule and flushes", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(&vcapUID)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -191,7 +193,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("adds the rule to the monit_access_jobs chain", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(&vcapUID)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
@@ -200,7 +202,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("adds a rule targeting loopback and monit port", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(&vcapUID)
 				Expect(err).NotTo(HaveOccurred())
 
 				rule := fakeConn.AddRuleArgsForCall(0)
@@ -215,10 +217,41 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(hasAcceptVerdict).To(BeTrue(), "rule should have an accept verdict")
 			})
 
+			It("adds a UID rule matching the provided UID", func() {
+				uid := uint32(1001)
+				err := manager.EnableMonitAccess(&uid)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				rule := fakeConn.AddRuleArgsForCall(0)
+
+				uidBytes := make([]byte, 4)
+				binary.NativeEndian.PutUint32(uidBytes, uid)
+
+				hasUIDMatch := false
+				for _, e := range rule.Exprs {
+					if cmpExpr, ok := e.(*expr.Cmp); ok {
+						if cmpExpr.Op == expr.CmpOpEq && len(cmpExpr.Data) == 4 {
+							if binary.NativeEndian.Uint32(cmpExpr.Data) == uid {
+								hasUIDMatch = true
+							}
+						}
+					}
+				}
+				Expect(hasUIDMatch).To(BeTrue(), "rule should match on the provided UID")
+			})
+
+			Context("when no UID is provided and cgroup detection fails", func() {
+				It("returns an error", func() {
+					err := manager.EnableMonitAccess(nil)
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("no UID was provided"))
+				})
+			})
+
 			Context("when the rule already exists (idempotency)", func() {
 				It("does not add a duplicate UID rule", func() {
-					// Simulate an existing UID rule matching the current UID
-					uid := uint32(os.Getuid())
+					uid := uint32(1000)
 					uidBytes := make([]byte, 4)
 					binary.NativeEndian.PutUint32(uidBytes, uid)
 
@@ -229,12 +262,9 @@ var _ = Describe("NftablesFirewall", func() {
 						},
 					}
 
-					// First call to GetRules is from cleanupStaleJobRules (cgroup path),
-					// subsequent calls check for existing rules.
-					// The UID fallback path calls GetRules to check for duplicates.
 					fakeConn.GetRulesReturns([]*nftables.Rule{existingRule}, nil)
 
-					err := manager.EnableMonitAccess()
+					err := manager.EnableMonitAccess(&uid)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 					Expect(fakeConn.FlushCallCount()).To(Equal(0))
@@ -245,7 +275,7 @@ var _ = Describe("NftablesFirewall", func() {
 				It("returns an error", func() {
 					fakeConn.FlushReturns(errors.New("flush failed"))
 
-					err := manager.EnableMonitAccess()
+					err := manager.EnableMonitAccess(&vcapUID)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("flush"))
 				})
@@ -258,7 +288,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("returns an error", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Failed to check if jobs chain exists"))
 			})
@@ -272,7 +302,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("returns bosh_agent table not found error", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("bosh_agent table not found"))
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
@@ -286,7 +316,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("returns an error", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Failed to check if jobs chain exists"))
 				Expect(err.Error()).To(ContainSubstring("listing chains"))
@@ -300,7 +330,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("returns monit_access_jobs chain not found error", func() {
-				err := manager.EnableMonitAccess()
+				err := manager.EnableMonitAccess(nil)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("monit_access_jobs chain not found"))
 			})
