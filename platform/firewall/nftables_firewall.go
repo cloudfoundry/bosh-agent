@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net"
 	gonetURL "net/url"
-	"os"
+	"os/user"
 	"strconv"
 	"strings"
 
@@ -17,6 +17,8 @@ import (
 	"github.com/google/nftables/expr"
 	"github.com/google/nftables/userdata"
 	"golang.org/x/sys/unix"
+
+	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 // NftablesConn abstracts the nftables connection for testing
@@ -93,6 +95,8 @@ func (r *realNftablesConn) CloseLasting() error {
 	return r.conn.CloseLasting()
 }
 
+type UserLookup func(username string) (*user.User, error)
+
 // NftablesFirewall implements Manager and NatsFirewallHook using nftables with UID-based matching
 type NftablesFirewall struct {
 	conn           NftablesConn
@@ -103,6 +107,7 @@ type NftablesFirewall struct {
 	monitChain     *nftables.Chain
 	monitJobsChain *nftables.Chain
 	natsChain      *nftables.Chain
+	userLookup     UserLookup
 }
 
 // NewNftablesFirewall creates a new nftables-based firewall manager
@@ -115,17 +120,19 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 	return NewNftablesFirewallWithDeps(
 		&realNftablesConn{conn: conn},
 		&realDNSResolver{},
+		user.Lookup,
 		logger,
 	), nil
 }
 
 // NewNftablesFirewallWithDeps creates a firewall manager with injected dependencies (for testing)
-func NewNftablesFirewallWithDeps(conn NftablesConn, resolver DNSResolver, logger boshlog.Logger) Manager {
+func NewNftablesFirewallWithDeps(conn NftablesConn, resolver DNSResolver, userLookup UserLookup, logger boshlog.Logger) Manager {
 	return &NftablesFirewall{
-		conn:     conn,
-		resolver: resolver,
-		logger:   logger,
-		logTag:   "NftablesFirewall",
+		conn:       conn,
+		resolver:   resolver,
+		logger:     logger,
+		logTag:     "NftablesFirewall",
+		userLookup: userLookup,
 	}
 }
 
@@ -182,7 +189,7 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 
 	// 2. Try cgroup-based rule first (better isolation)
 	cgroupPath, err := getCurrentCgroupPath(f.logger)
-	if err == nil && isCgroupAccessible(f.logger, cgroupPath) {
+	if err == nil {
 		inodeID, err := getCgroupInodeID(cgroupPath)
 		if err == nil {
 			f.logger.Info(f.logTag, "Using cgroup rule for: %s (inode: %d)", cgroupPath, inodeID)
@@ -196,15 +203,22 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 		} else {
 			f.logger.Error(f.logTag, "Failed to get cgroup inode ID: %v", err)
 		}
-	} else if err != nil {
+	} else {
 		f.logger.Error(f.logTag, "Could not detect cgroup: %v", err)
 	}
 
 	// 3. Fallback to UID-based rule
-	uid := uint32(os.Getuid())
-	f.logger.Info(f.logTag, "Falling back to UID rule for UID: %d", uid)
+	f.logger.Info(f.logTag, "Falling back to UID rule for vcap")
+	u, err := f.userLookup(settings.VCAPUsername)
+	if err != nil {
+		return fmt.Errorf("could not find vcap user: %w", err)
+	}
+	uid, err := strconv.ParseUint(u.Uid, 10, 32)
+	if err != nil {
+		return fmt.Errorf("could not parse vcap UID %q: %w", u.Uid, err)
+	}
 
-	return f.addUIDRule(uid)
+	return f.addUIDRule(uint32(uid))
 }
 
 // SetupNATSFirewall creates firewall rules to protect NATS.

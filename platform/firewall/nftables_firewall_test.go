@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"net"
-	"os"
+	"os/user"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -30,8 +30,21 @@ var _ = Describe("NftablesFirewall", func() {
 	BeforeEach(func() {
 		fakeConn = &firewallfakes.FakeNftablesConn{}
 		fakeResolver = &firewallfakes.FakeDNSResolver{}
+		var fakeUserLookup firewall.UserLookup = func(username string) (*user.User, error) {
+			if username != "vcap" {
+				return nil, errors.New("unexpected user")
+			}
+
+			return &user.User{
+				Uid:      "1000",
+				Gid:      "1000",
+				Username: "vcap",
+				Name:     "BOSH System User",
+				HomeDir:  "/home/vcap",
+			}, nil
+		}
 		logger = boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
-		manager = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeResolver, logger)
+		manager = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeResolver, fakeUserLookup, logger)
 	})
 
 	Describe("SetupMonitFirewall", func() {
@@ -218,7 +231,8 @@ var _ = Describe("NftablesFirewall", func() {
 			Context("when the rule already exists (idempotency)", func() {
 				It("does not add a duplicate UID rule", func() {
 					// Simulate an existing UID rule matching the current UID
-					uid := uint32(os.Getuid())
+					const vcapUid = 1000
+					uid := uint32(vcapUid)
 					uidBytes := make([]byte, 4)
 					binary.NativeEndian.PutUint32(uidBytes, uid)
 

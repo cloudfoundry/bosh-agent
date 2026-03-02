@@ -5,16 +5,21 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
+	"golang.org/x/sys/unix"
 )
 
 const cgroupLogTag = "cgroup"
 
-// getCurrentCgroupPath reads /proc/self/cgroup and extracts the cgroupv2 path.
-// Returns path WITHOUT leading slash (e.g., "system.slice/runc-bpm-galera-agent.scope")
-// to match the format used by the nft CLI.
+// getCurrentCgroupPath reads /proc/self/cgroup and determines the effective
+// cgroup v2 path.
+//
+// Returns path WITHOUT leading slash to match the format used by the nft CLI.
+// (e.g. "system.slice/runc-bpm-galera-agent.scope")
+//
+// On hybrid systems (e.g., Ubuntu Jammy), the path is automatically prefixed
+// with "unified/" to align with the hybrid mount point.
 func getCurrentCgroupPath(logger boshlog.Logger) (string, error) {
 	data, err := os.ReadFile("/proc/self/cgroup")
 	if err != nil {
@@ -29,6 +34,10 @@ func getCurrentCgroupPath(logger boshlog.Logger) (string, error) {
 		if strings.HasPrefix(line, "0::") {
 			path := strings.TrimPrefix(line, "0::")
 			path = strings.TrimPrefix(path, "/")
+			path, err := cgroupv2Path(path)
+			if err != nil {
+				return "", fmt.Errorf("determining cgroup v2 path: %w", err)
+			}
 			logger.Info(cgroupLogTag, "Detected cgroupv2 path: %s", path)
 			return path, nil
 		}
@@ -37,32 +46,49 @@ func getCurrentCgroupPath(logger boshlog.Logger) (string, error) {
 	return "", fmt.Errorf("cgroupv2 path not found in /proc/self/cgroup")
 }
 
-// isCgroupAccessible checks if the cgroup path is accessible and functional
-// for nftables socket cgroupv2 matching.
+// cgroupv2Path canonicalizes a path based on the detected cgroup hierarchy.
 //
-// This returns false in these cases:
-// - Cgroup path doesn't exist in /sys/fs/cgroup
-// - Hybrid cgroup system (cgroupv2 mounted but no controllers delegated)
-// - Nested containers where cgroup path is different from host view
-func isCgroupAccessible(logger boshlog.Logger, cgroupPath string) bool {
-	fullPath := filepath.Join("/sys/fs/cgroup", cgroupPath)
-	if _, err := os.Stat(fullPath); err != nil {
-		logger.Info(cgroupLogTag, "Cgroup path doesn't exist: %s", fullPath)
-		return false
+// On unified systems the path is returned unchanged
+// on hybrid systems it is prefixed with "unified/" to match the cgroupv2
+// mount at /sys/fs/cgroup/unified.
+//
+// Returns an error if the cgroup mode cannot be determined.
+func cgroupv2Path(path string) (string, error) {
+	switch detectCgroupMode() {
+	case unifiedMode:
+		return path, nil
+	case hybridMode:
+		return filepath.Join("unified", path), nil
+	default:
+		return "", fmt.Errorf("unknown cgroup mode")
+	}
+}
+
+type cgroupMode int
+
+const (
+	unifiedMode cgroupMode = iota // Pure v2
+	hybridMode                    // v1 with v2 at /unified
+	unknownMode
+)
+
+// detectCgroupMode determines the system's cgroup hierarchy mode.
+//
+// Returns `unifiedMode`, if /sys/fs/cgroup is a cgroup2 filesystem.
+// Returns `hybridMode`, if /sys/fs/cgroup/unified is a cgroup2 filesystem.
+// Returns `unknownMode`, if cgroup2 was otherwise not detected.
+func detectCgroupMode() cgroupMode {
+	var st unix.Statfs_t
+
+	if err := unix.Statfs("/sys/fs/cgroup", &st); err == nil && st.Type == unix.CGROUP2_SUPER_MAGIC {
+		return unifiedMode
 	}
 
-	controllers, err := os.ReadFile("/sys/fs/cgroup/cgroup.controllers")
-	if err != nil {
-		logger.Info(cgroupLogTag, "Cannot read cgroup.controllers: %v", err)
-		return false
+	if err := unix.Statfs("/sys/fs/cgroup/unified", &st); err == nil && st.Type == unix.CGROUP2_SUPER_MAGIC {
+		return hybridMode
 	}
 
-	if len(strings.TrimSpace(string(controllers))) == 0 {
-		logger.Info(cgroupLogTag, "Hybrid cgroup system detected (no controllers in cgroupv2)")
-		return false
-	}
-
-	return true
+	return unknownMode
 }
 
 // getCgroupInodeID returns the inode ID for the cgroup path.
@@ -72,8 +98,8 @@ func isCgroupAccessible(logger boshlog.Logger, cgroupPath string) bool {
 func getCgroupInodeID(cgroupPath string) (uint64, error) {
 	fullPath := filepath.Join("/sys/fs/cgroup", cgroupPath)
 
-	var stat syscall.Stat_t
-	if err := syscall.Stat(fullPath, &stat); err != nil {
+	var stat unix.Stat_t
+	if err := unix.Stat(fullPath, &stat); err != nil {
 		return 0, fmt.Errorf("stat %s: %w", fullPath, err)
 	}
 
