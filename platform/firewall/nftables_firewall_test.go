@@ -55,7 +55,7 @@ var _ = Describe("NftablesFirewall", func() {
 			Expect(fakeConn.AddTableCallCount()).To(Equal(1))
 			Expect(fakeConn.AddChainCallCount()).To(Equal(2)) // jobs chain + monit chain
 			Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
-			Expect(fakeConn.AddRuleCallCount()).To(Equal(3)) // jump + allow + block
+			Expect(fakeConn.AddRuleCallCount()).To(Equal(4)) // jump + conntrack + allow + block
 			Expect(fakeConn.FlushCallCount()).To(Equal(1))
 		})
 
@@ -107,16 +107,34 @@ var _ = Describe("NftablesFirewall", func() {
 			Expect(verdict.Chain).To(Equal("monit_access_jobs"))
 		})
 
-		It("adds allow rule for UID 0 after jump rule", func() {
+		It("adds conntrack established,related rule after jump rule", func() {
 			err := manager.SetupMonitFirewall()
 			Expect(err).NotTo(HaveOccurred())
 
-			// Second rule should be the allow rule (has UID match expressions)
-			allowRule := fakeConn.AddRuleArgsForCall(1)
+			ctRule := fakeConn.AddRuleArgsForCall(1)
+			Expect(ctRule.Chain.Name).To(Equal("monit_access"))
+
+			hasCt := false
+			hasAccept := false
+			for _, e := range ctRule.Exprs {
+				if ct, ok := e.(*expr.Ct); ok && ct.Key == expr.CtKeySTATE {
+					hasCt = true
+				}
+				if verdict, ok := e.(*expr.Verdict); ok && verdict.Kind == expr.VerdictAccept {
+					hasAccept = true
+				}
+			}
+			Expect(hasCt).To(BeTrue(), "rule should load ct state")
+			Expect(hasAccept).To(BeTrue(), "rule should accept")
+		})
+
+		It("adds allow rule for UID 0 after conntrack rule", func() {
+			err := manager.SetupMonitFirewall()
+			Expect(err).NotTo(HaveOccurred())
+
+			allowRule := fakeConn.AddRuleArgsForCall(2)
 			Expect(allowRule.Chain.Name).To(Equal("monit_access"))
-			// The allow rule has more expressions (UID match + loopback + port + accept)
-			// Block rule has fewer (loopback + port + drop)
-			blockRule := fakeConn.AddRuleArgsForCall(2)
+			blockRule := fakeConn.AddRuleArgsForCall(3)
 			Expect(len(allowRule.Exprs)).To(BeNumerically(">", len(blockRule.Exprs)))
 		})
 
@@ -330,8 +348,8 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(fakeConn.AddTableCallCount()).To(Equal(1))
 				Expect(fakeConn.AddChainCallCount()).To(Equal(1))
 				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
-				// One allow rule + one block rule
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				// conntrack + one allow rule + one block rule
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 				Expect(fakeConn.FlushCallCount()).To(Equal(1))
 			})
 
@@ -344,6 +362,27 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(chain.Type).To(Equal(nftables.ChainTypeFilter))
 				Expect(chain.Hooknum).To(Equal(nftables.ChainHookOutput))
 			})
+
+			It("adds conntrack established,related rule as first rule", func() {
+				err := manager.SetupNATSFirewall("nats://192.168.1.100:4222")
+				Expect(err).NotTo(HaveOccurred())
+
+				ctRule := fakeConn.AddRuleArgsForCall(0)
+				Expect(ctRule.Chain.Name).To(Equal("nats_access"))
+
+				hasCt := false
+				hasAccept := false
+				for _, e := range ctRule.Exprs {
+					if ct, ok := e.(*expr.Ct); ok && ct.Key == expr.CtKeySTATE {
+						hasCt = true
+					}
+					if verdict, ok := e.(*expr.Verdict); ok && verdict.Kind == expr.VerdictAccept {
+						hasAccept = true
+					}
+				}
+				Expect(hasCt).To(BeTrue(), "rule should load ct state")
+				Expect(hasAccept).To(BeTrue(), "rule should accept")
+			})
 		})
 
 		Context("with an IPv6 address URL", func() {
@@ -351,7 +390,7 @@ var _ = Describe("NftablesFirewall", func() {
 				err := manager.SetupNATSFirewall("nats://user:pass@[2001:db8::1]:4222")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 				Expect(fakeConn.FlushCallCount()).To(Equal(1))
 			})
 		})
@@ -369,8 +408,8 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
 				Expect(fakeResolver.LookupIPArgsForCall(0)).To(Equal("nats.example.com"))
 
-				// Two IPs * 2 rules each = 4 rules
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(4))
+				// 1 conntrack + two IPs * 2 rules each = 5 rules
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(5))
 			})
 
 			It("handles DNS resolution failure gracefully", func() {
@@ -389,7 +428,7 @@ var _ = Describe("NftablesFirewall", func() {
 				err := manager.SetupNATSFirewall("nats://192.168.1.100")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 			})
 		})
 
@@ -398,7 +437,7 @@ var _ = Describe("NftablesFirewall", func() {
 				err := manager.SetupNATSFirewall("nats://192.168.1.100:5222")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 			})
 		})
 
@@ -458,7 +497,7 @@ var _ = Describe("NftablesFirewall", func() {
 
 			Expect(fakeConn.AddTableCallCount()).To(Equal(1))
 			Expect(fakeConn.AddChainCallCount()).To(Equal(1))
-			Expect(fakeConn.AddRuleCallCount()).To(Equal(2))
+			Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
 		})
 
 		It("returns nil on success", func() {

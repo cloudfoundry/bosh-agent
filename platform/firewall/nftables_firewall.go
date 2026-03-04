@@ -164,6 +164,9 @@ func (f *NftablesFirewall) SetupMonitFirewall() error {
 	// Add jump to jobs chain first (so job rules are checked before agent rules)
 	f.addJumpToJobsChain()
 
+	// Allow return traffic for established/related connections
+	f.addConntrackRule(f.monitChain)
+
 	// Add allow rule for root (UID 0)
 	f.addMonitAllowRule()
 
@@ -254,6 +257,9 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURL string) error {
 
 	// Flush NATS chain (removes old rules for previous IPs)
 	f.conn.FlushChain(f.natsChain)
+
+	// Allow return traffic for established/related connections
+	f.addConntrackRule(f.natsChain)
 
 	// Add rules for each resolved IP
 	for _, addr := range addrs {
@@ -364,6 +370,14 @@ func (f *NftablesFirewall) ensureNATSChain() {
 		Policy:   policyPtr(nftables.ChainPolicyAccept),
 	}
 	f.conn.AddChain(f.natsChain)
+}
+
+func (f *NftablesFirewall) addConntrackRule(chain *nftables.Chain) {
+	f.conn.AddRule(&nftables.Rule{
+		Table: f.table,
+		Chain: chain,
+		Exprs: buildConntrackEstablishedRelatedExprs(),
+	})
 }
 
 func (f *NftablesFirewall) addMonitAllowRule() {
@@ -526,6 +540,38 @@ func (f *NftablesFirewall) addCgroupRule(inodeID uint64, cgroupPath string) erro
 
 	f.logger.Info(f.logTag, "Added cgroup rule tagged with job '%s'", jobName)
 	return nil
+}
+
+// buildConntrackEstablishedRelatedExprs creates expressions for:
+//
+//	ct state established,related accept
+//
+// This allows return traffic for already-established connections, preventing
+// existing connections from being broken when firewall rules are reloaded.
+func buildConntrackEstablishedRelatedExprs() []expr.Any {
+	ctStateMask := expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED
+	maskBytes := make([]byte, 4)
+	binary.NativeEndian.PutUint32(maskBytes, ctStateMask)
+
+	return []expr.Any{
+		&expr.Ct{
+			Key:      expr.CtKeySTATE,
+			Register: 1,
+		},
+		&expr.Bitwise{
+			SourceRegister: 1,
+			DestRegister:   1,
+			Len:            4,
+			Mask:           maskBytes,
+			Xor:            []byte{0, 0, 0, 0},
+		},
+		&expr.Cmp{
+			Op:       expr.CmpOpNeq,
+			Register: 1,
+			Data:     []byte{0, 0, 0, 0},
+		},
+		&expr.Verdict{Kind: expr.VerdictAccept},
+	}
 }
 
 // buildLoopbackDestExprs creates expressions for matching IPv4 loopback destination.
