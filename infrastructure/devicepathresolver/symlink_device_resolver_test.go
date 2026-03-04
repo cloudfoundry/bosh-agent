@@ -3,6 +3,7 @@ package devicepathresolver_test
 import (
 	"errors"
 	"os"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,6 +22,10 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 	)
 
 	BeforeEach(func() {
+		if runtime.GOOS == "windows" {
+			Skip("Not applicable on Windows")
+		}
+
 		fs = fakesys.NewFakeFileSystem()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		resolver = NewSymlinkDeviceResolver(fs, logger)
