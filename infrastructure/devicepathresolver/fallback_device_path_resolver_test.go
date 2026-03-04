@@ -51,7 +51,7 @@ var _ = Describe("FallbackDevicePathResolver", func() {
 			It("does not call the secondary resolver", func() {
 				_, _, err := pathResolver.GetRealDevicePath(diskSettings)
 				Expect(err).ToNot(HaveOccurred())
-				Expect(secondaryResolver.GetRealDevicePathDiskSettings).To(Equal(boshsettings.DiskSettings{}))
+				Expect(secondaryResolver.GetRealDevicePathDiskSettings).To(BeEmpty())
 			})
 		})
 
@@ -68,7 +68,7 @@ var _ = Describe("FallbackDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("/dev/sdc"))
 
-				Expect(secondaryResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+				Expect(secondaryResolver.GetRealDevicePathDiskSettings).To(ContainElement(diskSettings))
 			})
 
 			Context("when secondary resolver also errors", func() {

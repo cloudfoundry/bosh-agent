@@ -158,15 +158,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewFallbackDevicePathResolver(symlinkLunResolver, devicePathResolver, logger)
 	}
 
-	// Use auto-detecting instance storage resolver that determines NVMe vs non-NVMe
-	// based on device paths from the CPI (e.g., /dev/nvme* vs /dev/xvd* or /dev/sd*)
-	instanceStorageResolver := devicepathresolver.NewAutoDetectingInstanceStorageResolver(
-		fs,
-		devicePathResolver,
-		logger,
-		options.Linux.InstanceStorageManagedVolumePattern,
-		options.Linux.InstanceStorageDevicePattern,
-	)
+	// Symlink device resolver for NVMe instance storage discovery (filtering out EBS/managed disks)
+	symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, logger)
 
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
@@ -186,7 +179,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			centosCertManager,
 			monitRetryStrategy,
 			devicePathResolver,
-			instanceStorageResolver,
+			symlinkDeviceResolver,
 			bootstrapState,
 			options.Linux,
 			logger,
@@ -213,7 +206,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			ubuntuCertManager,
 			monitRetryStrategy,
 			devicePathResolver,
-			instanceStorageResolver,
+			symlinkDeviceResolver,
 			bootstrapState,
 			options.Linux,
 			logger,

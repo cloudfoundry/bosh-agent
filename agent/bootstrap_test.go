@@ -10,6 +10,7 @@ import (
 	"time"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -1132,16 +1133,7 @@ var _ = Describe("bootstrap", func() {
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
 				devicePathResolver := fakedevicepathresolver.NewFakeDevicePathResolver()
-				instanceStorageResolver := fakedevicepathresolver.NewFakeInstanceStorageResolver()
-
-				// Default stub: instance storage resolver returns device paths as-is
-				instanceStorageResolver.DiscoverInstanceStorageStub = func(devices []boshsettings.DiskSettings) ([]string, error) {
-					paths := make([]string, len(devices))
-					for i, device := range devices {
-						paths[i] = device.Path
-					}
-					return paths, nil
-				}
+				symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, logger)
 
 				fakeUUIDGenerator := boshuuid.NewGenerator()
 				routesSearcher := boshnet.NewRoutesSearcher(logger, runner, nil)
@@ -1163,7 +1155,7 @@ var _ = Describe("bootstrap", func() {
 					ubuntuCertManager,
 					monitRetryStrategy,
 					devicePathResolver,
-					instanceStorageResolver,
+					symlinkDeviceResolver,
 					state,
 					linuxOptions,
 					logger,
