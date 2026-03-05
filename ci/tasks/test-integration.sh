@@ -75,12 +75,6 @@ pushd "${bosh_agent_dir}/integration/fake-blobstore"
   copy_to_remote_host ./fake-blobstore /home/agent_test_user/fake-blobstore
 popd
 
-echo -e "\n Installing nftables-checker..."
-pushd "${bosh_agent_dir}/integration/nftables-checker"
-  GOARCH=amd64 GOOS=linux CGO_ENABLED=0 go build .
-  copy_to_remote_host ./nftables-checker /home/agent_test_user/nftables-checker
-popd
-
 echo -e "\n Setup assets"
 pushd "${bosh_agent_dir}/integration/assets"
   release_folder="/home/agent_test_user/release"
