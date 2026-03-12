@@ -27,7 +27,8 @@ var _ = Describe("LoadConfigFromPath", func() {
 					"UsePreformattedPersistentDisk": true,
 					"BindMountPersistentDisk": true,
 					"SkipDiskSetup": true,
-					"DevicePathResolutionType": "virtio"
+					"DevicePathResolutionType": "virtio",
+					"UseMonitIptablesFirewall": true
 				}
 			},
 			"Infrastructure": {
@@ -76,6 +77,7 @@ var _ = Describe("LoadConfigFromPath", func() {
 					BindMountPersistentDisk:       true,
 					SkipDiskSetup:                 true,
 					DevicePathResolutionType:      "virtio",
+					UseMonitIptablesFirewall:      true,
 				},
 			},
 			Infrastructure: boshinf.Options{
