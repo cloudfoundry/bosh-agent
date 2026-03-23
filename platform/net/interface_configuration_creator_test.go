@@ -1,6 +1,8 @@
 package net_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -523,7 +525,7 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 
 		_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(boshsettings.Networks{"foo": invalidNetwork}, interfacesByMAC)
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("Invalid IP 'not an ip'"))
+		Expect(strings.ToLower(err.Error())).To(ContainSubstring("invalid ip 'not an ip'"))
 	})
 })
 

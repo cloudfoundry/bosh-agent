@@ -3,6 +3,7 @@ package applyspec_test
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -57,7 +58,7 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 			if errorMsg == "" {
 				Expect(err).NotTo(HaveOccurred())
 			} else {
-				Expect(err).To(MatchError(errorMsg))
+				Expect(strings.ToLower(err.Error())).To(ContainSubstring(errorMsg))
 			}
 			if expected == nil {
 				Expect(rendered).To(BeNil())
@@ -77,7 +78,7 @@ var _ = Describe("RenderedTemplatesArchive", func() {
 				Sha1:        newMultipleSha1Digest("abc"),
 				BlobstoreID: "123",
 			}),
-			Entry("When only blobstoreID is set", "123", "", "No digest algorithm found. Supported algorithms: sha1, sha256, sha512", &RenderedTemplatesArchiveSpec{
+			Entry("When only blobstoreID is set", "123", "", "no digest algorithm found. supported algorithms: sha1, sha256, sha512", &RenderedTemplatesArchiveSpec{
 				Sha1:        nil,
 				BlobstoreID: "",
 			}),

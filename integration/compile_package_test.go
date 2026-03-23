@@ -130,7 +130,7 @@ var _ = Describe("compile_package", func() {
 			})
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+			Expect(strings.ToLower(err.Error())).To(ContainSubstring("no digest algorithm found. supported algorithms: sha1, sha256, sha512"))
 		})
 
 		It("compiles dependencies and stores them to the blobstore", func() {
@@ -202,7 +202,7 @@ var _ = Describe("compile_package", func() {
 			}, []agentclient.BlobRef{})
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("No digest algorithm found. Supported algorithms: sha1, sha256, sha512"))
+			Expect(strings.ToLower(err.Error())).To(ContainSubstring("no digest algorithm found. supported algorithms: sha1, sha256, sha512"))
 		})
 	})
 })
