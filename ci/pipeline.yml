@@ -4,7 +4,7 @@ vars:
 
 resource_types:
   - name: bosh-deployment
-    type: docker-image
+    type: registry-image
     source:
       repository: cloudfoundry/bosh-deployment-resource
       username: ((docker.username))
@@ -16,7 +16,7 @@ resource_types:
       username: ((docker.username))
       password: ((docker.password))
   - name: semver
-    type: docker-image
+    type: registry-image
     source:
       repository: concourse/semver-resource
       tag: "1.6"
