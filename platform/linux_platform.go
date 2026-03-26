@@ -1303,6 +1303,11 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 			return bosherr.WrapError(err, "Resizing disk partition")
 		}
 
+		err = p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
+		}
+
 		err := p.diskManager.GetMounter().Mount(firstPartitionPath, mountPoint, diskSetting.MountOptions...)
 		if err != nil {
 			return bosherr.WrapError(err, "Failed to mount partition for filesystem growing")
