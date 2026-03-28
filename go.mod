@@ -4,11 +4,11 @@ go 1.25.0
 
 require (
 	code.cloudfoundry.org/clock v1.64.0
-	code.cloudfoundry.org/tlsconfig v0.48.0
+	code.cloudfoundry.org/tlsconfig v0.49.0
 	github.com/Microsoft/hcsshim v0.13.0
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.1
-	github.com/cloudfoundry/bosh-davcli v0.0.466
+	github.com/cloudfoundry/bosh-davcli v0.0.468
 	github.com/cloudfoundry/bosh-utils v0.0.600
 	github.com/cloudfoundry/gosigar v1.3.117
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -66,7 +66,7 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.5 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
-	github.com/mdlayher/netlink v1.8.0 // indirect
+	github.com/mdlayher/netlink v1.9.0 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
 	github.com/nats-io/nkeys v0.4.15 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
