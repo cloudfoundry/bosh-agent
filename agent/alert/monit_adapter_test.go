@@ -14,8 +14,8 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
-func buildMonitAlert() MonitAlert {
-	return MonitAlert{
+func buildJobFailureAlert() JobFailureAlert {
+	return JobFailureAlert{
 		ID:          "some-random-id",
 		Service:     "nats",
 		Event:       "does not exist",
@@ -38,7 +38,7 @@ var _ = Describe("monitAdapter", func() {
 
 	Describe("IsIgnorable", func() {
 		itIgnores := func(event string) {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			monitAlert.Event = event
 
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
@@ -46,7 +46,7 @@ var _ = Describe("monitAdapter", func() {
 		}
 
 		itDoesNotIgnore := func(event string) {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			monitAlert.Event = event
 
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
@@ -76,7 +76,7 @@ var _ = Describe("monitAdapter", func() {
 
 	Describe("Alert", func() {
 		It("defaults to severty critical, when the event is unknown", func() {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
 
 			builtAlert, err := monitAdapter.Alert()
@@ -89,7 +89,7 @@ var _ = Describe("monitAdapter", func() {
 		})
 
 		It("defaults to severty critical, when the event is unknown", func() {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			monitAlert.Event = "fake-event"
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
 
@@ -106,7 +106,7 @@ var _ = Describe("monitAdapter", func() {
 			}
 
 			for event, expectedSeverity := range alerts {
-				monitAlert := buildMonitAlert()
+				monitAlert := buildJobFailureAlert()
 				monitAlert.Event = event
 				monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
 				builtAlert, err := monitAdapter.Alert()
@@ -116,7 +116,7 @@ var _ = Describe("monitAdapter", func() {
 		})
 
 		It("defaults CreatedAt to time.Now(), when parsing the supplied time fails", func() {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			monitAlert.Date = "Thu, 02 May 2013 20:07:0"
 
 			monitAdapter := NewMonitAdapter(monitAlert, settingsService, timeService)
@@ -126,7 +126,7 @@ var _ = Describe("monitAdapter", func() {
 		})
 
 		It("sets the title with ips", func() {
-			monitAlert := buildMonitAlert()
+			monitAlert := buildJobFailureAlert()
 			settingsService.Settings.Networks = boshsettings.Networks{
 				"fake-net1": boshsettings.Network{IP: "192.168.0.1"},
 				"fake-net2": boshsettings.Network{IP: "10.0.0.1"},

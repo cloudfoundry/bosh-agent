@@ -307,15 +307,15 @@ func init() { //nolint:funlen,gochecknoinits
 			It("sends job monitoring alerts to health manager", func() {
 				handler.KeepOnRunning()
 
-				monitAlert := boshalert.MonitAlert{
-					ID:          "fake-monit-alert",
-					Service:     "fake-service",
-					Event:       "fake-event",
-					Action:      "fake-action",
-					Date:        "Sun, 22 May 2011 20:07:41 +0500",
-					Description: "fake-description",
-				}
-				jobSupervisor.JobFailureAlert = &monitAlert
+			failureAlert := boshalert.JobFailureAlert{
+				ID:          "fake-monit-alert",
+				Service:     "fake-service",
+				Event:       "fake-event",
+				Action:      "fake-action",
+				Date:        "Sun, 22 May 2011 20:07:41 +0500",
+				Description: "fake-description",
+			}
+			jobSupervisor.JobFailureAlert = &failureAlert
 
 				// Fail the first time handler.Send is called for an alert (ignore heartbeats)
 				handler.SendCallback = func(input fakembus.SendInput) {

@@ -13,7 +13,7 @@ type alertEnvelope struct {
 	*smtpd.BasicEnvelope
 
 	handler JobFailureHandler
-	alert   *boshalert.MonitAlert
+	alert   *boshalert.JobFailureAlert
 }
 
 func (e *alertEnvelope) Write(lineBytes []byte) (err error) {
@@ -42,7 +42,7 @@ func (e *alertEnvelope) Write(lineBytes []byte) (err error) {
 
 func (e *alertEnvelope) Close() error {
 	alertToHandle := *e.alert
-	emptyAlert := boshalert.MonitAlert{}
+	emptyAlert := boshalert.JobFailureAlert{}
 
 	if alertToHandle != emptyAlert {
 		err := e.handler(*e.alert)

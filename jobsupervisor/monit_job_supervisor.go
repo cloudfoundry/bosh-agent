@@ -364,7 +364,7 @@ func (m monitJobSupervisor) MonitorJobFailures(handler JobFailureHandler) (err e
 		env = &alertEnvelope{
 			new(smtpd.BasicEnvelope),
 			handler,
-			new(boshalert.MonitAlert),
+			new(boshalert.JobFailureAlert),
 		}
 		return
 	}

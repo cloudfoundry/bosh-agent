@@ -23,7 +23,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 	Describe("MonitorJobFailures", func() {
 		It("monitors job status", func() {
-			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.JobFailureAlert) error { return nil })
 			Expect(err).NotTo(HaveOccurred())
 			Expect(handler.RegisteredAdditionalFunc).ToNot(BeNil())
 		})
@@ -31,7 +31,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 	Describe("Status", func() {
 		BeforeEach(func() {
-			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.JobFailureAlert) error { return nil })
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -54,7 +54,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 	Describe("Start", func() {
 		BeforeEach(func() {
-			err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+			err := dummyNats.MonitorJobFailures(func(boshalert.JobFailureAlert) error { return nil })
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		Context("when a job is failing", func() {
 			BeforeEach(func() {
-				err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				err := dummyNats.MonitorJobFailures(func(boshalert.JobFailureAlert) error { return nil })
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -122,7 +122,7 @@ var _ = Describe("dummyNatsJobSupervisor", func() {
 
 		Context("when a job is failing", func() {
 			BeforeEach(func() {
-				err := dummyNats.MonitorJobFailures(func(boshalert.MonitAlert) error { return nil })
+				err := dummyNats.MonitorJobFailures(func(boshalert.JobFailureAlert) error { return nil })
 				Expect(err).NotTo(HaveOccurred())
 			})
 

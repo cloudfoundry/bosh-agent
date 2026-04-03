@@ -134,14 +134,14 @@ func (d *dummyNatsJobSupervisor) statusHandler(req boshhandler.Request) boshhand
 		d.status = body["status"]
 
 		if d.status == "failing" && d.jobFailureHandler != nil { //nolint:errcheck
-			_ = d.jobFailureHandler(boshalert.MonitAlert{ //nolint:errcheck
-				ID:          "fake-monit-alert",
-				Service:     "fake-monit-service",
-				Event:       "failing",
-				Action:      "start",
-				Date:        "Sun, 22 May 2011 20:07:41 +0500",
-				Description: "fake-monit-description",
-			})
+		_ = d.jobFailureHandler(boshalert.JobFailureAlert{ //nolint:errcheck
+			ID:          "fake-monit-alert",
+			Service:     "fake-monit-service",
+			Event:       "failing",
+			Action:      "start",
+			Date:        "Sun, 22 May 2011 20:07:41 +0500",
+			Description: "fake-monit-description",
+		})
 		}
 
 		return boshhandler.NewValueResponse("ok")

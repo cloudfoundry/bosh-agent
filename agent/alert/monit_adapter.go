@@ -18,12 +18,12 @@ type MonitAdapter interface {
 }
 
 type monitAdapter struct {
-	monitAlert      MonitAlert
+	monitAlert      JobFailureAlert
 	settingsService boshsettings.Service
 	timeService     clock.Clock
 }
 
-func NewMonitAdapter(monitAlert MonitAlert, settingsService boshsettings.Service, timeService clock.Clock) MonitAdapter {
+func NewMonitAdapter(monitAlert JobFailureAlert, settingsService boshsettings.Service, timeService clock.Clock) MonitAdapter {
 	return &monitAdapter{
 		monitAlert:      monitAlert,
 		settingsService: settingsService,

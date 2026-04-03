@@ -727,9 +727,9 @@ var _ = Describe("monitJobSupervisor", func() {
 
 	Describe("MonitorJobFailures", func() {
 		It("monitor job failures", func() {
-			var handledAlert boshalert.MonitAlert
+			var handledAlert boshalert.JobFailureAlert
 
-			failureHandler := func(alert boshalert.MonitAlert) (err error) {
+			failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 				handledAlert = alert
 				return
 			}
@@ -751,7 +751,7 @@ var _ = Describe("monitJobSupervisor", func() {
 			err := doJobFailureEmail(msg, jobFailuresServerPort)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(handledAlert).To(Equal(boshalert.MonitAlert{
+			Expect(handledAlert).To(Equal(boshalert.JobFailureAlert{
 				ID:          "1304319946.0@localhost",
 				Service:     "nats",
 				Event:       "does not exist",
@@ -764,7 +764,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		It("ignores other emails", func() {
 			var didHandleAlert bool
 
-			failureHandler := func(alert boshalert.MonitAlert) (err error) {
+			failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 				didHandleAlert = true
 				return
 			}

@@ -25,7 +25,7 @@ type CPUVitals struct {
 	Total float64 `json:"total"`
 }
 
-type JobFailureHandler func(boshalert.MonitAlert) error
+type JobFailureHandler func(boshalert.JobFailureAlert) error
 
 type JobSupervisor interface {
 	Reload() error

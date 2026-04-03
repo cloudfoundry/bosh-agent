@@ -152,10 +152,10 @@ var _ = Describe("WrapperJobSupervisor", func() {
 	})
 
 	It("MonitorJobFailures should delegate to the underlying job supervisor", func() {
-		var testAlert *alert.MonitAlert
+		var testAlert *alert.JobFailureAlert
 
-		fakeSupervisor.JobFailureAlert = &alert.MonitAlert{ID: "test-alert"}
-		_ = wrapper.MonitorJobFailures(func(a alert.MonitAlert) error { //nolint:errcheck
+		fakeSupervisor.JobFailureAlert = &alert.JobFailureAlert{ID: "test-alert"}
+		_ = wrapper.MonitorJobFailures(func(a alert.JobFailureAlert) error { //nolint:errcheck
 			testAlert = &a
 
 			return nil

@@ -435,7 +435,7 @@ func (w *windowsJobSupervisor) handleJobFailure(hn JobFailureHandler, wr http.Re
 		w.logger.Error(w.logTag, "MonitorJobFailures: received unknown request: %s", err)
 		return
 	}
-	alert := boshalert.MonitAlert{
+	alert := boshalert.JobFailureAlert{
 		Action:      "Start",
 		Date:        time.Now().Format(time.RFC1123Z),
 		Event:       event.Event,

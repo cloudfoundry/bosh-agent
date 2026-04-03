@@ -365,16 +365,16 @@ func writeJobConfig(jobDir string, fs boshsys.FileSystem, configContents Windows
 
 type AlertHandler struct {
 	mu    sync.Mutex
-	alert boshalert.MonitAlert
+	alert boshalert.JobFailureAlert
 }
 
-func (a *AlertHandler) Set(alert boshalert.MonitAlert) {
+func (a *AlertHandler) Set(alert boshalert.JobFailureAlert) {
 	a.mu.Lock()
 	a.alert = alert
 	a.mu.Unlock()
 }
 
-func (a *AlertHandler) Get() boshalert.MonitAlert {
+func (a *AlertHandler) Get() boshalert.JobFailureAlert {
 	a.mu.Lock()
 	alert := a.alert
 	a.mu.Unlock()
@@ -1034,12 +1034,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				return err
 			}
 
-			expectedMonitAlert := func(received boshalert.MonitAlert) interface{} {
+			expectedMonitAlert := func(received boshalert.JobFailureAlert) interface{} {
 				date, err := time.Parse(time.RFC1123Z, received.Date)
 				if err != nil {
 					return err
 				}
-				return boshalert.MonitAlert{
+				return boshalert.JobFailureAlert{
 					ID:          "nats",
 					Service:     "nats",
 					Event:       "pid failed",
@@ -1053,7 +1053,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				var handledAlert AlertHandler
 
 				alertReceived := make(chan bool, 1)
-				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 					alertReceived <- true
 					handledAlert.Set(alert)
 					return
@@ -1074,7 +1074,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			It("receives job failures from the service wrapper via HTTP", func() {
 				var handledAlert AlertHandler
-				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 					handledAlert.Set(alert)
 					return
 				}
@@ -1093,7 +1093,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			It("stops sending failures after a call to Unmonitor", func() {
 				var handledAlert AlertHandler
-				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 					handledAlert.Set(alert)
 					return
 				}
@@ -1109,12 +1109,12 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should match empty MonitAlert
-				Expect(handledAlert.Get()).To(Equal(boshalert.MonitAlert{}))
+				Expect(handledAlert.Get()).To(Equal(boshalert.JobFailureAlert{}))
 			})
 
 			It("re-monitors all jobs after a call to start", func() {
 				var handledAlert AlertHandler
-				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 					handledAlert.Set(alert)
 					return
 				}
@@ -1130,7 +1130,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 				Expect(err).ToNot(HaveOccurred())
 
 				// Should match empty MonitAlert
-				Expect(handledAlert.Get()).To(Equal(boshalert.MonitAlert{}))
+				Expect(handledAlert.Get()).To(Equal(boshalert.JobFailureAlert{}))
 
 				// Start should re-monitor all jobs
 				Expect(jobSupervisor.Start()).To(Succeed())
@@ -1144,7 +1144,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 
 			It("ignores unknown requests", func() {
 				var didHandleAlert int32
-				failureHandler := func(alert boshalert.MonitAlert) (err error) {
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) {
 					atomic.StoreInt32(&didHandleAlert, 1)
 					return
 				}
@@ -1160,7 +1160,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			})
 
 			It("returns an error when it fails to bind", func() {
-				failureHandler := func(alert boshalert.MonitAlert) (err error) { return }
+				failureHandler := func(alert boshalert.JobFailureAlert) (err error) { return }
 
 				go func() {
 					err := jobSupervisor.MonitorJobFailures(failureHandler)

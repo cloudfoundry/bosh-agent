@@ -30,7 +30,7 @@ type FakeJobSupervisor struct {
 	ProcessesStatus []boshjobsuper.Process
 	ProcessesError  error
 
-	JobFailureAlert *boshalert.MonitAlert
+	JobFailureAlert *boshalert.JobFailureAlert
 
 	HealthRecorded      int
 	HealthRecordedMutex sync.Mutex

@@ -204,26 +204,26 @@ func (a Agent) getHeartbeat(status string) (Heartbeat, error) {
 }
 
 func (a Agent) handleJobFailure(errCh chan error) boshjobsuper.JobFailureHandler {
-	return func(monitAlert boshalert.MonitAlert) error {
-		alertAdapter := boshalert.NewMonitAdapter(monitAlert, a.settingsService, a.timeService)
+	return func(failureAlert boshalert.JobFailureAlert) error {
+		alertAdapter := boshalert.NewMonitAdapter(failureAlert, a.settingsService, a.timeService)
 		if alertAdapter.IsIgnorable() {
-			a.logger.Debug(agentLogTag, "Ignored monit event: ", monitAlert.Event)
+			a.logger.Debug(agentLogTag, "Ignored job failure event: ", failureAlert.Event)
 			return nil
 		}
 
 		severity, found := alertAdapter.Severity()
 		if !found {
-			a.logger.Error(agentLogTag, "Unknown monit event name `%s', using default severity %d", monitAlert.Event, severity)
+			a.logger.Error(agentLogTag, "Unknown job failure event name `%s', using default severity %d", failureAlert.Event, severity)
 		}
 
 		alert, err := alertAdapter.Alert()
 		if err != nil {
-			errCh <- bosherr.WrapError(err, "Adapting monit alert")
+			errCh <- bosherr.WrapError(err, "Adapting job failure alert")
 		}
 
 		err = a.mbusHandler.Send(boshhandler.HealthMonitor, boshhandler.Alert, alert)
 		if err != nil {
-			errCh <- bosherr.WrapError(err, "Sending monit alert")
+			errCh <- bosherr.WrapError(err, "Sending job failure alert")
 		}
 
 		return nil
