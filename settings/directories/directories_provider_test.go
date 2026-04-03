@@ -42,6 +42,7 @@ var _ = Describe("Provider", func() {
 		Entry("DisksDir()", p.DisksDir(), "/some/dir/instance/disks"),
 		Entry("BlobsDir()", p.BlobsDir(), "/some/dir/data/blobs"),
 		Entry("InstanceDNSDir()", p.InstanceDNSDir(), "/some/dir/instance/dns"),
+		Entry("SystemdDir()", p.SystemdDir(), "/etc/systemd/system"),
 	)
 
 	It("cleans the base dir", func() {

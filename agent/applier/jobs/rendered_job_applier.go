@@ -169,6 +169,23 @@ func (s *renderedJobApplier) Configure(job models.Job, jobIndex int) (err error)
 		return
 	}
 
+	processesYmlPath := path.Join(jobDir, "processes.yml")
+	if s.fs.FileExists(processesYmlPath) {
+		s.logger.Debug(logTag, "Found processes.yml for job %s, using systemd path", job.Name)
+		err = s.jobSupervisor.AddJob(job.Name, jobIndex, processesYmlPath)
+		if err != nil {
+			err = bosherr.WrapError(err, "Adding systemd configuration from processes.yml")
+			return
+		}
+
+		monitFilePaths, globErr := s.fs.Glob(path.Join(jobDir, "*.monit"))
+		if globErr == nil && len(monitFilePaths) > 0 {
+			s.logger.Warn(logTag, "Job %s has processes.yml and additional *.monit files; ignoring *.monit files", job.Name)
+		}
+
+		return nil
+	}
+
 	monitFilePath := path.Join(jobDir, "monit")
 	if s.fs.FileExists(monitFilePath) {
 		err = s.jobSupervisor.AddJob(job.Name, jobIndex, monitFilePath)

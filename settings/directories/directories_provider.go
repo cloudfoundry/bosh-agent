@@ -127,3 +127,7 @@ func (p Provider) BlobsDir() string {
 func (p Provider) SensitiveBlobsDir() string {
 	return filepath.Join(p.DataDir(), "sensitive_blobs")
 }
+
+func (p Provider) SystemdDir() string {
+	return "/etc/systemd/system"
+}

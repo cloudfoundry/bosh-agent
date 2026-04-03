@@ -410,6 +410,40 @@ var _ = Describe("renderedJobApplier", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(jobSupervisor.AddJobArgs)).To(Equal(0))
 		})
+
+		It("uses processes.yml when present, passing it to the supervisor instead of monit", func() {
+			job, bundle := buildJob(jobsBc)
+			bundle.GetDirPath = "/path/to/job"
+
+			err := fs.WriteFileString("/path/to/job/processes.yml", "processes: []")
+			Expect(err).NotTo(HaveOccurred())
+
+			// Also write a monit file to prove it is ignored
+			err = fs.WriteFileString("/path/to/job/monit", "some monit conf")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = applier.Configure(job, 0)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(jobSupervisor.AddJobArgs).To(HaveLen(1))
+			Expect(jobSupervisor.AddJobArgs[0].ConfigPath).To(Equal("/path/to/job/processes.yml"))
+		})
+
+		It("does not call AddJob for any monit files when processes.yml is present", func() {
+			job, bundle := buildJob(jobsBc)
+			bundle.GetDirPath = "/path/to/job"
+
+			err := fs.WriteFileString("/path/to/job/processes.yml", "processes: []")
+			Expect(err).NotTo(HaveOccurred())
+			fs.SetGlob("/path/to/job/*.monit", []string{"/path/to/job/sub.monit"})
+
+			err = applier.Configure(job, 0)
+			Expect(err).ToNot(HaveOccurred())
+
+			for _, args := range jobSupervisor.AddJobArgs {
+				Expect(args.ConfigPath).NotTo(ContainSubstring(".monit"))
+			}
+		})
 	})
 
 	Describe("KeepOnly", func() {

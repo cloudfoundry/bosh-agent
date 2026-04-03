@@ -48,9 +48,13 @@ func NewProvider(
 		platform.GetServiceManager(),
 	)
 
+	systemdSupervisor := NewSystemdJobSupervisor(fs, runner, logger, dirProvider)
+	compositeSupervisor := NewCompositeJobSupervisor(monitJobSupervisor, systemdSupervisor, logger)
+
 	return Provider{
 		supervisors: map[string]JobSupervisor{
 			"monit":      NewWrapperJobSupervisor(monitJobSupervisor, fs, dirProvider, logger),
+			"composite":  NewWrapperJobSupervisor(compositeSupervisor, fs, dirProvider, logger),
 			"dummy":      NewDummyJobSupervisor(),
 			"dummy-nats": NewDummyNatsJobSupervisor(handler),
 		},
