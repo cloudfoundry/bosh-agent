@@ -307,15 +307,24 @@ var _ = Describe("WindowsPlatform", func() {
 			servers := []string{"0.north-america.pool.ntp.org", "1.north-america.pool.ntp.org"}
 			platform.SetTimeWithNtpServers(servers) //nolint:errcheck
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
-			Expect(cmdRunner.RunCommands[0]).To(ContainElement(ContainSubstring("new-netfirewallrule")))
-			Expect(cmdRunner.RunCommands[1]).To(ContainElement(ContainSubstring("stop")))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
+			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{
+				"netsh", "advfirewall", "firewall", "delete", "rule", `name="BOSH NTP Outbound"`,
+			}))
+			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{
+				"netsh", "advfirewall", "firewall", "add", "rule",
+				`name="BOSH NTP Outbound"`,
+				"dir=out",
+				"action=allow",
+				"protocol=UDP",
+				"remoteport=123",
+			}))
+			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"net", "stop", "w32time"}))
 			ntpServers := strings.Join(servers, " ")
-			Expect(cmdRunner.RunCommands[2]).To(ContainElement(ContainSubstring(ntpServers)))
-			Expect(cmdRunner.RunCommands[2]).To(ContainElement(ContainSubstring("powershell.exe")))
-			Expect(cmdRunner.RunCommands[3]).To(ContainElement(ContainSubstring("start")))
-			Expect(cmdRunner.RunCommands[4]).To(ContainElement(ContainSubstring("/update")))
-			Expect(cmdRunner.RunCommands[5]).To(ContainElement(ContainSubstring("/resync")))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"w32tm", "/config", "/syncfromflags:manual", fmt.Sprintf(`/manualpeerlist:"%s"`, ntpServers)}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"net", "start", "w32time"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"w32tm", "/config", "/update"}))
+			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"w32tm", "/resync", "/rediscover"}))
 		})
 
 		It("sets time with ntp servers is noop when no ntp server provided", func() {
@@ -512,7 +521,7 @@ var _ = Describe("WindowsPlatform", func() {
 				logsTarProvider,
 			)
 			cmdRunner.AddCmdResult(
-				"powershell -Command Get-Disk -UniqueId f0015401d | Select Number | ConvertTo-Json",
+				"powershell.exe -NoProfile -NonInteractive -Command Get-Disk -UniqueId 'f0015401d' | Select-Object Number | ConvertTo-Json",
 				fakesys.FakeCmdResult{Stdout: `{
 					"Number": 42
 			  }`},
@@ -537,7 +546,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("returns the disk number resolved from Get-Disk when disk settings is passed by id, with dashes stripped", func() {
 			cmdRunner.AddCmdResult(
-				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				"powershell.exe -NoProfile -NonInteractive -Command Get-Disk -UniqueId 'c00101d0d00d' | Select-Object Number | ConvertTo-Json",
 				fakesys.FakeCmdResult{Stdout: `{
 					"Number": 42
 			  }`},
@@ -549,7 +558,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("returns an error if executing Get-Disk fails", func() {
 			cmdRunner.AddCmdResult(
-				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				"powershell.exe -NoProfile -NonInteractive -Command Get-Disk -UniqueId 'c00101d0d00d' | Select-Object Number | ConvertTo-Json",
 				fakesys.FakeCmdResult{Stderr: `commands are hard`, Error: errors.New("running is hard")},
 			)
 			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
@@ -561,7 +570,7 @@ var _ = Describe("WindowsPlatform", func() {
 
 		It("returns an error if Get-Disk does not return a marshallable JSON response", func() {
 			cmdRunner.AddCmdResult(
-				"powershell -Command Get-Disk -UniqueId c00101d0d00d | Select Number | ConvertTo-Json",
+				"powershell.exe -NoProfile -NonInteractive -Command Get-Disk -UniqueId 'c00101d0d00d' | Select-Object Number | ConvertTo-Json",
 				fakesys.FakeCmdResult{Stdout: "aklsjdfh"},
 			)
 			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "c00101d0d00d"})
