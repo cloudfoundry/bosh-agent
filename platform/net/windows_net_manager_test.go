@@ -2,7 +2,6 @@ package net_test
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -114,30 +113,42 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"net1": network1, "net2": network2, "vip": vip})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(
-				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, "net1", network1.IP, network1.Netmask, network1.Gateway)}))
-			Expect(runner.RunCommands).To(
-				ContainElement([]string{"powershell", "-Command", fmt.Sprintf(NicSettingsTemplate, "net2", network2.IP, network2.Netmask, "")}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"netsh", "interface", "ip", "set", "address",
+				`name="net1"`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
+			}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"netsh", "interface", "ip", "set", "address",
+				`name="net2"`, "source=static", "addr=192.168.20.20", "mask=255.255.255.0", "gateway=none",
+			}))
 		})
 
 		It("ignores VIP networks", func() {
 			err := setupNetworking(boshsettings.Networks{"vip": vip})
 			Expect(err).ToNot(HaveOccurred())
-			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+			}))
 		})
 
 		It("returns an error when configuring fails", func() {
 			stubInterfaces(map[string]boshsettings.Network{
 				"static-1": network1,
 			})
+			netshCmd := strings.Join([]string{
+				"netsh", "interface", "ip", "set", "address",
+				`name="static-1"`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
+			}, " ")
 			runner.AddCmdResult(
-				"powershell -Command "+fmt.Sprintf(NicSettingsTemplate, "static-1", network1.IP, network1.Netmask, network1.Gateway),
+				netshCmd,
 				fakesys.FakeCmdResult{Error: errors.New("fake-err")},
 			)
 
 			err := setupNetworking(boshsettings.Networks{"static-1": network1})
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("Configuring interface: fake-err"))
+			Expect(err.Error()).To(ContainSubstring(`Configuring interface "static-1"`))
+			Expect(err.Error()).To(ContainSubstring("fake-err"))
 
 			lockFile := filepath.Join(dirProvider.BoshDir(), "configured_interfaces.txt")
 			Expect(lockFile).ToNot(BeAnExistingFile())
@@ -171,8 +182,10 @@ var _ = Describe("WindowsNetManager", func() {
 				err := setupNetworking(boshsettings.Networks{"net1": network})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(runner.RunCommands).NotTo(ContainElement(
-					[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+				Expect(runner.RunCommands).NotTo(ContainElement([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "Start-Service http"}))
+				for _, cmd := range runner.RunCommands {
+					Expect(strings.Join(cmd, " ")).NotTo(ContainSubstring("Set-DnsClientServerAddress"))
+				}
 			})
 		})
 
@@ -181,8 +194,13 @@ var _ = Describe("WindowsNetManager", func() {
 				err := setupNetworking(boshsettings.Networks{"net1": network})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(runner.RunCommands).To(ContainElement(
-					[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+				Expect(runner.RunCommands).To(ContainElement([]string{
+					"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+					`$dns=@('8.8.8.8'); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+				}))
+
+				dnsLockFile := filepath.Join(dirProvider.BoshDir(), "dns")
+				Expect(dnsLockFile).To(BeAnExistingFile())
 			})
 		})
 	})
@@ -202,8 +220,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"net1": network})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement(
-				[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				`$dns=@('8.8.8.8'); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+			}))
 		})
 
 		It("configures DNS with multiple DNS servers", func() {
@@ -220,8 +240,59 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"manual-1": network})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement(
-				[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				`$dns=@('127.0.0.1','8.8.8.8'); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+			}))
+		})
+
+		It("returns error when a DNS server is not a valid IP and does not run DNS set PowerShell", func() {
+			network := boshsettings.Network{
+				Type:    "manual",
+				IP:      "192.168.50.50",
+				Gateway: "192.168.50.0",
+				Netmask: "255.255.255.0",
+				Mac:     "00:0C:29:0B:69:7A",
+				DNS:     []string{"8.8.8"},
+				Default: []string{"gateway", "dns"},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"net1": network,
+			})
+
+			err := setupNetworking(boshsettings.Networks{"net1": network})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`"8.8.8"`))
+
+			for _, cmd := range runner.RunCommands {
+				Expect(strings.Join(cmd, " ")).NotTo(ContainSubstring("$dns=@"))
+			}
+
+			dnsLockFile := filepath.Join(dirProvider.BoshDir(), "dns")
+			_, statErr := os.Stat(dnsLockFile)
+			Expect(statErr).To(HaveOccurred())
+			Expect(os.IsNotExist(statErr)).To(BeTrue())
+		})
+
+		It("rejects IPv6 DNS server addresses for this configuration path", func() {
+			network := boshsettings.Network{
+				Type:    "manual",
+				IP:      "192.168.50.50",
+				Gateway: "192.168.50.0",
+				Netmask: "255.255.255.0",
+				Mac:     "00:0C:29:0B:69:7A",
+				DNS:     []string{"2001:db8::1"},
+				Default: []string{"gateway", "dns"},
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"net1": network,
+			})
+
+			err := setupNetworking(boshsettings.Networks{"net1": network})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("IPv6 is not supported"))
 		})
 
 		It("resets DNS without any DNS servers", func() {
@@ -237,8 +308,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement(
-				[]string{"powershell", "-Command", ResetDNSTemplate}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+			}))
 		})
 
 		It("returns error if configuring DNS servers fails", func() {
@@ -253,7 +326,10 @@ var _ = Describe("WindowsNetManager", func() {
 			})
 
 			runner.AddCmdResult(
-				"powershell -Command "+fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`)),
+				strings.Join([]string{
+					"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+					`$dns=@('127.0.0.1','8.8.8.8'); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+				}, " "),
 				fakesys.FakeCmdResult{Error: errors.New("fake-err")},
 			)
 			err := setupNetworking(boshsettings.Networks{"static-1": network})
@@ -269,7 +345,10 @@ var _ = Describe("WindowsNetManager", func() {
 			})
 
 			runner.AddCmdResult(
-				"powershell -Command "+ResetDNSTemplate,
+				strings.Join([]string{
+					"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+					"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+				}, " "),
 				fakesys.FakeCmdResult{Error: errors.New("fake-err")},
 			)
 
@@ -294,8 +373,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement(
-				[]string{"powershell", "-Command", fmt.Sprintf(SetDNSTemplate, strings.Join(network.DNS, `","`))}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				`$dns=@('127.0.0.1','8.8.8.8'); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+			}))
 		})
 
 		It("resets DNS without any DNS servers if there are multiple networks", func() {
@@ -320,7 +401,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"man-1": network1, "man-2": network2})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+			}))
 		})
 	})
 
@@ -345,7 +429,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{"static-1": network1, "vip-1": network2})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+			}))
 		})
 	})
 
@@ -354,7 +441,10 @@ var _ = Describe("WindowsNetManager", func() {
 			err := setupNetworking(boshsettings.Networks{})
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", ResetDNSTemplate}))
+			Expect(runner.RunCommands).To(ContainElement([]string{
+				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command",
+				"Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }",
+			}))
 		})
 	})
 
@@ -364,8 +454,25 @@ var _ = Describe("WindowsNetManager", func() {
 				err := setupNetworking(boshsettings.Networks{})
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(runner.RunCommands).To(ContainElement([]string{"powershell", "-Command", "Start-Service http"}))
+				Expect(runner.RunCommands).To(ContainElement([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "Start-Service http"}))
 			})
+		})
+	})
+
+	Describe("ValidateWindowsNetshInterfaceAlias", func() {
+		It("allows typical Windows interface aliases", func() {
+			Expect(ValidateWindowsNetshInterfaceAlias("Ethernet")).To(Succeed())
+			Expect(ValidateWindowsNetshInterfaceAlias("Ethernet 2")).To(Succeed())
+		})
+
+		It("returns error when the name is empty or whitespace-only", func() {
+			Expect(ValidateWindowsNetshInterfaceAlias("")).To(MatchError(ContainSubstring("empty")))
+			Expect(ValidateWindowsNetshInterfaceAlias("   ")).To(MatchError(ContainSubstring("empty")))
+		})
+
+		It("returns error when the name contains double quotes or newlines", func() {
+			Expect(ValidateWindowsNetshInterfaceAlias(`eth"bad`)).To(MatchError(ContainSubstring("double quotes")))
+			Expect(ValidateWindowsNetshInterfaceAlias("eth\nbad")).To(MatchError(ContainSubstring("newlines")))
 		})
 	})
 })
