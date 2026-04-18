@@ -583,6 +583,18 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(diskPath).To(Equal("99"))
 		})
+
+		It("returns an error when DeviceID is not valid hex after stripping hyphens", func() {
+			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "not-hex"})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid ephemeral disk DeviceID"))
+		})
+
+		It("returns an error when Path is neither a decimal disk index nor a legacy /dev/sd* letter", func() {
+			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "/dev/sdz"})
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unsupported legacy suffix"))
+		})
 	})
 
 	Describe("SetupEphemeralDiskWithPath", func() {

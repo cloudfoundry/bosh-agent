@@ -32,7 +32,7 @@ var _ = Describe("Partitioner", func() {
 			expectedFreeSpace := 5 * 1024 * 1024 * 1024
 
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
 				fakes.FakeCmdResult{
 					Stdout: fmt.Sprintf(`%d
 `, expectedFreeSpace),
@@ -47,7 +47,7 @@ var _ = Describe("Partitioner", func() {
 		It("when the command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
@@ -64,7 +64,7 @@ var _ = Describe("Partitioner", func() {
 `
 
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty LargestFreeExtent`}, " "),
 				fakes.FakeCmdResult{
 					Stdout: expectedStdout,
 				},
@@ -90,7 +90,7 @@ var _ = Describe("Partitioner", func() {
 			expectedPartitionCount := "2"
 
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty NumberOfPartitions`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty NumberOfPartitions`}, " "),
 				fakes.FakeCmdResult{
 					Stdout: fmt.Sprintf(`%s
 `, expectedPartitionCount),
@@ -105,7 +105,7 @@ var _ = Describe("Partitioner", func() {
 		It("when the command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty NumberOfPartitions`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Disk -Number 1 | Select-Object -ExpandProperty NumberOfPartitions`}, " "),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
@@ -126,7 +126,7 @@ var _ = Describe("Partitioner", func() {
 
 	Describe("InitializeDisk", func() {
 		It("makes the request to initialize the given disk", func() {
-			expected := []string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Initialize-Disk -Number 1 -PartitionStyle GPT`}
+			expected := []string{"-NoProfile", "-NonInteractive", "-Command", `Initialize-Disk -Number 1 -PartitionStyle GPT`}
 
 			cmdRunner.AddCmdResult(strings.Join(expected, " "), fakes.FakeCmdResult{})
 
@@ -138,7 +138,7 @@ var _ = Describe("Partitioner", func() {
 		It("when the command fails returns a wrapped error", func() {
 			cmdRunnerError := errors.New("It went wrong")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Initialize-Disk -Number 1 -PartitionStyle GPT`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Initialize-Disk -Number 1 -PartitionStyle GPT`}, " "),
 				fakes.FakeCmdResult{ExitStatus: -1, Error: cmdRunnerError},
 			)
 
@@ -157,7 +157,7 @@ var _ = Describe("Partitioner", func() {
 		It("makes the request to create a new parition and returns the generated partition number", func() {
 			expectedPartitionNumber := "2"
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`}, " "),
 				fakes.FakeCmdResult{Stdout: fmt.Sprintf(`%s
 `, expectedPartitionNumber)})
 
@@ -165,14 +165,14 @@ var _ = Describe("Partitioner", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(partitionNumber).To(Equal(expectedPartitionNumber))
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{{
-				"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`,
+				"-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`,
 			}}))
 		})
 
 		It("returns a wrapped error with no partition number when the command fails", func() {
 			cmdRunnerError := errors.New("Failed to partition")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `New-Partition -DiskNumber 1 -UseMaximumSize | Select-Object -ExpandProperty PartitionNumber`}, " "),
 				fakes.FakeCmdResult{Error: cmdRunnerError},
 			)
 
@@ -200,11 +200,11 @@ var _ = Describe("Partitioner", func() {
 		It("makes the request to add a partition path to given disk and partition returning the drive letter", func() {
 			expectedDriveLetter := "G"
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
 				fakes.FakeCmdResult{},
 			)
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " "),
 				fakes.FakeCmdResult{Stdout: fmt.Sprintf(`%s
 `, expectedDriveLetter)})
 
@@ -212,15 +212,15 @@ var _ = Describe("Partitioner", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(driveLetter).To(Equal(expectedDriveLetter))
 			Expect(cmdRunner.RunCommands).To(Equal([][]string{
-				{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`},
-				{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`},
+				{"-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`},
+				{"-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`},
 			}))
 		})
 
 		It("returns a wrapped error when the request to add a partition path fails", func() {
 			addPartitionPathError := errors.New("failed to add path")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
 				fakes.FakeCmdResult{Error: addPartitionPathError},
 			)
 
@@ -237,11 +237,11 @@ var _ = Describe("Partitioner", func() {
 		It("return a wrapped error when the request to discover the drive letter fails", func() {
 			getDriveLetterError := errors.New("failed to discover drive letter")
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " "),
 				fakes.FakeCmdResult{},
 			)
 			cmdRunner.AddCmdResult(
-				strings.Join([]string{"powershell.exe", "-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " "),
+				strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command", `Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " "),
 				fakes.FakeCmdResult{Error: getDriveLetterError},
 			)
 
