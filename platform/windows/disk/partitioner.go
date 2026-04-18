@@ -37,7 +37,7 @@ func canonicalPartitionIndexString(s string) (int, string, error) {
 }
 
 func (p *Partitioner) ps(script string) (string, string, int, error) {
-	return p.Runner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script)
+	return p.Runner.RunCommand("-NoProfile", "-NonInteractive", "-Command", script)
 }
 
 func (p *Partitioner) GetCountOnDisk(diskNumber string) (string, error) {

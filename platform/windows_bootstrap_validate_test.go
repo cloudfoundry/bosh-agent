@@ -100,5 +100,4 @@ var _ = Describe("Windows bootstrap validation", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
-
 })

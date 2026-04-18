@@ -659,6 +659,8 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string, err error) {
 	p.logger.Debug("WindowsPlatform", "Identifying ephemeral disk path, diskSettings.Path: `%s`", diskSettings.Path)
 
+	strippedID := strings.ReplaceAll(diskSettings.DeviceID, "-", "")
+
 	if p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
@@ -682,13 +684,12 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			diskPath = strconv.Itoa(idx)
 		}
 	} else if diskSettings.DeviceID != "" {
-		stripped := strings.ReplaceAll(diskSettings.DeviceID, "-", "")
-		if err := ValidateWindowsDiskUniqueIDHex(stripped); err != nil {
+		if err := ValidateWindowsDiskUniqueIDHex(strippedID); err != nil {
 			return "", bosherr.WrapError(err, "invalid ephemeral disk DeviceID")
 		}
 		// Single-quoted UniqueId so PowerShell treats it as a literal.
-		ps := fmt.Sprintf("Get-Disk -UniqueId '%s' | Select-Object Number | ConvertTo-Json", stripped)
-		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", ps)
+		psBody := fmt.Sprintf("Get-Disk -UniqueId '%s' | Select-Object Number | ConvertTo-Json", strippedID)
+		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", psBody)
 		if err != nil {
 			return "", bosherr.WrapErrorf(err, "Translating disk ID to disk number failed: %s", stderr)
 		}
