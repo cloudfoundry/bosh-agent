@@ -32,12 +32,12 @@ github.com/cloudfoundry/bosh-cli/v7 v7.10.2 h1:P+4ksKMnAaqDIctYoEdR4GaQ5gcfDrHTo
 github.com/cloudfoundry/bosh-cli/v7 v7.10.2/go.mod h1:hUoPBwWK1177DKLbbcdngc4Hk/OqKCTBOnG3fmtOo6o=
 github.com/cloudfoundry/bosh-davcli v0.0.473 h1:b7M//KhkR/CRRn/zo+rB57HxWFp9MdcPIyEhyBn23HI=
 github.com/cloudfoundry/bosh-davcli v0.0.473/go.mod h1:F+uVgLJVLISrh6C+9RASS0kRbktNCHDWL473SNMYEF8=
-github.com/cloudfoundry/bosh-utils v0.0.605 h1:ZxScW/SfD4oF4taVUAZ6wu3GM7JY4LdQyK0NKpOcPDo=
-github.com/cloudfoundry/bosh-utils v0.0.605/go.mod h1:FPbFLzoojtan9UEHuvFnpx4ujklB7uTi1aLtYeKwalo=
+github.com/cloudfoundry/bosh-utils v0.0.607 h1:kLI3NZClxAW5rnOLn4+unP1HMwq5F2V9bSHL/Pb0W3c=
+github.com/cloudfoundry/bosh-utils v0.0.607/go.mod h1:KadjsAX8mmt8C5DKYq9NOzDDKZVwdjrdPW2EJ0IE4zA=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 h1:oy59UYcspoP44ggE8DM3kjxl1+sTFd802bbZlBBhBMk=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
-github.com/cloudfoundry/gosigar v1.3.117 h1:sbBOcGTZHn0MrBnS0gsCeepK/+oWdUX+k2AhJBDMFb8=
-github.com/cloudfoundry/gosigar v1.3.117/go.mod h1:Lh0wz9k/AjM5PQFQqUxLtayA1fMxPTCAxcqS3K1RuJQ=
+github.com/cloudfoundry/gosigar v1.3.118 h1:M5I101sHroieCCM07+HDVhYq6AUThH9LTJF4WY1d3O0=
+github.com/cloudfoundry/gosigar v1.3.118/go.mod h1:HaIEZU356TAVnxmEvDFe5PXOTCOeSmUgVxoPzrat5Po=
 github.com/cloudfoundry/socks5-proxy v0.2.173 h1:vEAKc//jHXN9AWrSjoZJMPZWVORusRfq6lkwKyUuOQs=
 github.com/cloudfoundry/socks5-proxy v0.2.173/go.mod h1:i4pmYUQel0SFjAdHGZ65hWVuQMV5fkZNE4m1QXmPH/0=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
@@ -151,8 +151,8 @@ github.com/masterzen/winrm v0.0.0-20260407182533-5570be7f80cf h1:UxGs98qiSWMqoqQ
 github.com/masterzen/winrm v0.0.0-20260407182533-5570be7f80cf/go.mod h1:JajVhkiG2bYSNYYPYuWG7WZHr42CTjMTcCjfInRNCqc=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2 h1:V23nK2R2B63g2GhygF9zVGpnigmhvoZoH8d0hrZwMGY=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2/go.mod h1:Mr897yU9FmyKaQDPtRlVKibrjz40XXyOHUfyZBPSyZU=
-github.com/mdlayher/netlink v1.11.0 h1:Cot7ixQZL6P/pxRFB4z3jRdGPYeZosFT+WHS3sMXy8Y=
-github.com/mdlayher/netlink v1.11.0/go.mod h1:rMwDzh42W85uW3yTtiTRZFX9uway98aDQ5i+D8Jq4g4=
+github.com/mdlayher/netlink v1.11.1 h1:T136gDS6Gkt+hLncaBwKdW5GpEC8Z0ykqimOebVoal0=
+github.com/mdlayher/netlink v1.11.1/go.mod h1:ao4LjamyK4Uq9L8+fQzqFYpAncbeCdwbvd9Edv/pYnc=
 github.com/mdlayher/socket v0.6.0 h1:ScZPaAGyO1icQnbFrhPM8mnXyMu9qukC1K4ZoM2IQKU=
 github.com/mdlayher/socket v0.6.0/go.mod h1:q7vozUAnxSqnjHc12Fik5yUKIzfZ8ITCfMkhOtE9z18=
 github.com/mfridman/tparse v0.18.0 h1:wh6dzOKaIwkUGyKgOntDW4liXSo37qg5AXbIhkMV3vE=
