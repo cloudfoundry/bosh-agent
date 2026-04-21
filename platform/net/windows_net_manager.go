@@ -188,7 +188,7 @@ func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConf
 
 		args := []string{
 			"interface", "ip", "set", "address",
-			fmt.Sprintf(`name="%s"`, conf.Name),
+			fmt.Sprintf("name=%s", conf.Name),
 			"source=static",
 			fmt.Sprintf("addr=%s", conf.Address),
 			fmt.Sprintf("mask=%s", conf.Netmask),
@@ -268,8 +268,6 @@ func validateWindowsLiteralIPv4(s string) (string, error) {
 	return ip.String(), nil
 }
 
-// ValidateWindowsNetshInterfaceAlias checks a Windows interface alias before it is embedded in netsh
-// `name="..."` argv. Values containing quotes or newlines would break argv parsing.
 func ValidateWindowsNetshInterfaceAlias(name string) error {
 	if strings.TrimSpace(name) == "" {
 		return fmt.Errorf("network interface name is empty")

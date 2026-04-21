@@ -47,27 +47,32 @@ var _ = Describe("Windows bootstrap validation", func() {
 		})
 	})
 
-	Describe("ValidateWindowsDiskUniqueIDHex", func() {
+	Describe("ValidateWindowsDiskUniqueID", func() {
 		It("accepts hex of reasonable length", func() {
-			Expect(ValidateWindowsDiskUniqueIDHex("f0015401d")).To(Succeed())
-			Expect(ValidateWindowsDiskUniqueIDHex("c00101d0d00d")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("f0015401d")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("c00101d0d00d")).To(Succeed())
 		})
 
-		It("accepts boundary lengths and mixed case", func() {
-			Expect(ValidateWindowsDiskUniqueIDHex("12345678")).To(Succeed())
-			Expect(ValidateWindowsDiskUniqueIDHex(strings.Repeat("f", 128))).To(Succeed())
-			Expect(ValidateWindowsDiskUniqueIDHex("AbCdEf01")).To(Succeed())
+		It("accepts boundary lengths, mixed case, and non-hex identifier punctuation", func() {
+			Expect(ValidateWindowsDiskUniqueID("a")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("short")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("1234567")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("12345678")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID(strings.Repeat("f", 128))).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("AbCdEf01")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("naa.5000abcd")).To(Succeed())
+			Expect(ValidateWindowsDiskUniqueID("scsi-3:0:0:1")).To(Succeed())
 		})
 
-		It("rejects non-hex and short strings", func() {
-			Expect(ValidateWindowsDiskUniqueIDHex("0;iex")).To(HaveOccurred())
-			Expect(ValidateWindowsDiskUniqueIDHex("short")).To(HaveOccurred())
+		It("rejects disallowed characters", func() {
+			Expect(ValidateWindowsDiskUniqueID("0;iex")).To(HaveOccurred())
+			Expect(ValidateWindowsDiskUniqueID("bad'quote01")).To(HaveOccurred())
+			Expect(ValidateWindowsDiskUniqueID("has space01")).To(HaveOccurred())
 		})
 
-		It("rejects empty, too short, and too long hex strings", func() {
-			Expect(ValidateWindowsDiskUniqueIDHex("")).To(HaveOccurred())
-			Expect(ValidateWindowsDiskUniqueIDHex("1234567")).To(HaveOccurred())
-			Expect(ValidateWindowsDiskUniqueIDHex(strings.Repeat("0", 129))).To(HaveOccurred())
+		It("rejects empty and too long strings", func() {
+			Expect(ValidateWindowsDiskUniqueID("")).To(HaveOccurred())
+			Expect(ValidateWindowsDiskUniqueID(strings.Repeat("0", 1025))).To(HaveOccurred())
 		})
 	})
 

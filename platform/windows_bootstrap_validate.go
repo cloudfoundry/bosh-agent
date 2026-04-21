@@ -10,13 +10,17 @@ import (
 	boshwindisk "github.com/cloudfoundry/bosh-agent/v2/platform/windows/disk"
 )
 
+// maxWindowsDiskUniqueIDLen caps the stripped DeviceID; This seemed reasonably large, increse if you find one longer
+const maxWindowsDiskUniqueIDLen = 1024
+
 var (
 	// Per-label hostname rules (RFC 1123–style): alnum, internal hyphens only; no empty labels or "..".
 	ntpHostnameLabelPattern = regexp.MustCompile(`^(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])$`)
-	diskUniqueHexPattern    = regexp.MustCompile(`^[0-9A-Fa-f]{8,128}$`)
+	// Ephemeral disk DeviceID (hyphens stripped) is passed as a single-quoted Get-Disk -UniqueId literal.
+	// Charset only; max length is maxWindowsDiskUniqueIDLen (RE2 disallows {1,1024}).
+	diskIDAllowedCharsPattern = regexp.MustCompile(`^[-A-Za-z0-9._:]+$`)
 )
 
-// ValidateNtpServerEntry returns nil if s is a valid IPv4/IPv6 literal or a conservative hostname for NTP.
 func ValidateNtpServerEntry(s string) error {
 	s = strings.TrimSpace(s)
 	if s == "" {
@@ -53,10 +57,15 @@ func validateNtpHostnameLabels(host string) error {
 	return nil
 }
 
-// ValidateWindowsDiskUniqueIDHex validates the DeviceID string after hyphens are removed (UniqueId form for Get-Disk).
-func ValidateWindowsDiskUniqueIDHex(stripped string) error {
-	if !diskUniqueHexPattern.MatchString(stripped) {
-		return errors.New("disk DeviceID must be hexadecimal (after removing hyphens)")
+func ValidateWindowsDiskUniqueID(stripped string) error {
+	if stripped == "" {
+		return errors.New("disk DeviceID is empty after removing hyphens")
+	}
+	if len(stripped) > maxWindowsDiskUniqueIDLen {
+		return errors.New("disk DeviceID has invalid characters or exceeds maximum length (after removing hyphens)")
+	}
+	if !diskIDAllowedCharsPattern.MatchString(stripped) {
+		return errors.New("disk DeviceID has invalid characters or exceeds maximum length (after removing hyphens)")
 	}
 	return nil
 }
