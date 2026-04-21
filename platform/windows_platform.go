@@ -421,6 +421,8 @@ func (p WindowsPlatform) SetupLogrotate(groupName, basePath, size string) error 
 }
 
 func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
+	const ruleName = "BOSH NTP Outbound"
+
 	if len(servers) == 0 {
 		return nil
 	}
@@ -436,13 +438,13 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
 
 	// Best-effort: remove stale rule so repeated bootstrap does not accumulate duplicate rules.
 	_, _, _, delErr := p.cmdRunner.RunCommand(
-		"netsh", "advfirewall", "firewall", "delete", "rule", `name="BOSH NTP Outbound"`,
+		"netsh", "advfirewall", "firewall", "delete", "rule", fmt.Sprintf("name=%s", ruleName),
 	)
 	_ = delErr
 
 	_, stderr, _, err := p.cmdRunner.RunCommand(
 		"netsh", "advfirewall", "firewall", "add", "rule",
-		`name="BOSH NTP Outbound"`,
+		fmt.Sprintf("name=%s", ruleName),
 		"dir=out",
 		"action=allow",
 		"protocol=UDP",
@@ -454,7 +456,7 @@ func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
 
 	ntpServers := strings.Join(validated, " ")
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time") //nolint:errcheck
-	manualPeerList := fmt.Sprintf(`/manualpeerlist:"%s"`, ntpServers)
+	manualPeerList := fmt.Sprintf(`/manualpeerlist:%s`, ntpServers)
 	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/syncfromflags:manual", manualPeerList)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
@@ -684,7 +686,7 @@ func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSett
 			diskPath = strconv.Itoa(idx)
 		}
 	} else if diskSettings.DeviceID != "" {
-		if err := ValidateWindowsDiskUniqueIDHex(strippedID); err != nil {
+		if err := ValidateWindowsDiskUniqueID(strippedID); err != nil {
 			return "", bosherr.WrapError(err, "invalid ephemeral disk DeviceID")
 		}
 		// Single-quoted UniqueId so PowerShell treats it as a literal.

@@ -115,11 +115,11 @@ var _ = Describe("WindowsNetManager", func() {
 
 			Expect(runner.RunCommands).To(ContainElement([]string{
 				"netsh", "interface", "ip", "set", "address",
-				`name="net1"`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
+				`name=net1`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
 			}))
 			Expect(runner.RunCommands).To(ContainElement([]string{
 				"netsh", "interface", "ip", "set", "address",
-				`name="net2"`, "source=static", "addr=192.168.20.20", "mask=255.255.255.0", "gateway=none",
+				`name=net2`, "source=static", "addr=192.168.20.20", "mask=255.255.255.0", "gateway=none",
 			}))
 		})
 
@@ -138,7 +138,7 @@ var _ = Describe("WindowsNetManager", func() {
 			})
 			netshCmd := strings.Join([]string{
 				"netsh", "interface", "ip", "set", "address",
-				`name="static-1"`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
+				`name=static-1`, "source=static", "addr=192.168.50.50", "mask=255.255.255.0", "gateway=192.168.50.0", "gwmetric=1",
 			}, " ")
 			runner.AddCmdResult(
 				netshCmd,

@@ -309,11 +309,11 @@ var _ = Describe("WindowsPlatform", func() {
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(7))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{
-				"netsh", "advfirewall", "firewall", "delete", "rule", `name="BOSH NTP Outbound"`,
+				"netsh", "advfirewall", "firewall", "delete", "rule", `name=BOSH NTP Outbound`,
 			}))
 			Expect(cmdRunner.RunCommands[1]).To(Equal([]string{
 				"netsh", "advfirewall", "firewall", "add", "rule",
-				`name="BOSH NTP Outbound"`,
+				`name=BOSH NTP Outbound`,
 				"dir=out",
 				"action=allow",
 				"protocol=UDP",
@@ -321,7 +321,7 @@ var _ = Describe("WindowsPlatform", func() {
 			}))
 			Expect(cmdRunner.RunCommands[2]).To(Equal([]string{"net", "stop", "w32time"}))
 			ntpServers := strings.Join(servers, " ")
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"w32tm", "/config", "/syncfromflags:manual", fmt.Sprintf(`/manualpeerlist:"%s"`, ntpServers)}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"w32tm", "/config", "/syncfromflags:manual", fmt.Sprintf(`/manualpeerlist:%s`, ntpServers)}))
 			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"net", "start", "w32time"}))
 			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"w32tm", "/config", "/update"}))
 			Expect(cmdRunner.RunCommands[6]).To(Equal([]string{"w32tm", "/resync", "/rediscover"}))
@@ -584,8 +584,8 @@ var _ = Describe("WindowsPlatform", func() {
 			Expect(diskPath).To(Equal("99"))
 		})
 
-		It("returns an error when DeviceID is not valid hex after stripping hyphens", func() {
-			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "not-hex"})
+		It("returns an error when DeviceID is not valid after stripping hyphens", func() {
+			_, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{DeviceID: "bad;abcdef"})
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("invalid ephemeral disk DeviceID"))
 		})
