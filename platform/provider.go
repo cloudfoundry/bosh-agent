@@ -159,7 +159,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	}
 
 	// Symlink device resolver for NVMe instance storage discovery (filtering out EBS/managed disks)
-	symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, logger)
+	symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, boshudev.NewConcreteUdevDevice(runner, logger), logger)
 
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)

@@ -17,6 +17,7 @@ const (
 
 type SymlinkDeviceResolver struct {
 	fs     boshsys.FileSystem
+	udev   boshudev.UdevDevice
 	logger boshlog.Logger
 	logTag string
 }
@@ -24,10 +25,12 @@ type SymlinkDeviceResolver struct {
 // NewSymlinkDeviceResolver creates a new symlink device resolver.
 func NewSymlinkDeviceResolver(
 	fs boshsys.FileSystem,
+	udev boshudev.UdevDevice,
 	logger boshlog.Logger,
 ) *SymlinkDeviceResolver {
 	return &SymlinkDeviceResolver{
 		fs:     fs,
+		udev:   udev,
 		logger: logger,
 		logTag: "SymlinkDeviceResolver",
 	}
@@ -36,6 +39,13 @@ func NewSymlinkDeviceResolver(
 // ResolveSymlinksToDevices resolves all symlinks matching the given pattern
 // and returns a map of resolved device paths -> symlink paths.
 func (r *SymlinkDeviceResolver) ResolveSymlinksToDevices(symlinkPattern string) (map[string]string, error) {
+	if err := r.udev.Trigger(); err != nil {
+		return nil, bosherr.WrapError(err, "Running udevadm trigger")
+	}
+	if err := r.udev.Settle(); err != nil {
+		return nil, bosherr.WrapError(err, "Running udevadm settle")
+	}
+
 	symlinks, err := r.fs.Glob(symlinkPattern)
 	if err != nil {
 		return nil, bosherr.WrapErrorf(err, "Globbing symlinks with pattern '%s'", symlinkPattern)

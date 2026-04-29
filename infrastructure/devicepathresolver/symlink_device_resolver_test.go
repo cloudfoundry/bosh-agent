@@ -12,11 +12,13 @@ import (
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
 	. "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
 )
 
 var _ = Describe("SymlinkDeviceResolver", func() {
 	var (
 		fs       *fakesys.FakeFileSystem
+		udev     *fakeudev.FakeUdevDevice
 		logger   boshlog.Logger
 		resolver *SymlinkDeviceResolver
 	)
@@ -27,8 +29,9 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 		}
 
 		fs = fakesys.NewFakeFileSystem()
+		udev = fakeudev.NewFakeUdevDevice()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
-		resolver = NewSymlinkDeviceResolver(fs, logger)
+		resolver = NewSymlinkDeviceResolver(fs, udev, logger)
 	})
 
 	Describe("ResolveSymlinksToDevices", func() {

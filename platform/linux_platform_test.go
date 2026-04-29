@@ -34,6 +34,7 @@ import (
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -91,7 +92,7 @@ var _ = Describe("LinuxPlatform", func() {
 		certManager = new(certfakes.FakeManager)
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
-		symlinkDeviceResolver = boshdpresolv.NewSymlinkDeviceResolver(fs, logger)
+		symlinkDeviceResolver = boshdpresolv.NewSymlinkDeviceResolver(fs, fakeudev.NewFakeUdevDevice(), logger)
 
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		serviceManager = &servicemanagerfakes.FakeServiceManager{}

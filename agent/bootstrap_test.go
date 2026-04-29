@@ -1133,7 +1133,7 @@ var _ = Describe("bootstrap", func() {
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
 				devicePathResolver := fakedevicepathresolver.NewFakeDevicePathResolver()
-				symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, logger)
+				symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, udev, logger)
 
 				fakeUUIDGenerator := boshuuid.NewGenerator()
 				routesSearcher := boshnet.NewRoutesSearcher(logger, runner, nil)
