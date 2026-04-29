@@ -3,12 +3,12 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.25.0
 
 require (
-	code.cloudfoundry.org/clock v1.66.0
-	code.cloudfoundry.org/tlsconfig v0.51.0
+	code.cloudfoundry.org/clock v1.67.0
+	code.cloudfoundry.org/tlsconfig v0.52.0
 	github.com/Microsoft/hcsshim v0.14.1
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.10.2
-	github.com/cloudfoundry/bosh-davcli v0.0.473
+	github.com/cloudfoundry/bosh-cli/v7 v7.10.3
+	github.com/cloudfoundry/bosh-davcli v0.0.474
 	github.com/cloudfoundry/bosh-utils v0.0.607
 	github.com/cloudfoundry/gosigar v1.3.118
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -20,8 +20,8 @@ require (
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nats-io/nats.go v1.51.0
-	github.com/onsi/ginkgo/v2 v2.28.1
-	github.com/onsi/gomega v1.39.1
+	github.com/onsi/ginkgo/v2 v2.28.3
+	github.com/onsi/gomega v1.40.0
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
@@ -34,7 +34,7 @@ require (
 )
 
 require (
-	github.com/Azure/go-ntlmssp v0.1.0 // indirect
+	github.com/Azure/go-ntlmssp v0.1.1 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
@@ -81,9 +81,9 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20260410095643-746e56fc9e2f // indirect
 	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260414141209-fac6e1c83189 // indirect
+	golang.org/x/telemetry v0.0.0-20260428171046-76f71b9afea0 // indirect
 	golang.org/x/text v0.36.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260427160629-7cedc36a6bc4 // indirect
 	google.golang.org/grpc v1.80.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	honnef.co/go/tools v0.7.0 // indirect
