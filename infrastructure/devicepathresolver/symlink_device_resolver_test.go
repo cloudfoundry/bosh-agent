@@ -69,7 +69,7 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 			Expect(result["/dev/nvme2n1"]).To(Equal("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456"))
 		})
 
-		It("skips symlinks that cannot be resolved", func() {
+		It("returns error when a managed volume symlink cannot be resolved", func() {
 			err := fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
 			Expect(err).ToNot(HaveOccurred())
 
@@ -85,10 +85,9 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 			Expect(err).ToNot(HaveOccurred())
 			// nvme-invalid has no symlink target
 
-			result, err := resolver.ResolveSymlinksToDevices("/dev/disk/by-id/nvme-*")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(result).To(HaveLen(1))
-			Expect(result["/dev/nvme1n1"]).To(Equal("/dev/disk/by-id/nvme-valid"))
+            _, err = resolver.ResolveSymlinksToDevices("/dev/disk/by-id/nvme-*")
+            Expect(err).To(HaveOccurred())
+            Expect(err.Error()).To(ContainSubstring("nvme-invalid"))
 		})
 
 		It("returns error when glob fails", func() {
