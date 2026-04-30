@@ -812,9 +812,12 @@ func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSetting
 	// 1. A managed volume pattern is configured (tells us what to exclude)
 	// 2. The CPI reports NVMe device paths
 	// 3. The symlink resolver is available
-	if p.options.InstanceStorageManagedVolumePattern != "" &&
-		p.symlinkDeviceResolver != nil &&
-		p.hasNVMeDevices(devices) {
+	hasPattern := p.options.InstanceStorageManagedVolumePattern != ""
+	hasResolver := p.symlinkDeviceResolver != nil
+	hasNVMe := p.hasNVMeDevices(devices)
+	p.logger.Debug(logTag, "Instance storage resolution: hasPattern=%v, hasResolver=%v, hasNVMe=%v", hasPattern, hasResolver, hasNVMe)
+
+	if hasPattern && hasResolver && hasNVMe {
 		return p.discoverNVMeInstanceStorage(devices)
 	}
 
@@ -838,6 +841,7 @@ func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) 
 	if nvmePattern == "" {
 		nvmePattern = boshdpresolv.NVMeDevicePattern
 	}
+	p.logger.Debug(logTag, "Discovering NVMe instance storage: device pattern=%s, managed volume pattern=%s", nvmePattern, p.options.InstanceStorageManagedVolumePattern)
 
 	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(nvmePattern)
 	if err != nil {
@@ -849,6 +853,7 @@ func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) 
 	if err != nil {
 		return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
 	}
+	p.logger.Debug(logTag, "Found %d managed (IaaS) devices to exclude: %v", len(managedDevices), managedDevices)
 
 	instanceStorage := p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
 	sort.Strings(instanceStorage)
