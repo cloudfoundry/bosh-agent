@@ -888,6 +888,7 @@ func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettin
 		paths[i] = realPath
 	}
 	return paths, nil
+}
 
 func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
 	devicePath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
