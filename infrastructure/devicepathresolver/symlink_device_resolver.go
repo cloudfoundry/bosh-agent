@@ -4,6 +4,8 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice"
 )
 
 const (
@@ -38,6 +40,12 @@ func NewSymlinkDeviceResolver(
 
 // ResolveSymlinksToDevices resolves all symlinks matching the given pattern
 // and returns a map of resolved device paths -> symlink paths.
+//
+// udevadm trigger and settle are called before globbing to avoid a race condition:
+// NVMe block devices (/dev/nvme*) appear synchronously at boot, but the
+// /dev/disk/by-id/ symlinks are created asynchronously by udev. Without waiting,
+// globbing may return no symlinks, causing all NVMe devices to be misidentified
+// as instance storage (instead of EBS/managed volumes).
 func (r *SymlinkDeviceResolver) ResolveSymlinksToDevices(symlinkPattern string) (map[string]string, error) {
 	if err := r.udev.Trigger(); err != nil {
 		return nil, bosherr.WrapError(err, "Running udevadm trigger")
