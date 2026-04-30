@@ -8,6 +8,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager"
@@ -52,6 +53,17 @@ type FakePlatform struct {
 		result1 error
 	}
 	associateDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
+	CleanupDynamicDiskStub        func(string) error
+	cleanupDynamicDiskMutex       sync.RWMutex
+	cleanupDynamicDiskArgsForCall []struct {
+		arg1 string
+	}
+	cleanupDynamicDiskReturns struct {
+		result1 error
+	}
+	cleanupDynamicDiskReturnsOnCall map[int]struct {
 		result1 error
 	}
 	CreateUserStub        func(string, string) error
@@ -269,6 +281,16 @@ type FakePlatform struct {
 		result1 string
 		result2 string
 		result3 error
+	}
+	GetNatsFirewallHookStub        func() firewall.NatsFirewallHook
+	getNatsFirewallHookMutex       sync.RWMutex
+	getNatsFirewallHookArgsForCall []struct {
+	}
+	getNatsFirewallHookReturns struct {
+		result1 firewall.NatsFirewallHook
+	}
+	getNatsFirewallHookReturnsOnCall map[int]struct {
+		result1 firewall.NatsFirewallHook
 	}
 	GetPersistentDiskSettingsPathStub        func(bool) string
 	getPersistentDiskSettingsPathMutex       sync.RWMutex
@@ -496,6 +518,17 @@ type FakePlatform struct {
 	setupDataDirReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupDynamicDiskStub        func(settings.DiskSettings) error
+	setupDynamicDiskMutex       sync.RWMutex
+	setupDynamicDiskArgsForCall []struct {
+		arg1 settings.DiskSettings
+	}
+	setupDynamicDiskReturns struct {
+		result1 error
+	}
+	setupDynamicDiskReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupEphemeralDiskWithPathStub        func(string, *uint64, string) error
 	setupEphemeralDiskWithPathMutex       sync.RWMutex
 	setupEphemeralDiskWithPathArgsForCall []struct {
@@ -507,6 +540,16 @@ type FakePlatform struct {
 		result1 error
 	}
 	setupEphemeralDiskWithPathReturnsOnCall map[int]struct {
+		result1 error
+	}
+	SetupFirewallStub        func() error
+	setupFirewallMutex       sync.RWMutex
+	setupFirewallArgsForCall []struct {
+	}
+	setupFirewallReturns struct {
+		result1 error
+	}
+	setupFirewallReturnsOnCall map[int]struct {
 		result1 error
 	}
 	SetupHomeDirStub        func() error
@@ -905,6 +948,67 @@ func (fake *FakePlatform) AssociateDiskReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.associateDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) CleanupDynamicDisk(arg1 string) error {
+	fake.cleanupDynamicDiskMutex.Lock()
+	ret, specificReturn := fake.cleanupDynamicDiskReturnsOnCall[len(fake.cleanupDynamicDiskArgsForCall)]
+	fake.cleanupDynamicDiskArgsForCall = append(fake.cleanupDynamicDiskArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.CleanupDynamicDiskStub
+	fakeReturns := fake.cleanupDynamicDiskReturns
+	fake.recordInvocation("CleanupDynamicDisk", []interface{}{arg1})
+	fake.cleanupDynamicDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskCallCount() int {
+	fake.cleanupDynamicDiskMutex.RLock()
+	defer fake.cleanupDynamicDiskMutex.RUnlock()
+	return len(fake.cleanupDynamicDiskArgsForCall)
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskCalls(stub func(string) error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = stub
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskArgsForCall(i int) string {
+	fake.cleanupDynamicDiskMutex.RLock()
+	defer fake.cleanupDynamicDiskMutex.RUnlock()
+	argsForCall := fake.cleanupDynamicDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskReturns(result1 error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = nil
+	fake.cleanupDynamicDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) CleanupDynamicDiskReturnsOnCall(i int, result1 error) {
+	fake.cleanupDynamicDiskMutex.Lock()
+	defer fake.cleanupDynamicDiskMutex.Unlock()
+	fake.CleanupDynamicDiskStub = nil
+	if fake.cleanupDynamicDiskReturnsOnCall == nil {
+		fake.cleanupDynamicDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.cleanupDynamicDiskReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }
@@ -2009,6 +2113,59 @@ func (fake *FakePlatform) GetMonitCredentialsReturnsOnCall(i int, result1 string
 		result2 string
 		result3 error
 	}{result1, result2, result3}
+}
+
+func (fake *FakePlatform) GetNatsFirewallHook() firewall.NatsFirewallHook {
+	fake.getNatsFirewallHookMutex.Lock()
+	ret, specificReturn := fake.getNatsFirewallHookReturnsOnCall[len(fake.getNatsFirewallHookArgsForCall)]
+	fake.getNatsFirewallHookArgsForCall = append(fake.getNatsFirewallHookArgsForCall, struct {
+	}{})
+	stub := fake.GetNatsFirewallHookStub
+	fakeReturns := fake.getNatsFirewallHookReturns
+	fake.recordInvocation("GetNatsFirewallHook", []interface{}{})
+	fake.getNatsFirewallHookMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookCallCount() int {
+	fake.getNatsFirewallHookMutex.RLock()
+	defer fake.getNatsFirewallHookMutex.RUnlock()
+	return len(fake.getNatsFirewallHookArgsForCall)
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookCalls(stub func() firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = stub
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookReturns(result1 firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = nil
+	fake.getNatsFirewallHookReturns = struct {
+		result1 firewall.NatsFirewallHook
+	}{result1}
+}
+
+func (fake *FakePlatform) GetNatsFirewallHookReturnsOnCall(i int, result1 firewall.NatsFirewallHook) {
+	fake.getNatsFirewallHookMutex.Lock()
+	defer fake.getNatsFirewallHookMutex.Unlock()
+	fake.GetNatsFirewallHookStub = nil
+	if fake.getNatsFirewallHookReturnsOnCall == nil {
+		fake.getNatsFirewallHookReturnsOnCall = make(map[int]struct {
+			result1 firewall.NatsFirewallHook
+		})
+	}
+	fake.getNatsFirewallHookReturnsOnCall[i] = struct {
+		result1 firewall.NatsFirewallHook
+	}{result1}
 }
 
 func (fake *FakePlatform) GetPersistentDiskSettingsPath(arg1 bool) string {
@@ -3197,6 +3354,67 @@ func (fake *FakePlatform) SetupDataDirReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakePlatform) SetupDynamicDisk(arg1 settings.DiskSettings) error {
+	fake.setupDynamicDiskMutex.Lock()
+	ret, specificReturn := fake.setupDynamicDiskReturnsOnCall[len(fake.setupDynamicDiskArgsForCall)]
+	fake.setupDynamicDiskArgsForCall = append(fake.setupDynamicDiskArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	stub := fake.SetupDynamicDiskStub
+	fakeReturns := fake.setupDynamicDiskReturns
+	fake.recordInvocation("SetupDynamicDisk", []interface{}{arg1})
+	fake.setupDynamicDiskMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCallCount() int {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	return len(fake.setupDynamicDiskArgsForCall)
+}
+
+func (fake *FakePlatform) SetupDynamicDiskCalls(stub func(settings.DiskSettings) error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = stub
+}
+
+func (fake *FakePlatform) SetupDynamicDiskArgsForCall(i int) settings.DiskSettings {
+	fake.setupDynamicDiskMutex.RLock()
+	defer fake.setupDynamicDiskMutex.RUnlock()
+	argsForCall := fake.setupDynamicDiskArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturns(result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	fake.setupDynamicDiskReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupDynamicDiskReturnsOnCall(i int, result1 error) {
+	fake.setupDynamicDiskMutex.Lock()
+	defer fake.setupDynamicDiskMutex.Unlock()
+	fake.SetupDynamicDiskStub = nil
+	if fake.setupDynamicDiskReturnsOnCall == nil {
+		fake.setupDynamicDiskReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupDynamicDiskReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePlatform) SetupEphemeralDiskWithPath(arg1 string, arg2 *uint64, arg3 string) error {
 	fake.setupEphemeralDiskWithPathMutex.Lock()
 	ret, specificReturn := fake.setupEphemeralDiskWithPathReturnsOnCall[len(fake.setupEphemeralDiskWithPathArgsForCall)]
@@ -3256,6 +3474,59 @@ func (fake *FakePlatform) SetupEphemeralDiskWithPathReturnsOnCall(i int, result1
 		})
 	}
 	fake.setupEphemeralDiskWithPathReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupFirewall() error {
+	fake.setupFirewallMutex.Lock()
+	ret, specificReturn := fake.setupFirewallReturnsOnCall[len(fake.setupFirewallArgsForCall)]
+	fake.setupFirewallArgsForCall = append(fake.setupFirewallArgsForCall, struct {
+	}{})
+	stub := fake.SetupFirewallStub
+	fakeReturns := fake.setupFirewallReturns
+	fake.recordInvocation("SetupFirewall", []interface{}{})
+	fake.setupFirewallMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupFirewallCallCount() int {
+	fake.setupFirewallMutex.RLock()
+	defer fake.setupFirewallMutex.RUnlock()
+	return len(fake.setupFirewallArgsForCall)
+}
+
+func (fake *FakePlatform) SetupFirewallCalls(stub func() error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = stub
+}
+
+func (fake *FakePlatform) SetupFirewallReturns(result1 error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = nil
+	fake.setupFirewallReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupFirewallReturnsOnCall(i int, result1 error) {
+	fake.setupFirewallMutex.Lock()
+	defer fake.setupFirewallMutex.Unlock()
+	fake.SetupFirewallStub = nil
+	if fake.setupFirewallReturnsOnCall == nil {
+		fake.setupFirewallReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupFirewallReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }

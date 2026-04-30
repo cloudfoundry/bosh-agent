@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -20,6 +21,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -419,30 +421,43 @@ func (p WindowsPlatform) SetupLogrotate(groupName, basePath, size string) error 
 }
 
 func (p WindowsPlatform) SetTimeWithNtpServers(servers []string) error {
+	const ruleName = "BOSH NTP Outbound"
+
 	if len(servers) == 0 {
 		return nil
 	}
 
-	ntpServers := strings.Join(servers, " ")
-	_, stderr, _, err := p.cmdRunner.RunCommand("powershell.exe",
-		"new-netfirewallrule",
-		"-displayname", "NTP",
-		"-direction", "outbound",
-		"-action", "allow",
-		"-protocol", "udp",
-		"-RemotePort", "123")
-	if err != nil {
-		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers  %s", stderr)
+	validated := make([]string, 0, len(servers))
+	for i, s := range servers {
+		if err := ValidateNtpServerEntry(s); err != nil {
+			return bosherr.WrapErrorf(err, "SetTimeWithNtpServers: invalid NTP server at index %d (%q)", i, s)
+		}
+		// Trim after validation so NTP peers and w32tm peer list use the same canonical form as validation.
+		validated = append(validated, strings.TrimSpace(s))
 	}
 
+	// Best-effort: remove stale rule so repeated bootstrap does not accumulate duplicate rules.
+	_, _, _, delErr := p.cmdRunner.RunCommand(
+		"netsh", "advfirewall", "firewall", "delete", "rule", fmt.Sprintf("name=%s", ruleName),
+	)
+	_ = delErr
+
+	_, stderr, _, err := p.cmdRunner.RunCommand(
+		"netsh", "advfirewall", "firewall", "add", "rule",
+		fmt.Sprintf("name=%s", ruleName),
+		"dir=out",
+		"action=allow",
+		"protocol=UDP",
+		"remoteport=123",
+	)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
+	}
+
+	ntpServers := strings.Join(validated, " ")
 	_, _, _, _ = p.cmdRunner.RunCommand("net", "stop", "w32time") //nolint:errcheck
-	manualPeerList := fmt.Sprintf("/manualpeerlist:\"%s\"", ntpServers)
-	_, stderr, _, err = p.cmdRunner.RunCommand(
-		"powershell.exe",
-		"w32tm",
-		"/config",
-		"/syncfromflags:manual",
-		manualPeerList)
+	manualPeerList := fmt.Sprintf(`/manualpeerlist:%s`, ntpServers)
+	_, stderr, _, err = p.cmdRunner.RunCommand("w32tm", "/config", "/syncfromflags:manual", manualPeerList)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "SetTimeWithNtpServers %s", stderr)
 	}
@@ -548,6 +563,14 @@ func (p WindowsPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSetti
 	return
 }
 
+func (p WindowsPlatform) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) (err error) {
+	return
+}
+
+func (p WindowsPlatform) CleanupDynamicDisk(diskID string) (err error) {
+	return
+}
+
 func (p WindowsPlatform) SetupDataDir(_ boshsettings.JobDir, _ boshsettings.RunDir) error {
 	dataDir := p.dirProvider.DataDir()
 	sysDataDir := filepath.Join(dataDir, "sys")
@@ -638,24 +661,39 @@ func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSet
 func (p WindowsPlatform) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (diskPath string, err error) {
 	p.logger.Debug("WindowsPlatform", "Identifying ephemeral disk path, diskSettings.Path: `%s`", diskSettings.Path)
 
+	strippedID := strings.ReplaceAll(diskSettings.DeviceID, "-", "")
+
 	if p.options.Linux.CreatePartitionIfNoEphemeralDisk {
 		diskPath = "0"
 	}
 
 	if diskSettings.Path != "" { //nolint:nestif
-		matchInt, _ := regexp.MatchString(`\d`, diskSettings.Path) //nolint:errcheck
-		if matchInt {
-			diskPath = diskSettings.Path
+		canonical, pathErr := ValidateWindowsDiskNumberString(diskSettings.Path)
+		if pathErr == nil {
+			diskPath = canonical
 		} else {
+			// Letters a–q map to disk indices 0–16, matching the Windows stemcell’s historical /dev/sda–/dev/sdq range (not the full Linux /dev/sd[a–z] alphabet).
 			alphs := []byte("abcdefghijklmnopq")
 
 			lastChar := diskSettings.Path[len(diskSettings.Path)-1:]
-			diskPath = fmt.Sprintf("%d", bytes.IndexByte(alphs, lastChar[0]))
+			idx := bytes.IndexByte(alphs, lastChar[0])
+			if idx < 0 {
+				return "", fmt.Errorf(
+					"ephemeral disk path %q has unsupported legacy suffix %q (expected a non-negative decimal disk index or a path whose last character is a letter a-q for legacy /dev/sd* style)",
+					diskSettings.Path, lastChar,
+				)
+			}
+			diskPath = strconv.Itoa(idx)
 		}
 	} else if diskSettings.DeviceID != "" {
-		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell", "-Command", fmt.Sprintf("Get-Disk -UniqueId %s | Select Number | ConvertTo-Json", strings.ReplaceAll(diskSettings.DeviceID, "-", "")))
+		if err := ValidateWindowsDiskUniqueID(strippedID); err != nil {
+			return "", bosherr.WrapError(err, "invalid ephemeral disk DeviceID")
+		}
+		// Single-quoted UniqueId so PowerShell treats it as a literal.
+		psBody := fmt.Sprintf("Get-Disk -UniqueId '%s' | Select-Object Number | ConvertTo-Json", strippedID)
+		stdout, stderr, _, err := p.cmdRunner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", psBody)
 		if err != nil {
-			return "", bosherr.WrapErrorf(err, "Translating disk ID to disk number: %s: %s", err.Error(), stderr)
+			return "", bosherr.WrapErrorf(err, "Translating disk ID to disk number failed: %s", stderr)
 		}
 		var diskNumberResponse struct {
 			Number json.Number
@@ -772,6 +810,14 @@ func (p WindowsPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p WindowsPlatform) SetupFirewall() error {
+	return nil
+}
+
 func (p WindowsPlatform) Shutdown() error {
+	return nil
+}
+
+func (p WindowsPlatform) GetNatsFirewallHook() firewall.NatsFirewallHook {
 	return nil
 }

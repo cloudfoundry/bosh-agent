@@ -48,27 +48,6 @@ func NewWindowsNetManager(
 	}
 }
 
-const (
-	SetDNSTemplate = `
-[array]$interfaces = Get-DNSClientServerAddress
-$dns = @("%s")
-foreach($interface in $interfaces) {
-	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ServerAddresses ($dns -join ",")
-}
-`
-
-	ResetDNSTemplate = `
-[array]$interfaces = Get-DNSClientServerAddress
-foreach($interface in $interfaces) {
-	Set-DnsClientServerAddress -InterfaceAlias $interface.InterfaceAlias -ResetServerAddresses
-}
-`
-
-	NicSettingsTemplate = `
-netsh interface ip set address %q static %s %s %s
-`
-)
-
 // GetConfiguredNetworkInterfaces returns all of the network interfaces if a
 // previous call to SetupNetworking succeeded as indicated by the presence of
 // a file ("configured_interfaces.txt").
@@ -138,22 +117,22 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbu
 		return nil
 	}
 
-	if err := WriteLockFileForDNS(net.fs, net.dirProvider); err != nil {
-		return bosherr.WrapError(err, "writing dns lockfile")
-	}
-
 	_, _, dnsServers, err := net.ComputeNetworkConfig(networks)
 	if err != nil {
 		return bosherr.WrapError(err, "Computing network configuration for dns")
 	}
 
-	_, _, _, err = net.runner.RunCommand("powershell", "-Command", "Start-Service http")
+	_, _, _, err = net.runner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", "Start-Service http")
 	if err != nil {
 		return bosherr.WrapError(err, "Starting HTTP service")
 	}
 	err = net.setupDNS(dnsServers)
 	if err != nil {
 		return err
+	}
+
+	if err := WriteLockFileForDNS(net.fs, net.dirProvider); err != nil {
+		return bosherr.WrapError(err, "writing dns lockfile")
 	}
 
 	return nil
@@ -194,16 +173,34 @@ func (net WindowsNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) e
 
 func (net WindowsNetManager) setupInterfaces(staticConfigs []StaticInterfaceConfiguration) error {
 	for _, conf := range staticConfigs {
-		var gateway string
-		if conf.IsDefaultForGateway {
-			gateway = conf.Gateway
+		if err := ValidateWindowsNetshInterfaceAlias(conf.Name); err != nil {
+			return bosherr.WrapErrorf(err, "invalid network interface name %q", conf.Name)
 		}
 
-		content := fmt.Sprintf(NicSettingsTemplate, conf.Name, conf.Address, conf.Netmask, gateway)
+		gwArg := "none"
+		if conf.IsDefaultForGateway && conf.Gateway != "" {
+			canon, err := validateWindowsLiteralIPv4(conf.Gateway)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "invalid gateway address %q", conf.Gateway)
+			}
+			gwArg = canon
+		}
 
-		_, _, _, err := net.runner.RunCommand("powershell", "-Command", content)
+		args := []string{
+			"interface", "ip", "set", "address",
+			fmt.Sprintf("name=%s", conf.Name),
+			"source=static",
+			fmt.Sprintf("addr=%s", conf.Address),
+			fmt.Sprintf("mask=%s", conf.Netmask),
+			fmt.Sprintf("gateway=%s", gwArg),
+		}
+		if gwArg != "none" {
+			args = append(args, "gwmetric=1")
+		}
+
+		_, _, _, err := net.runner.RunCommand("netsh", args...)
 		if err != nil {
-			return bosherr.WrapError(err, "Configuring interface")
+			return bosherr.WrapErrorf(err, "Configuring interface %q", conf.Name)
 		}
 	}
 	return nil
@@ -231,18 +228,52 @@ func (net WindowsNetManager) buildInterfaces(networks boshsettings.Networks) (
 func (net WindowsNetManager) setupDNS(dnsServers []string) error {
 	net.logger.Info(net.logTag, "Setting up DNS...")
 
-	var content string
+	var script string
 	if len(dnsServers) > 0 {
 		net.logger.Info(net.logTag, "Setting DNS servers: %v", dnsServers)
-		content = fmt.Sprintf(SetDNSTemplate, strings.Join(dnsServers, `","`))
+		var parts []string
+		for _, d := range dnsServers {
+			canon, err := validateWindowsLiteralIPv4(d)
+			if err != nil {
+				return bosherr.WrapErrorf(err, "invalid DNS server IP %q", strings.TrimSpace(d))
+			}
+			parts = append(parts, "'"+canon+"'")
+		}
+		script = fmt.Sprintf(
+			`$dns=@(%s); Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ServerAddresses $dns }`,
+			strings.Join(parts, ","),
+		)
 	} else {
 		net.logger.Info(net.logTag, "Resetting DNS servers")
-		content = ResetDNSTemplate
+		script = `Get-DNSClientServerAddress | ForEach-Object { Set-DnsClientServerAddress -InterfaceAlias $_.InterfaceAlias -ResetServerAddresses }`
 	}
 
-	_, _, _, err := net.runner.RunCommand("powershell", "-Command", content)
+	_, _, _, err := net.runner.RunCommand("powershell.exe", "-NoProfile", "-NonInteractive", "-Command", script)
 	if err != nil {
 		return bosherr.WrapError(err, "Setting DNS servers")
+	}
+	return nil
+}
+
+// validateWindowsLiteralIPv4 parses a host or DNS server address for netsh / Set-DnsClientServerAddress (IPv4 literals only).
+func validateWindowsLiteralIPv4(s string) (string, error) {
+	trimmed := strings.TrimSpace(s)
+	ip := gonet.ParseIP(trimmed)
+	if ip == nil {
+		return "", fmt.Errorf("invalid IP address %q", trimmed)
+	}
+	if ip.To4() == nil {
+		return "", fmt.Errorf("invalid IPv4 address %q (IPv6 is not supported for this configuration path)", trimmed)
+	}
+	return ip.String(), nil
+}
+
+func ValidateWindowsNetshInterfaceAlias(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("network interface name is empty")
+	}
+	if strings.ContainsAny(name, "\"\r\n") {
+		return fmt.Errorf("network interface name must not contain double quotes or newlines")
 	}
 	return nil
 }

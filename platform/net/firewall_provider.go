@@ -1,10 +1,10 @@
-//go:build !windows && !linux
+//go:build !windows
 
 package net
 
-// SetupNatsFirewall is does nothing, except on Linux and Windows
+// SetupNatsFirewall is a no-op on non-Windows platforms.
+// On Linux, the nftables-based firewall in platform/firewall/ is used instead.
+// On Windows, a Windows Firewall rule is set up.
 func SetupNatsFirewall(mbus string) error {
-	// NOTE: If we return a "not supported" err here, unit tests would fail.
-	//return errors.New("not supported")
 	return nil
 }

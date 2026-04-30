@@ -24,6 +24,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
 	boshdisk "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boshnet "github.com/cloudfoundry/bosh-agent/v2/platform/net"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
@@ -101,6 +102,11 @@ type LinuxOptions struct {
 
 	// Base path for LUN-based symlink resolution (e.g., "/dev/disk/azure/data/by-lun").
 	LunDeviceSymlinkPath string
+
+	// When set to true, the agent will not install nftables rules for monit
+	// access control. Set this on stemcells where monit access is managed by
+	// iptables rules (i.e. ubuntu-jammy stemcells maintaining backwards compatibility).
+	UseMonitIptablesFirewall bool
 }
 
 type linux struct {
@@ -126,6 +132,7 @@ type linux struct {
 	auditLogger            AuditLogger
 	logsTarProvider        boshlogstarprovider.LogsTarProvider
 	serviceManager         servicemanager.ServiceManager
+	firewallManager        firewall.Manager
 }
 
 func NewLinuxPlatform(
@@ -881,6 +888,31 @@ func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettin
 		paths[i] = realPath
 	}
 	return paths, nil
+
+func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
+	devicePath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
+	if err != nil {
+		return bosherr.WrapError(err, "Getting dynamic disk real device path")
+	}
+	if timedOut {
+		return bosherr.WrapErrorf(err, "Timed out resolving device path for %s", diskSetting.ID)
+	}
+
+	symlinkDestination := filepath.Join(p.dirProvider.DataDynamicDisksDir(), diskSetting.ID)
+	if err := p.fs.Symlink(devicePath, symlinkDestination); err != nil {
+		return bosherr.WrapError(err, "Symlinking dynamic disk real device path")
+	}
+
+	return nil
+}
+
+func (p linux) CleanupDynamicDisk(diskCID string) error {
+	symlinkDestination := filepath.Join(p.dirProvider.DataDynamicDisksDir(), diskCID)
+	if err := p.fs.RemoveAll(symlinkDestination); err != nil {
+		return bosherr.WrapError(err, "Removing dynamic disk symlink")
+	}
+
+	return nil
 }
 
 func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsettings.RunDir) error {
@@ -908,6 +940,12 @@ func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsetting
 	err = p.fs.MkdirAll(jobsDir, jobsDirPermissions)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "Making %s dir", jobsDir)
+	}
+
+	dynamicDisksDir := p.dirProvider.DataDynamicDisksDir()
+	err = p.fs.MkdirAll(dynamicDisksDir, persistentDiskPermissions)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "Making %s dir", dynamicDisksDir)
 	}
 
 	sensitiveDir := p.dirProvider.SensitiveBlobsDir()
@@ -938,6 +976,11 @@ func (p linux) SetupDataDir(jobConfig boshsettings.JobDir, runConfig boshsetting
 	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", sensitiveDir)
 	if err != nil {
 		return bosherr.WrapErrorf(err, "chown %s", sensitiveDir)
+	}
+
+	_, _, _, err = p.cmdRunner.RunCommand("chown", "root:vcap", dynamicDisksDir)
+	if err != nil {
+		return bosherr.WrapErrorf(err, "chown %s", dynamicDisksDir)
 	}
 
 	packagesDir := p.dirProvider.PkgDir()
@@ -1359,6 +1402,11 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 		err = partitioner.ResizeSinglePartition(devicePath)
 		if err != nil {
 			return bosherr.WrapError(err, "Resizing disk partition")
+		}
+
+		err = p.fs.MkdirAll(mountPoint, persistentDiskPermissions)
+		if err != nil {
+			return bosherr.WrapErrorf(err, "Creating directory %s", mountPoint)
 		}
 
 		err := p.diskManager.GetMounter().Mount(firstPartitionPath, mountPoint, diskSetting.MountOptions...)
@@ -1910,4 +1958,44 @@ func prepareDiskLabelPrefix(labelPrefix string) string {
 	}
 
 	return labelPrefix
+}
+
+// SetupFirewall initializes the nftables-based firewall for protecting monit and NATS.
+// This should be called during platform setup, before NATS connections are attempted.
+func (p *linux) SetupFirewall() error {
+	mgr, err := firewall.NewNftablesFirewall(p.logger)
+	if err != nil {
+		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
+		// Not a fatal error - continue without firewall protection
+		return nil
+	}
+	p.firewallManager = mgr
+
+	if p.options.UseMonitIptablesFirewall {
+		p.logger.Info(logTag, "UseMonitIptablesFirewall is set; skipping nftables monit firewall setup")
+		return nil
+	}
+
+	// Set up monit firewall rules
+	if err := mgr.SetupMonitFirewall(); err != nil {
+		p.logger.Warn(logTag, "Failed to set up monit firewall: %s", err)
+		// Not a fatal error - continue without monit firewall protection
+	}
+
+	return nil
+}
+
+// GetNatsFirewallHook returns the firewall hook for NATS connection management.
+// The hook is called before each NATS connection/reconnection to update firewall
+// rules with resolved DNS addresses. Returns nil if firewall was not set up.
+func (p *linux) GetNatsFirewallHook() firewall.NatsFirewallHook {
+	if p.firewallManager == nil {
+		return nil
+	}
+
+	// The firewall manager implements NatsFirewallHook
+	if hook, ok := p.firewallManager.(firewall.NatsFirewallHook); ok {
+		return hook
+	}
+	return nil
 }

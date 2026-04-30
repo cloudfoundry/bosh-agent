@@ -15,6 +15,7 @@ import (
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	boshstats "github.com/cloudfoundry/bosh-agent/v2/platform/stats"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
@@ -219,6 +220,14 @@ func (p dummyPlatform) SetupEphemeralDiskWithPath(devicePath string, desiredSwap
 }
 
 func (p dummyPlatform) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err error) {
+	return
+}
+
+func (p dummyPlatform) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) (err error) {
+	return
+}
+
+func (p dummyPlatform) CleanupDynamicDisk(diskCID string) (err error) {
 	return
 }
 
@@ -562,6 +571,14 @@ func (p dummyPlatform) SetupRecordsJSONPermission(path string) error {
 	return nil
 }
 
+func (p dummyPlatform) SetupFirewall() error {
+	return nil
+}
+
 func (p dummyPlatform) Shutdown() error {
+	return nil
+}
+
+func (p dummyPlatform) GetNatsFirewallHook() firewall.NatsFirewallHook {
 	return nil
 }

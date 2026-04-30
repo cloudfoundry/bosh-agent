@@ -75,7 +75,6 @@ pushd "${bosh_agent_dir}/integration/fake-blobstore"
   copy_to_remote_host ./fake-blobstore /home/agent_test_user/fake-blobstore
 popd
 
-
 echo -e "\n Setup assets"
 pushd "${bosh_agent_dir}/integration/assets"
   release_folder="/home/agent_test_user/release"

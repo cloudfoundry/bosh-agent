@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	boshapp "github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/agentlogger"
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
+	"github.com/cloudfoundry/bosh-agent/v2/platform/firewall"
 )
 
 const mainLogTag = "main"
@@ -76,6 +78,15 @@ func startAgent(logger logger.Logger) error {
 }
 
 func main() {
+	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
+	logger := newSignalableLogger(asyncLog)
+
+	switch binaryName(os.Args[0]) {
+	case "bosh-enable-monit-access":
+		firewall.EnableMonitAccess(logger, "enable-monit-access")
+		return
+	}
+
 	if len(os.Args) > 1 {
 		switch cmd := os.Args[1]; cmd {
 		case "compile":
@@ -83,8 +94,6 @@ func main() {
 			return
 		}
 	}
-	asyncLog := logger.NewAsyncWriterLogger(logger.LevelDebug, os.Stderr)
-	logger := newSignalableLogger(asyncLog)
 
 	exitCode := 0
 	if err := startAgent(logger); err != nil {
@@ -95,6 +104,10 @@ func main() {
 		logger.Error(mainLogTag, "Setting logger flush timeout failed: %s", err)
 	}
 	os.Exit(exitCode)
+}
+
+func binaryName(argv0 string) string {
+	return filepath.Base(argv0)
 }
 
 func newSignalableLogger(logger logger.Logger) logger.Logger {
