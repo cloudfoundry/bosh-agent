@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.3
 	github.com/cloudfoundry/bosh-davcli v0.0.474
-	github.com/cloudfoundry/bosh-utils v0.0.607
+	github.com/cloudfoundry/bosh-utils v0.0.608
 	github.com/cloudfoundry/gosigar v1.3.118
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -37,7 +37,7 @@ require (
 	github.com/Azure/go-ntlmssp v0.1.1 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 // indirect
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/Masterminds/semver/v3 v3.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/bodgit/ntlmssp v0.0.0-20240506230425-31973bb52d9b // indirect
@@ -64,7 +64,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/mdlayher/netlink v1.11.1 // indirect
 	github.com/mdlayher/socket v0.6.0 // indirect

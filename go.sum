@@ -12,8 +12,8 @@ github.com/BurntSushi/toml v1.6.0 h1:dRaEfpa2VI55EwlIW72hMRHdWouJeRF7TPYhI+AUQjk
 github.com/BurntSushi/toml v1.6.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6 h1:w0E0fgc1YafGEh5cROhlROMWXiNoZqApk2PDN0M1+Ns=
 github.com/ChrisTrenkamp/goxpath v0.0.0-20210404020558-97928f7e12b6/go.mod h1:nuWgzSkT5PnyOd+272uUmV0dnAnAn42Mk7PiQC5VzN4=
-github.com/Masterminds/semver/v3 v3.4.0 h1:Zog+i5UMtVoCU8oKka5P7i9q9HgrJeGzI9SA1Xbatp0=
-github.com/Masterminds/semver/v3 v3.4.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
+github.com/Masterminds/semver/v3 v3.5.0 h1:kQceYJfbupGfZOKZQg0kou0DgAKhzDg2NZPAwZ/2OOE=
+github.com/Masterminds/semver/v3 v3.5.0/go.mod h1:4V+yj/TJE1HU9XfppCwVMZq3I84lprf4nC11bSS5beM=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/Microsoft/hcsshim v0.14.1 h1:CMuB3fqQVfPdhyXhUqYdUmPUIOhJkmghCx3dJet8Cqs=
@@ -32,8 +32,8 @@ github.com/cloudfoundry/bosh-cli/v7 v7.10.3 h1:tc5c6CZAX5ZVieJs1tmvB/oG0KMytdPFO
 github.com/cloudfoundry/bosh-cli/v7 v7.10.3/go.mod h1:hUoPBwWK1177DKLbbcdngc4Hk/OqKCTBOnG3fmtOo6o=
 github.com/cloudfoundry/bosh-davcli v0.0.474 h1:y+GuuAC6zk/07k+5CtCE4LissS7EzTrSEaiO7LSzzHE=
 github.com/cloudfoundry/bosh-davcli v0.0.474/go.mod h1:FxVUBCRL88lp1KGtgqZFe1CtkRjjilihwl55XlQYsU4=
-github.com/cloudfoundry/bosh-utils v0.0.607 h1:kLI3NZClxAW5rnOLn4+unP1HMwq5F2V9bSHL/Pb0W3c=
-github.com/cloudfoundry/bosh-utils v0.0.607/go.mod h1:KadjsAX8mmt8C5DKYq9NOzDDKZVwdjrdPW2EJ0IE4zA=
+github.com/cloudfoundry/bosh-utils v0.0.608 h1:Q0mJPdvkCSU3D/O5F9OGvvH1ezhCu50vk0h6EqDfxug=
+github.com/cloudfoundry/bosh-utils v0.0.608/go.mod h1:ASB+Wzh6oeaooXeyBJbW0sC2+LSB9SPxlowi7nlEtmM=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 h1:oy59UYcspoP44ggE8DM3kjxl1+sTFd802bbZlBBhBMk=
 github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851/go.mod h1:72EEm1oq5oXqGfu9XGtaRPWEcAFYd/P10cMNln0QhA8=
 github.com/cloudfoundry/gosigar v1.3.118 h1:M5I101sHroieCCM07+HDVhYq6AUThH9LTJF4WY1d3O0=
@@ -137,8 +137,8 @@ github.com/kevinburke/ssh_config v1.6.0 h1:J1FBfmuVosPHf5GRdltRLhPJtJpTlMdKTBjRg
 github.com/kevinburke/ssh_config v1.6.0/go.mod h1:q2RIzfka+BXARoNexmF9gkxEX7DmvbW9P4hIVx2Kg4M=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/klauspost/compress v1.18.5 h1:/h1gH5Ce+VWNLSWqPzOVn6XBO+vJbCNGvjoaGBFW2IE=
-github.com/klauspost/compress v1.18.5/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
+github.com/klauspost/compress v1.18.6 h1:2jupLlAwFm95+YDR+NwD2MEfFO9d4z4Prjl1XXDjuao=
+github.com/klauspost/compress v1.18.6/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
