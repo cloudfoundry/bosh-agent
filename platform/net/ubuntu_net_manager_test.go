@@ -228,6 +228,31 @@ var _ = Describe("ubuntuNetManager", func() {
 				Expect(dhcpInterfaceConfigurations).To(BeEmpty())
 				Expect(dnsServers).To(Equal([]string{"54.209.78.6", "127.0.0.5"}))
 			})
+
+			It("returns an error when alias is invalid", func() {
+				networks := boshsettings.Networks{
+					"default": factory.Network{
+						IP:      "10.10.0.32",
+						Netmask: "255.255.255.0",
+						Mac:     "mac-1",
+						Default: []string{"dns", "gateway"},
+						DNS:     &[]string{"8.8.8.8"},
+						Gateway: "10.10.0.1",
+					}.Build(),
+					"second": factory.Network{
+						IP:      "10.10.0.33",
+						Netmask: "255.255.255.0",
+						DNS:     &[]string{"8.8.8.8"},
+						Gateway: "10.10.0.1",
+						Alias:   "/../../../../foo/bar",
+					}.Build(),
+				}
+				addresses := map[string]string{"mac-1": "eth0"}
+				fakeMACAddressDetector.DetectMacAddressesReturns(addresses, nil)
+
+				_, _, _, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 
