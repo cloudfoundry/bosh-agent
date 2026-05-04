@@ -361,6 +361,48 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 				})
 			})
 
+			Context("when a network alias fails interface name validation", func() {
+				BeforeEach(func() {
+					networks["bar"] = dhcpNetwork
+					interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+				})
+
+				It("returns an error when alias contains a forward slash", func() {
+					staticNetworkWithoutMAC.Alias = "/../../../../foo/bar"
+					networks["foo"] = staticNetworkWithoutMAC
+					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("returns an error when alias contains whitespace", func() {
+					staticNetworkWithoutMAC.Alias = "eth0 bad"
+					networks["foo"] = staticNetworkWithoutMAC
+					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("returns an error when alias is exactly '.'", func() {
+					staticNetworkWithoutMAC.Alias = "."
+					networks["foo"] = staticNetworkWithoutMAC
+					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("returns an error when alias is exactly '..'", func() {
+					staticNetworkWithoutMAC.Alias = ".."
+					networks["foo"] = staticNetworkWithoutMAC
+					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).To(HaveOccurred())
+				})
+
+				It("succeeds when alias contains a colon (IP alias convention)", func() {
+					staticNetworkWithoutMAC.Alias = "eth0:0"
+					networks["foo"] = staticNetworkWithoutMAC
+					_, _, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+				})
+			})
+
 			Context("when static network has postup routes, dhcp network has no postup routes", func() {
 				BeforeEach(func() {
 					staticNetwork.Routes = []boshsettings.Route{
