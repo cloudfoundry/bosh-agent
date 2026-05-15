@@ -29,6 +29,10 @@ var _ = Describe("EphemeralDisk", func() {
 		agent.EnsureDataDirDoesntExist()
 
 		if diskLetter != "" {
+			Expect(diskLetter).NotTo(Equal("C"),
+				"diskLetter must never be the system partition (C:) — "+
+					"this indicates the agent created the data-dir junction pointing to the root drive, "+
+					"or AssignDriveLetter returned an unexpected value")
 			agent.RunPowershellCommand(fmt.Sprintf("Remove-Partition -DriveLetter %s -Confirm:$false", diskLetter))
 		}
 		if diskNumber != "0" {
