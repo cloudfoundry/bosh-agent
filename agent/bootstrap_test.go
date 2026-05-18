@@ -10,6 +10,7 @@ import (
 	"time"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	"github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -1132,6 +1133,7 @@ var _ = Describe("bootstrap", func() {
 				monitRetryStrategy := boshretry.NewAttemptRetryStrategy(10, 1*time.Second, monitRetryable, logger)
 
 				devicePathResolver := fakedevicepathresolver.NewFakeDevicePathResolver()
+				symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, udev, logger)
 
 				fakeUUIDGenerator := boshuuid.NewGenerator()
 				routesSearcher := boshnet.NewRoutesSearcher(logger, runner, nil)
@@ -1153,6 +1155,7 @@ var _ = Describe("bootstrap", func() {
 					ubuntuCertManager,
 					monitRetryStrategy,
 					devicePathResolver,
+					symlinkDeviceResolver,
 					state,
 					linuxOptions,
 					logger,
