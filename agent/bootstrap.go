@@ -96,7 +96,7 @@ func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 		return bosherr.WrapError(err, "Setting up hostname")
 	}
 
-	if err = boot.platform.SetupNetworking(settings.Networks, settings.GetMbusURL()); err != nil {
+	if err = boot.platform.SetupNetworking(settings.Networks, settings.GetMbusURLs()); err != nil {
 		return bosherr.WrapError(err, "Setting up networking")
 	}
 

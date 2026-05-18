@@ -54,6 +54,77 @@ var _ = Describe("nats firewall", func() {
 		})
 	})
 
+	Context("multi-url", func() {
+		var dummyIP = "192.0.2.1" // RFC 5737 TEST-NET-1 — unreachable by design
+
+		BeforeEach(func() {
+			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
+
+			fileSettings := settings.Settings{
+				AgentID: "fake-agent-id",
+				Blobstore: settings.Blobstore{
+					Type: "local",
+					Options: map[string]interface{}{
+						"blobstore_path": "/var/vcap/data",
+					},
+				},
+				Env: settings.Env{
+					Bosh: settings.BoshEnv{
+						Mbus: settings.MBus{
+							URLs: []string{
+								fmt.Sprintf("nats://%s:4222", dummyIP),
+								fmt.Sprintf("nats://%s:4222", boshEnv),
+							},
+						},
+					},
+				},
+				Disks: settings.Disks{
+					Ephemeral: "/dev/sdh",
+				},
+			}
+
+			err := testEnvironment.CreateSettingsFile(fileSettings)
+			Expect(err).ToNot(HaveOccurred())
+			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+			Expect(err).ToNot(HaveOccurred())
+			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+			Expect(err).ToNot(HaveOccurred())
+
+			// Flush legacy iptables mangle rules as in the ipv4 case.
+			_, _ = testEnvironment.RunCommand("sudo iptables -t mangle -F")  //nolint:errcheck
+			_, _ = testEnvironment.RunCommand("sudo ip6tables -t mangle -F") //nolint:errcheck
+		})
+
+		AfterEach(func() {
+			err := testEnvironment.DetachDevice("/dev/sdh")
+			Expect(err).ToNot(HaveOccurred())
+			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
+			Expect(err).To(BeNil())
+		})
+
+		It("adds allow/block rules for both NATS server IPs", func() {
+			format.MaxLength = 0
+			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
+
+			Eventually(func() string {
+				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
+				return logs
+			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
+
+			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
+			Expect(err).To(BeNil())
+			Expect(output).To(ContainSubstring("ct state established,related accept"))
+
+			// Rules for the real NATS server IP
+			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, boshEnv))
+			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, boshEnv))
+
+			// Rules for the dummy/unreachable IP
+			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, dummyIP))
+			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, dummyIP))
+		})
+	})
+
 	Context("ipv6", func() {
 		BeforeEach(func() {
 			fileSettings := settings.Settings{

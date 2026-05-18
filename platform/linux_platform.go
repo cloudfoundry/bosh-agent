@@ -245,7 +245,7 @@ func (p linux) GetAuditLogger() AuditLogger {
 	return p.auditLogger
 }
 
-func (p linux) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
+func (p linux) SetupNetworking(networks boshsettings.Networks, mbus []string) (err error) {
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 

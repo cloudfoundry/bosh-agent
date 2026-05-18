@@ -106,7 +106,7 @@ func (net WindowsNetManager) setupNetworkInterfaces(networks boshsettings.Networ
 	return nil
 }
 
-func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
+func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbus []string, errCh chan error) error {
 	if err := net.setupNetworkInterfaces(networks); err != nil {
 		return bosherr.WrapError(err, "setting up network interfaces")
 	}
@@ -137,8 +137,8 @@ func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbu
 
 	return nil
 }
-func (net WindowsNetManager) setupFirewall(mbus string) error {
-	if mbus == "" {
+func (net WindowsNetManager) setupFirewall(mbus []string) error {
+	if len(mbus) == 0 {
 		net.logger.Info("NetworkSetup", "Skipping adding Firewall for outgoing nats. Mbus url is empty")
 		return nil
 	}
