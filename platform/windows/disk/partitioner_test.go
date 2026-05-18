@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry/bosh-utils/system/fakes"
 	. "github.com/onsi/ginkgo/v2"
@@ -263,6 +264,46 @@ var _ = Describe("Partitioner", func() {
 			_, err = partitioner.AssignDriveLetter(diskNumber, `2;Invoke-Expression`)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(`AssignDriveLetter: invalid partition number "2;Invoke-Expression"`))
+		})
+
+		It("retries when Get-Partition reports char(0) before returning the valid letter", func() {
+			// Simulate WMI returning the null character on the first poll, then the
+			// real letter on the second. Without the retry the function would return ""
+			// and the caller would create a junction pointing at bare ":", which Windows
+			// resolves to the current directory on the default drive (often C:\).
+			partitioner.DriveLetterPollInterval = time.Millisecond
+
+			addKey := strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command",
+				`Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " ")
+			getKey := strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command",
+				`Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " ")
+
+			cmdRunner.AddCmdResult(addKey, fakes.FakeCmdResult{})
+			cmdRunner.AddCmdResult(getKey, fakes.FakeCmdResult{Stdout: "\x00\n"}) // null char — unassigned
+			cmdRunner.AddCmdResult(getKey, fakes.FakeCmdResult{Stdout: "E\n"})   // assigned on second poll
+
+			driveLetter, err := partitioner.AssignDriveLetter(diskNumber, partitionNumber)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(driveLetter).To(Equal("E"))
+		})
+
+		It("returns an error when DriveLetter stays null across all retry attempts", func() {
+			partitioner.DriveLetterPollInterval = time.Millisecond
+
+			addKey := strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command",
+				`Add-PartitionAccessPath -DiskNumber 1 -PartitionNumber 2 -AssignDriveLetter`}, " ")
+			getKey := strings.Join([]string{"-NoProfile", "-NonInteractive", "-Command",
+				`Get-Partition -DiskNumber 1 -PartitionNumber 2 | Select-Object -ExpandProperty DriveLetter`}, " ")
+
+			cmdRunner.AddCmdResult(addKey, fakes.FakeCmdResult{})
+			// Sticky so every Get-Partition call returns the null char.
+			cmdRunner.AddCmdResult(getKey, fakes.FakeCmdResult{Stdout: "\x00\n", Sticky: true})
+
+			_, err := partitioner.AssignDriveLetter(diskNumber, partitionNumber)
+			Expect(err).To(MatchError(ContainSubstring(
+				fmt.Sprintf("drive letter was not assigned to partition %s on disk %s after 10 attempts",
+					partitionNumber, diskNumber),
+			)))
 		})
 	})
 })

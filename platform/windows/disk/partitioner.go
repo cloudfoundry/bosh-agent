@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
@@ -13,6 +14,11 @@ var diskNumberPattern = regexp.MustCompile(`^[0-9]+$`)
 
 type Partitioner struct {
 	Runner boshsys.CmdRunner
+
+	// DriveLetterPollInterval controls how long AssignDriveLetter waits between
+	// queries when Get-Partition reports no letter yet (DriveLetter == char(0)).
+	// Zero (the default) uses 1 second. Override in tests to avoid delays.
+	DriveLetterPollInterval time.Duration
 }
 
 // ParseDiskNumberString validates a non-negative decimal disk or partition index for Windows PowerShell -Number parameters.
@@ -151,15 +157,45 @@ func (p *Partitioner) AssignDriveLetter(diskNumber, partitionNumber string) (str
 		dn, pn,
 	)
 
-	stdout, _, _, err := p.ps(driveScript)
-	if err != nil {
-		return "", fmt.Errorf(
-			"failed to find drive letter for partition %s on disk %s: %s",
-			partitionNumber,
-			diskNumber,
-			err,
-		)
+	// PowerShell's Partition.DriveLetter is a .NET char. When no letter has been
+	// assigned the property holds char(0) — the null character — which PowerShell
+	// prints as "\x00\r\n". If we returned that empty string the caller would call
+	// linker.Link with a bare ":" target; on Windows that resolves to the current
+	// directory on the default drive (typically C:\), silently creating a junction
+	// that points back to the system partition.
+	//
+	// Retry up to 10 times to tolerate transient WMI staleness after the access
+	// path is added.
+	pollInterval := p.DriveLetterPollInterval
+	if pollInterval == 0 {
+		pollInterval = time.Second
 	}
 
-	return strings.TrimSpace(stdout), nil
+	for attempt := 0; attempt < 10; attempt++ {
+		stdout, _, _, err := p.ps(driveScript)
+		if err != nil {
+			return "", fmt.Errorf(
+				"failed to find drive letter for partition %s on disk %s: %s",
+				partitionNumber,
+				diskNumber,
+				err,
+			)
+		}
+
+		// The DriveLetter property is a char; an unassigned partition returns the null
+		// character (\x00). Strip it along with whitespace before checking.
+		letter := strings.Trim(strings.TrimSpace(stdout), "\x00")
+		if letter != "" {
+			return letter, nil
+		}
+
+		time.Sleep(pollInterval)
+	}
+
+	return "", fmt.Errorf(
+		"drive letter was not assigned to partition %s on disk %s after %d attempts",
+		partitionNumber,
+		diskNumber,
+		10,
+	)
 }

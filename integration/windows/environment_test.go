@@ -35,6 +35,7 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 	sizeMinBuffer := 1 * GB
 	cmdFmtString := "Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + %d)"
 
+	shrunkSuccessfully := false
 	for i := 0; i < 5; i++ {
 		cmd := fmt.Sprintf(cmdFmtString, sizeMinBuffer)
 		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(cmd)
@@ -72,8 +73,14 @@ func (e *WindowsEnvironment) ShrinkRootPartition() {
 			}
 		}
 
+		shrunkSuccessfully = true
 		break
 	}
+
+	Expect(shrunkSuccessfully).WithOffset(1).To(
+		BeTrue(),
+		fmt.Sprintf("Failed to shrink root partition after 5 attempts; last command: %s", fmt.Sprintf(cmdFmtString, sizeMinBuffer)),
+	)
 }
 
 func (e *WindowsEnvironment) EnsureRootPartitionAtMaxSize() {
