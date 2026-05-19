@@ -38,10 +38,10 @@ type FakeManager struct {
 	setupMonitFirewallReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupNATSFirewallStub        func(string) error
+	SetupNATSFirewallStub        func([]string) error
 	setupNATSFirewallMutex       sync.RWMutex
 	setupNATSFirewallArgsForCall []struct {
-		arg1 string
+		arg1 []string
 	}
 	setupNATSFirewallReturns struct {
 		result1 error
@@ -212,15 +212,20 @@ func (fake *FakeManager) SetupMonitFirewallReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeManager) SetupNATSFirewall(arg1 string) error {
+func (fake *FakeManager) SetupNATSFirewall(arg1 []string) error {
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
 	fake.setupNATSFirewallMutex.Lock()
 	ret, specificReturn := fake.setupNATSFirewallReturnsOnCall[len(fake.setupNATSFirewallArgsForCall)]
 	fake.setupNATSFirewallArgsForCall = append(fake.setupNATSFirewallArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 []string
+	}{arg1Copy})
 	stub := fake.SetupNATSFirewallStub
 	fakeReturns := fake.setupNATSFirewallReturns
-	fake.recordInvocation("SetupNATSFirewall", []interface{}{arg1})
+	fake.recordInvocation("SetupNATSFirewall", []interface{}{arg1Copy})
 	fake.setupNATSFirewallMutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
@@ -237,13 +242,13 @@ func (fake *FakeManager) SetupNATSFirewallCallCount() int {
 	return len(fake.setupNATSFirewallArgsForCall)
 }
 
-func (fake *FakeManager) SetupNATSFirewallCalls(stub func(string) error) {
+func (fake *FakeManager) SetupNATSFirewallCalls(stub func([]string) error) {
 	fake.setupNATSFirewallMutex.Lock()
 	defer fake.setupNATSFirewallMutex.Unlock()
 	fake.SetupNATSFirewallStub = stub
 }
 
-func (fake *FakeManager) SetupNATSFirewallArgsForCall(i int) string {
+func (fake *FakeManager) SetupNATSFirewallArgsForCall(i int) []string {
 	fake.setupNATSFirewallMutex.RLock()
 	defer fake.setupNATSFirewallMutex.RUnlock()
 	argsForCall := fake.setupNATSFirewallArgsForCall[i]

@@ -225,60 +225,69 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 }
 
 // SetupNATSFirewall creates firewall rules to protect NATS.
+// It accepts a slice of NATS URLs, resolves each host, and adds allow+block rules
+// for every resolved IP in a single nftables flush.
 // This resolves DNS and should be called before each connection attempt.
-func (f *NftablesFirewall) SetupNATSFirewall(mbusURL string) error {
-	// Parse URL to get host and port
-	host, port, err := parseNATSURL(mbusURL)
-	if err != nil {
-		// Not an error for https URLs or empty URLs (create-env case)
-		f.logger.Info(f.logTag, "Skipping NATS firewall: %s", err)
+func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
+	type hostPort struct {
+		host string
+		port int
+	}
+
+	var targets []hostPort
+	for _, mbusURL := range mbusURLs {
+		host, port, err := parseNATSURL(mbusURL)
+		if err != nil {
+			// Not an error for https URLs or empty URLs (create-env case)
+			f.logger.Info(f.logTag, "Skipping NATS firewall for %q: %s", mbusURL, err)
+			continue
+		}
+		targets = append(targets, hostPort{host, port})
+	}
+
+	if len(targets) == 0 {
 		return nil
 	}
 
-	// Resolve host to IP addresses
-	var addrs []net.IP
-	if ip := net.ParseIP(host); ip != nil {
-		addrs = []net.IP{ip}
-	} else {
-		addrs, err = f.resolver.LookupIP(host)
-		if err != nil {
-			f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", host, err)
-			return nil
-		}
-	}
-
-	f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", host, port, addrs)
-
-	// Ensure table exists
+	// Ensure table and chain exist, then flush stale rules.
 	f.ensureTable()
-
-	// Ensure NATS chain exists
 	f.ensureNATSChain()
-
-	// Flush NATS chain (removes old rules for previous IPs)
 	f.conn.FlushChain(f.natsChain)
 
-	// Allow return traffic for established/related connections
+	// Allow return traffic for established/related connections.
 	f.addConntrackRule(f.natsChain)
 
-	// Add rules for each resolved IP
-	for _, addr := range addrs {
-		f.addNATSAllowRule(addr, port)
-		f.addNATSBlockRule(addr, port)
+	// Resolve each host and add allow+block rules — all in one pending batch.
+	for _, t := range targets {
+		var addrs []net.IP
+		if ip := net.ParseIP(t.host); ip != nil {
+			addrs = []net.IP{ip}
+		} else {
+			var err error
+			addrs, err = f.resolver.LookupIP(t.host)
+			if err != nil {
+				f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", t.host, err)
+				continue
+			}
+		}
+		f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", t.host, t.port, addrs)
+		for _, addr := range addrs {
+			f.addNATSAllowRule(addr, t.port)
+			f.addNATSBlockRule(addr, t.port)
+		}
+		f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", t.host, t.port)
 	}
 
-	// Commit
 	if err := f.conn.Flush(); err != nil {
 		return bosherr.WrapError(err, "Flushing nftables rules")
 	}
 
-	f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", host, port)
 	return nil
 }
 
 // BeforeConnect implements NatsFirewallHook. Called before each NATS connection attempt.
-func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
-	return f.SetupNATSFirewall(mbusURL)
+func (f *NftablesFirewall) BeforeConnect(mbusURLs []string) error {
+	return f.SetupNATSFirewall(mbusURLs)
 }
 
 func (f *NftablesFirewall) Cleanup() error {

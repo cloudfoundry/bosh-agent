@@ -77,7 +77,7 @@ var _ = Describe("WindowsNetManager", func() {
 	setupNetworking := func(networks boshsettings.Networks) error {
 		// Allow 5 seconds to pass so that the Sleep() in the function can pass.
 		go clock.WaitForWatcherAndIncrement(5 * time.Second)
-		return netManager.SetupNetworking(networks, "", nil)
+		return netManager.SetupNetworking(networks, nil, nil)
 	}
 
 	Describe("Setting NIC settings", func() {

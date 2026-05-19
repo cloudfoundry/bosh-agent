@@ -109,6 +109,32 @@ var _ = Describe("An Agent running on Windows", func() {
 
 		Eventually(getStateSpecAgentID, DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
 	})
+	It("connects to NATS when the first server is unreachable", func() {
+		// Stop agent, switch to multi-NATS settings (first URL is 192.0.2.1 — RFC 5737
+		// documentation address, guaranteed unreachable; second URL is the real NATS server),
+		// restart agent, and assert it still answers get_state messages via the second server.
+		agent.EnsureAgentServiceStopped()
+		agent.RunPowershellCommand("cp c:\\bosh\\agent-configuration\\multi-nats-settings.json c:\\bosh\\settings.json")
+		agent.StartAgent()
+
+		getStateSpecAgentID := func() (string, error) {
+			message := fmt.Sprintf(`{"method":"get_state","arguments":[],"reply_to":"%s"}`, senderID)
+			rawResponse, err := natsClient.SendRawMessage(message)
+			if err != nil {
+				return "", err
+			}
+			response := map[string]action.GetStateV1ApplySpec{}
+			if err := json.Unmarshal(rawResponse, &response); err != nil {
+				return "", err
+			}
+			return response["value"].AgentID, nil
+		}
+
+		// Use a longer timeout: the NATS client will attempt the unreachable first URL before
+		// failing over to the working second URL.
+		Eventually(getStateSpecAgentID, 3*DefaultTimeout, DefaultInterval).Should(Equal(agentGUID))
+	})
+
 	It("its windows service is set to start automatically", func() {
 		output := agent.RunPowershellCommand("Get-Service -Name bosh-agent | select -property name,starttype")
 		Expect(output).To(MatchRegexp("bosh-agent *Automatic"))
