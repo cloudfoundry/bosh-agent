@@ -435,6 +435,25 @@ func init() { //nolint:funlen,gochecknoinits
 					Expect(mbusURLs).To(Equal([]string{"nats://fake-username:fake-password@127.0.0.1:1234"}))
 				})
 
+				It("passes all mbus URLs to BeforeConnect when multiple are configured", func() {
+					settingsService.Settings.Env.Bosh.Mbus.URLs = []string{
+						"nats://fake-username:fake-password@127.0.0.1:1234",
+						"nats://fake-username:fake-password@127.0.0.2:5678",
+					}
+					handler = mbus.NewNatsHandler(settingsService, connector, logger, platform)
+
+					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
+					Expect(err).NotTo(HaveOccurred())
+					defer handler.Stop()
+
+					Expect(fakeFirewallHook.BeforeConnectCallCount()).To(Equal(1))
+					mbusURLs := fakeFirewallHook.BeforeConnectArgsForCall(0)
+					Expect(mbusURLs).To(Equal([]string{
+						"nats://fake-username:fake-password@127.0.0.1:1234",
+						"nats://fake-username:fake-password@127.0.0.2:5678",
+					}))
+				})
+
 				It("does not fail if hook returns nil", func() {
 					platform.GetNatsFirewallHookReturns(nil)
 

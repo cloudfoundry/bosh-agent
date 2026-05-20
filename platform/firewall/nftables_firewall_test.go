@@ -446,7 +446,8 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(err).NotTo(HaveOccurred()) // Should not return error, just log warning
 
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(0)) // No rules added
+				// Base conntrack rule is still added; per-IP allow/block rules are skipped.
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
 			})
 		})
 

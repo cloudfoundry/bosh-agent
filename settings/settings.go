@@ -168,6 +168,9 @@ func (s Settings) GetMbusURLs() []string {
 		return s.Env.Bosh.Mbus.URLs
 	}
 
+	if s.Mbus == "" {
+		return nil
+	}
 	return []string{s.Mbus}
 }
 

@@ -74,7 +74,11 @@ func SetupNatsFirewall(mbusURLs []string) error {
 		if err != nil {
 			return bosherr.WrapError(err, "Resolving mbus ips from settings")
 		}
-		natsPort, err := strconv.Atoi(natsURI.Port())
+		portStr := natsURI.Port()
+		if portStr == "" {
+			portStr = "4222"
+		}
+		natsPort, err := strconv.Atoi(portStr)
 		if err != nil {
 			return bosherr.WrapError(err, "Parsing Nats Port from URI")
 		}
@@ -82,6 +86,10 @@ func SetupNatsFirewall(mbusURLs []string) error {
 			natsIP, err := gonetIP.ParseAddr(natsIPString)
 			if err != nil {
 				return bosherr.WrapError(err, "Parsing mbus ip")
+			}
+			// Only IPv4 ALE layers are currently active; skip IPv6 addresses.
+			if natsIP.Is6() && !natsIP.Is4In6() {
+				continue
 			}
 			// The Firewall rule will check if the Target IP is within natsIp/32 Range, thus matching exactly the NatsIP
 			natsIPCidr, err := natsIP.Prefix(32)

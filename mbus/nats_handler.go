@@ -320,13 +320,13 @@ func (h *natsHandler) getConnectionInfo() (*ConnectionInfo, error) {
 	connInfo.Addr = strings.Join(mbusURLs, ", ")
 
 	// Parse host IPs from each URL for ARP cleanup.
+	// Use Hostname() so IPv6 addresses like [2001:db8::1] are returned without brackets.
 	for _, rawURL := range mbusURLs {
 		natsURL, err := url.Parse(rawURL)
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Parsing Nats URL %q", rawURL)
 		}
-		hostSplit := strings.Split(natsURL.Host, ":")
-		connInfo.IPs = append(connInfo.IPs, hostSplit[0])
+		connInfo.IPs = append(connInfo.IPs, natsURL.Hostname())
 	}
 	if len(connInfo.IPs) > 0 {
 		connInfo.IP = connInfo.IPs[0]

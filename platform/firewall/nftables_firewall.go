@@ -249,15 +249,13 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
 		return nil
 	}
 
-	// Ensure table and chain exist, then flush stale rules.
-	f.ensureTable()
-	f.ensureNATSChain()
-	f.conn.FlushChain(f.natsChain)
-
-	// Allow return traffic for established/related connections.
-	f.addConntrackRule(f.natsChain)
-
-	// Resolve each host and add allow+block rules — all in one pending batch.
+	// Resolve all hosts first so we can decide whether to flush.
+	type resolvedTarget struct {
+		addrs []net.IP
+		port  int
+		host  string
+	}
+	var resolved []resolvedTarget
 	for _, t := range targets {
 		var addrs []net.IP
 		if ip := net.ParseIP(t.host); ip != nil {
@@ -270,12 +268,26 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
 				continue
 			}
 		}
-		f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", t.host, t.port, addrs)
-		for _, addr := range addrs {
-			f.addNATSAllowRule(addr, t.port)
-			f.addNATSBlockRule(addr, t.port)
+		resolved = append(resolved, resolvedTarget{addrs: addrs, port: t.port, host: t.host})
+	}
+
+	// Ensure table and chain exist, then flush stale rules only when we have
+	// at least one successfully resolved address to replace them with.
+	f.ensureTable()
+	f.ensureNATSChain()
+	f.conn.FlushChain(f.natsChain)
+
+	// Allow return traffic for established/related connections.
+	f.addConntrackRule(f.natsChain)
+
+	// Add allow+block rules for every resolved IP — all in one pending batch.
+	for _, rt := range resolved {
+		f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", rt.host, rt.port, rt.addrs)
+		for _, addr := range rt.addrs {
+			f.addNATSAllowRule(addr, rt.port)
+			f.addNATSBlockRule(addr, rt.port)
 		}
-		f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", t.host, t.port)
+		f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", rt.host, rt.port)
 	}
 
 	if err := f.conn.Flush(); err != nil {

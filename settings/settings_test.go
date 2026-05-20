@@ -1293,6 +1293,22 @@ var _ = Describe("Settings", func() {
 				Expect(settings.GetMbusURLs()).To(Equal([]string{"nats://top-level:456"}))
 			})
 		})
+
+		Context("all URL sources are empty and Mbus is an empty string", func() {
+			It("returns nil so downstream URL parsing sees no entries", func() {
+				settings = Settings{
+					Mbus: "",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: nil,
+							},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(BeNil())
+			})
+		})
 	})
 
 	Describe("#GetMbusCerts", func() {
