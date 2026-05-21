@@ -63,7 +63,8 @@ func (r *SymlinkDeviceResolver) ResolveSymlinksToDevices(symlinkPattern string) 
 	for _, symlink := range symlinks {
 		absPath, err := r.fs.ReadAndFollowLink(symlink)
 		if err != nil {
-			return nil, bosherr.WrapErrorf(err, "Resolving managed volume symlink '%s'", symlink)
+			r.logger.Warn(r.logTag, "Skipping unresolvable symlink '%s': %s", symlink, err.Error())
+			continue
 		}
 
 		r.logger.Debug(r.logTag, "Resolved symlink: %s -> %s", symlink, absPath)
