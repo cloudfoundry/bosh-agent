@@ -446,17 +446,19 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(err).NotTo(HaveOccurred()) // Should not return error, just log warning
 
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
-				// Base conntrack rule is still added; per-IP allow/block rules are skipped.
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(1))
+				// Chain is not flushed and no rules are added when all DNS lookups fail.
+				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 			})
 		})
 
-		Context("with default port", func() {
-			It("uses port 4222 when not specified", func() {
+		Context("with missing port", func() {
+			It("skips the URL and adds no rules", func() {
 				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
+				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 			})
 		})
 

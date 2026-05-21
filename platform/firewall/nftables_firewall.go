@@ -271,8 +271,12 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
 		resolved = append(resolved, resolvedTarget{addrs: addrs, port: t.port, host: t.host})
 	}
 
-	// Ensure table and chain exist, then flush stale rules only when we have
-	// at least one successfully resolved address to replace them with.
+	if len(resolved) == 0 {
+		f.logger.Warn(f.logTag, "Skipping NATS firewall update: no targets resolved")
+		return nil
+	}
+
+	// At least one address resolved — safe to flush stale rules and replace them.
 	f.ensureTable()
 	f.ensureNATSChain()
 	f.conn.FlushChain(f.natsChain)
@@ -766,8 +770,7 @@ func parseNATSURL(mbusURL string) (string, int, error) {
 
 	host, portStr, err := net.SplitHostPort(u.Host)
 	if err != nil {
-		host = u.Hostname()
-		portStr = "4222"
+		return "", 0, fmt.Errorf("missing or invalid port in NATS URL %q: %w", mbusURL, err)
 	}
 
 	port, err := strconv.Atoi(portStr)
