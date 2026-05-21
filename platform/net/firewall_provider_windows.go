@@ -74,11 +74,7 @@ func SetupNatsFirewall(mbusURLs []string) error {
 		if err != nil {
 			return bosherr.WrapError(err, "Resolving mbus ips from settings")
 		}
-		portStr := natsURI.Port()
-		if portStr == "" {
-			portStr = "4222"
-		}
-		natsPort, err := strconv.Atoi(portStr)
+		natsPort, err := strconv.Atoi(natsURI.Port())
 		if err != nil {
 			return bosherr.WrapError(err, "Parsing Nats Port from URI")
 		}
