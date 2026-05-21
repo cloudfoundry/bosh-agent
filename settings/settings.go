@@ -160,6 +160,20 @@ func (s Settings) GetMbusURL() string {
 	return s.Mbus
 }
 
+func (s Settings) GetMbusURLs() []string {
+	if len(s.UpdateSettings.Mbus.URLs) > 0 {
+		return s.UpdateSettings.Mbus.URLs
+	}
+	if len(s.Env.Bosh.Mbus.URLs) > 0 {
+		return s.Env.Bosh.Mbus.URLs
+	}
+
+	if s.Mbus == "" {
+		return nil
+	}
+	return []string{s.Mbus}
+}
+
 func (s Settings) GetMbusCerts() CertKeyPair {
 	if s.UpdateSettings.Mbus.Cert.CA != "" {
 		return s.UpdateSettings.Mbus.Cert

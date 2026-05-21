@@ -43,9 +43,9 @@ type Manager interface {
 	EnableMonitAccess() error
 
 	// SetupNATSFirewall creates firewall rules to protect NATS.
-	// Only root (UID 0) is allowed to connect to the resolved NATS address.
+	// Only root (UID 0) is allowed to connect to the resolved NATS addresses.
 	// This method resolves DNS and should be called before each connection attempt.
-	SetupNATSFirewall(mbusURL string) error
+	SetupNATSFirewall(mbusURLs []string) error
 
 	// Cleanup closes the nftables connection.
 	Cleanup() error
@@ -57,6 +57,6 @@ type Manager interface {
 //counterfeiter:generate . NatsFirewallHook
 type NatsFirewallHook interface {
 	// BeforeConnect is called before each NATS connection/reconnection attempt.
-	// It resolves the NATS URL and updates firewall rules with the resolved IP.
-	BeforeConnect(mbusURL string) error
+	// It resolves all NATS URLs and updates firewall rules with the resolved IPs.
+	BeforeConnect(mbusURLs []string) error
 }

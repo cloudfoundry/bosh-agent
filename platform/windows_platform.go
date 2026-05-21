@@ -404,7 +404,7 @@ func (p WindowsPlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
-func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks, mbus string) (err error) {
+func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks, mbus []string) (err error) {
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
 

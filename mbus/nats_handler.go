@@ -71,6 +71,7 @@ type natsHandler struct {
 type ConnectionInfo struct {
 	Addr      string
 	IP        string
+	IPs       []string
 	Dial      func(network, address string) (net.Conn, error)
 	TLSConfig *tls.Config
 }
@@ -102,8 +103,10 @@ func (h *natsHandler) arpClean() {
 		h.logger.Error(h.logTag, "Failed to get connection info for ARP clean: %v", err)
 		return
 	}
-	if err := h.platform.DeleteARPEntryWithIP(connectionInfo.IP); err != nil {
-		h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s. Error: %v", connectionInfo.IP, err)
+	for _, ip := range connectionInfo.IPs {
+		if err := h.platform.DeleteARPEntryWithIP(ip); err != nil {
+			h.logger.Error(h.logTag, "Cleaning ip-mac address cache for: %s. Error: %v", ip, err)
+		}
 	}
 }
 
@@ -115,10 +118,8 @@ func (h *natsHandler) updateFirewallForNATS() {
 		return
 	}
 
-	settings := h.settingsService.GetSettings()
-	mbusURL := settings.GetMbusURL()
-
-	if err := hook.BeforeConnect(mbusURL); err != nil {
+	mbusURLs := h.settingsService.GetSettings().GetMbusURLs()
+	if err := hook.BeforeConnect(mbusURLs); err != nil {
 		// Log but don't fail - firewall update failure shouldn't prevent connection attempt
 		h.logger.Warn(h.logTag, "Failed to update NATS firewall rules: %v", err)
 	}
@@ -313,14 +314,23 @@ func (h *natsHandler) getConnectionInfo() (*ConnectionInfo, error) {
 	settings := h.settingsService.GetSettings()
 
 	connInfo := new(ConnectionInfo)
-	connInfo.Addr = settings.GetMbusURL()
-	natsURL, err := url.Parse(connInfo.Addr)
-	if err != nil {
-		return nil, bosherr.WrapError(err, "Parsing Nats URL")
-	}
+	mbusURLs := settings.GetMbusURLs()
 
-	hostSplit := strings.Split(natsURL.Host, ":")
-	connInfo.IP = hostSplit[0]
+	// Build comma-separated address string for nats.Connect cluster support.
+	connInfo.Addr = strings.Join(mbusURLs, ", ")
+
+	// Parse host IPs from each URL for ARP cleanup.
+	// Use Hostname() so IPv6 addresses like [2001:db8::1] are returned without brackets.
+	for _, rawURL := range mbusURLs {
+		natsURL, err := url.Parse(rawURL)
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Parsing Nats URL %q", rawURL)
+		}
+		connInfo.IPs = append(connInfo.IPs, natsURL.Hostname())
+	}
+	if len(connInfo.IPs) > 0 {
+		connInfo.IP = connInfo.IPs[0]
+	}
 
 	connInfo.TLSConfig = &tls.Config{MinVersion: tls.VersionTLS12}
 

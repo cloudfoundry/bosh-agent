@@ -77,7 +77,7 @@ func (net centosNetManager) GetConfiguredNetworkInterfaces() ([]string, error) {
 
 func (net centosNetManager) SetupIPv6(_ boshsettings.IPv6, _ <-chan struct{}) error { return nil }
 
-func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, mbus string, errCh chan error) error {
+func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, mbus []string, errCh chan error) error {
 	// NOTE: Do not overwrite `/etc/resolv.conf` here, as it is controlled by Network Manager
 	// This is an intentional asymmetry vs `ubuntu_net_manager.go`.
 	// See commit 63548d43c69180b761d96b8e42a699e0762779e2.
@@ -162,8 +162,8 @@ func (net centosNetManager) SetupNetworking(networks boshsettings.Networks, mbus
 	return nil
 }
 
-func (net centosNetManager) setupFirewall(mbus string) error {
-	if mbus == "" {
+func (net centosNetManager) setupFirewall(mbus []string) error {
+	if len(mbus) == 0 {
 		net.logger.Info("NetworkSetup", "Skipping adding Firewall for outgoing nats. Mbus url is empty")
 		return nil
 	}

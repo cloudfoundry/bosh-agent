@@ -627,11 +627,11 @@ type FakePlatform struct {
 	setupMonitUserReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetupNetworkingStub        func(settings.Networks, string) error
+	SetupNetworkingStub        func(settings.Networks, []string) error
 	setupNetworkingMutex       sync.RWMutex
 	setupNetworkingArgsForCall []struct {
 		arg1 settings.Networks
-		arg2 string
+		arg2 []string
 	}
 	setupNetworkingReturns struct {
 		result1 error
@@ -3928,16 +3928,21 @@ func (fake *FakePlatform) SetupMonitUserReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePlatform) SetupNetworking(arg1 settings.Networks, arg2 string) error {
+func (fake *FakePlatform) SetupNetworking(arg1 settings.Networks, arg2 []string) error {
+	var arg2Copy []string
+	if arg2 != nil {
+		arg2Copy = make([]string, len(arg2))
+		copy(arg2Copy, arg2)
+	}
 	fake.setupNetworkingMutex.Lock()
 	ret, specificReturn := fake.setupNetworkingReturnsOnCall[len(fake.setupNetworkingArgsForCall)]
 	fake.setupNetworkingArgsForCall = append(fake.setupNetworkingArgsForCall, struct {
 		arg1 settings.Networks
-		arg2 string
-	}{arg1, arg2})
+		arg2 []string
+	}{arg1, arg2Copy})
 	stub := fake.SetupNetworkingStub
 	fakeReturns := fake.setupNetworkingReturns
-	fake.recordInvocation("SetupNetworking", []interface{}{arg1, arg2})
+	fake.recordInvocation("SetupNetworking", []interface{}{arg1, arg2Copy})
 	fake.setupNetworkingMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
@@ -3954,13 +3959,13 @@ func (fake *FakePlatform) SetupNetworkingCallCount() int {
 	return len(fake.setupNetworkingArgsForCall)
 }
 
-func (fake *FakePlatform) SetupNetworkingCalls(stub func(settings.Networks, string) error) {
+func (fake *FakePlatform) SetupNetworkingCalls(stub func(settings.Networks, []string) error) {
 	fake.setupNetworkingMutex.Lock()
 	defer fake.setupNetworkingMutex.Unlock()
 	fake.SetupNetworkingStub = stub
 }
 
-func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) (settings.Networks, string) {
+func (fake *FakePlatform) SetupNetworkingArgsForCall(i int) (settings.Networks, []string) {
 	fake.setupNetworkingMutex.RLock()
 	defer fake.setupNetworkingMutex.RUnlock()
 	argsForCall := fake.setupNetworkingArgsForCall[i]

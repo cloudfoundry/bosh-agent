@@ -1224,6 +1224,93 @@ var _ = Describe("Settings", func() {
 		})
 	})
 
+	Describe("#GetMbusURLs", func() {
+		Context("UpdateSettings.Mbus.URLs is populated", func() {
+			It("returns the full UpdateSettings slice", func() {
+				settings = Settings{
+					Mbus: "nats://top-level:123",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: []string{"nats://env:789"},
+							},
+						},
+					},
+					UpdateSettings: UpdateSettings{
+						Mbus: MBus{
+							URLs: []string{"nats://update1:4222", "nats://update2:4222"},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(Equal([]string{"nats://update1:4222", "nats://update2:4222"}))
+			})
+		})
+
+		Context("Env.Bosh.Mbus.URLs is populated", func() {
+			It("returns the full Env slice", func() {
+				settings = Settings{
+					Mbus: "nats://top-level:123",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: []string{"nats://env1:4222", "nats://env2:4222"},
+							},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(Equal([]string{"nats://env1:4222", "nats://env2:4222"}))
+			})
+		})
+
+		Context("no URLs slice is set", func() {
+			It("returns the legacy top-level Mbus string as a single-element slice", func() {
+				settings = Settings{
+					Mbus: "nats://top-level:456",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: nil,
+							},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(Equal([]string{"nats://top-level:456"}))
+			})
+		})
+
+		Context("Env.Bosh.Mbus.URLs is zero length", func() {
+			It("returns the legacy top-level Mbus string as a single-element slice", func() {
+				settings = Settings{
+					Mbus: "nats://top-level:456",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: []string{},
+							},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(Equal([]string{"nats://top-level:456"}))
+			})
+		})
+
+		Context("all URL sources are empty and Mbus is an empty string", func() {
+			It("returns nil so downstream URL parsing sees no entries", func() {
+				settings = Settings{
+					Mbus: "",
+					Env: Env{
+						Bosh: BoshEnv{
+							Mbus: MBus{
+								URLs: nil,
+							},
+						},
+					},
+				}
+				Expect(settings.GetMbusURLs()).To(BeNil())
+			})
+		})
+	})
+
 	Describe("#GetMbusCerts", func() {
 		Context("UpdateSettings.Mbus.Cert is populated", func() {
 			It("returns UpdateSettings.Mbus.Certs", func() {
