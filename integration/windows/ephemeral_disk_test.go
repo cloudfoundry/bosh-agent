@@ -28,7 +28,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 		agent.EnsureDataDirDoesntExist()
 
-		if diskLetter != "" {
+		if diskLetter != "" && strings.ToUpper(diskLetter) != "C" {
 			agent.RunPowershellCommand(fmt.Sprintf("Remove-Partition -DriveLetter %s -Confirm:$false", diskLetter))
 		}
 		if diskNumber != "0" {
@@ -50,7 +50,10 @@ var _ = Describe("EphemeralDisk", func() {
 			agent.StartAgent()
 
 			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-			diskLetter = agent.GetDriveLetterForLink(dataDir)
+			letter := agent.GetDriveLetterForLink(dataDir)
+			Expect(strings.ToUpper(letter)).NotTo(Equal("C"),
+				"agent unexpectedly placed ephemeral data on the root C: partition; ShrinkRootPartition may not have freed enough space")
+			diskLetter = letter
 
 			agent.AssertDataACLed()
 		})
@@ -62,7 +65,10 @@ var _ = Describe("EphemeralDisk", func() {
 			agent.StartAgent()
 
 			agent.EnsureLinkTargetedToDisk(dataDir, diskNumber)
-			diskLetter = agent.GetDriveLetterForLink(dataDir)
+			letter := agent.GetDriveLetterForLink(dataDir)
+			Expect(strings.ToUpper(letter)).NotTo(Equal("C"),
+				"agent unexpectedly placed ephemeral data on the root C: partition; ShrinkRootPartition may not have freed enough space")
+			diskLetter = letter
 
 			agent.RunPowershellCommand(`c:\bosh\service_wrapper.exe restart`)
 
