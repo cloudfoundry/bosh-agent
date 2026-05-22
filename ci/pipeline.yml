@@ -464,8 +464,6 @@ jobs:
             stemcells:
               - "aws-stemcell/*.tgz"
               - "aws-windows-stemcell/*.tgz"
-            ops_files:
-              - "bosh-agent/integration/assets/agent-windows-large-root-disk.yml"
             vars:
               deployment_name: bosh-agent-integration-windows-main
         - task: get-agent-info
@@ -510,7 +508,6 @@ jobs:
               - "aws-stemcell/*.tgz"
               - "aws-windows-stemcell/*.tgz"
             ops_files:
-              - "bosh-agent/integration/assets/agent-windows-large-root-disk.yml"
               - "bosh-agent/integration/assets/agent-windows-nats-blobstore.yml"
             releases:
               - bosh-bosh-release/release.tgz
@@ -570,6 +567,7 @@ jobs:
                 delete:
                   enabled: true
                   force: true
+
   - name: bosh-integration-tests
     serial: true
     plan:
