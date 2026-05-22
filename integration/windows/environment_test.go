@@ -28,17 +28,24 @@ type WindowsEnvironment struct {
 }
 
 func (e *WindowsEnvironment) ShrinkRootPartition() {
-	// Shrink C: by a fixed amount from its current maximum rather than trying
-	// to reach the theoretical SizeMin. Shrinking to SizeMin requires Windows
-	// to move almost all data to the start of the disk, which fails with
-	// "Size Not Supported" when NTFS unmovable files (MFT mirror, NTFS log,
-	// VSS snapshots) are scattered throughout the partition. Shrinking by a
-	// modest fixed amount only requires the last N GB to be free contiguous
-	// space, which is reliably true on a freshly provisioned VM.
-	// 10 GB is more than enough for the ephemeral partition the tests create.
-	const shrinkBy = 10 * GB
+	// Shrink C: by a small fixed amount from its current size rather than
+	// trying to reach the theoretical SizeMin.
+	//
+	// On stemcell 2019.99 the gap between SizeMin and the partition size is
+	// only ~950 MB, so a large shrink (e.g. 10 GB) would request a target
+	// below SizeMin and silently fail (Resize-Partition returns exit code 0
+	// but leaves the partition unchanged). Using a small amount (200 MB)
+	// keeps the target safely above SizeMin while giving the agent more than
+	// enough room to create an ephemeral partition (minimum is 1 MB).
+	//
+	// Using (Get-Partition -DriveLetter C).Size (current size) rather than
+	// (Get-PartitionSupportedSize -DriveLetter C).SizeMax ensures we are
+	// always shrinking: SizeMax includes adjacent unallocated space and can
+	// be larger than the current partition size.
+	const MB = 1024 * 1024
+	const shrinkBy = 200 * MB
 	cmd := fmt.Sprintf(
-		"Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMax - %d)",
+		"$currentSize = (Get-Partition -DriveLetter C).Size; Get-Partition -DriveLetter C | Resize-Partition -Size ($currentSize - %d)",
 		shrinkBy,
 	)
 
