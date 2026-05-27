@@ -105,15 +105,25 @@ var _ = Describe("MacAddressDetector", func() {
 				})
 			})
 
-			Context("when there are SR-IOV VF interfaces", func() {
+			Context("when there are SR-IOV VF interfaces marked AZURE_UNMANAGED_SRIOV=1", func() {
+				writeUdevProperties := func(iface, ifindex, body string) {
+					err := fs.WriteFileString(fmt.Sprintf("/sys/class/net/%s/ifindex", iface), ifindex+"\n")
+					Expect(err).NotTo(HaveOccurred())
+					err = fs.WriteFileString(fmt.Sprintf("/run/udev/data/n%s", ifindex), body)
+					Expect(err).NotTo(HaveOccurred())
+				}
+
 				It("should ignore VF interfaces", func() {
 					stubInterfacesWithVirtual(map[string]string{
 						"aa:bb": "eth0",
 						"cc:dd": "eth2",
 					}, nil, nil)
 
-					sriovVF1Path := writeNetworkDevice("eth1", "aa:bb", true, "sriov-vf")
-					sriovVF2Path := writeNetworkDevice("eth3", "ee:ff", true, "sriov-vf")
+					sriovVF1Path := writeNetworkDevice("eth1", "aa:bb", true, "")
+					writeUdevProperties("eth1", "3", "I:1\nE:AZURE_UNMANAGED_SRIOV=1\nE:ID_NET_DRIVER=mlx5_core\n")
+
+					sriovVF2Path := writeNetworkDevice("eth3", "ee:ff", true, "")
+					writeUdevProperties("eth3", "5", "E:AZURE_UNMANAGED_SRIOV=1\n")
 
 					existingPaths, err := fs.Glob("/sys/class/net/*")
 					Expect(err).NotTo(HaveOccurred())
@@ -127,6 +137,37 @@ var _ = Describe("MacAddressDetector", func() {
 					Expect(interfacesByMacAddress).To(Equal(map[string]string{
 						"aa:bb": "eth0",
 						"cc:dd": "eth2",
+					}))
+				})
+
+				It("includes the interface when the udev data file is missing", func() {
+					stubInterfacesWithVirtual(map[string]string{
+						"aa:bb": "eth0",
+					}, nil, nil)
+
+					interfacesByMacAddress, err := macAddressDetector.DetectMacAddresses()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interfacesByMacAddress).To(HaveKeyWithValue("aa:bb", "eth0"))
+				})
+
+				It("does not match a substring or differently-valued property", func() {
+					stubInterfacesWithVirtual(map[string]string{
+						"aa:bb": "eth0",
+					}, nil, nil)
+
+					vfPath := writeNetworkDevice("eth1", "cc:dd", true, "")
+					// AZURE_UNMANAGED_SRIOV=0 and a similarly-named property must not trigger the skip
+					writeUdevProperties("eth1", "3", "E:AZURE_UNMANAGED_SRIOV=0\nE:SOME_AZURE_UNMANAGED_SRIOV=1\n")
+
+					existing, err := fs.Glob("/sys/class/net/*")
+					Expect(err).NotTo(HaveOccurred())
+					fs.SetGlob("/sys/class/net/*", append(existing, vfPath))
+
+					interfacesByMacAddress, err := macAddressDetector.DetectMacAddresses()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interfacesByMacAddress).To(Equal(map[string]string{
+						"aa:bb": "eth0",
+						"cc:dd": "eth1",
 					}))
 				})
 			})
