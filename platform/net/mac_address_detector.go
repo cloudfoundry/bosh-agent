@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	gonet "net"
 	"path"
+	"slices"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -18,9 +19,10 @@ type MACAddressDetector interface {
 }
 
 const (
-	ifaliasPrefix            = "bosh-interface"
-	sriovVFIfalias           = "sriov-vf"
-	macAddressDetectorLogTag = "MacAddressDetector"
+	ifaliasPrefix              = "bosh-interface"
+	azureUnmanagedSRIOVUdevTag = "E:AZURE_UNMANAGED_SRIOV=1"
+	udevDataDir                = "/run/udev/data"
+	macAddressDetectorLogTag   = "MacAddressDetector"
 )
 
 type linuxMacAddressDetector struct {
@@ -75,16 +77,10 @@ func (d linuxMacAddressDetector) DetectMacAddresses() (map[string]string, error)
 			hasBoshPrefix = strings.HasPrefix(ifalias, ifaliasPrefix)
 		}
 
-		// SR-IOV VF interfaces share the same MAC address as synthetic interfaces and should be ignored
-		// They have an ifalias with the content "sriov-vf"
-		isSRIOVVF := false
-		if err == nil {
-			isSRIOVVF = strings.Contains(ifalias, sriovVFIfalias)
-			if isSRIOVVF {
-				interfaceName := path.Base(filePath)
-				d.logger.Debug(macAddressDetectorLogTag, "Ignoring SR-IOV VF interface: %s (ifalias: %s)", interfaceName, strings.TrimSpace(ifalias))
-				continue
-			}
+		if d.isAzureUnmanagedSRIOV(filePath) {
+			interfaceName := path.Base(filePath)
+			d.logger.Debug(macAddressDetectorLogTag, "Ignoring SR-IOV VF interface: %s (AZURE_UNMANAGED_SRIOV=1)", interfaceName)
+			continue
 		}
 
 		if isPhysicalDevice || hasBoshPrefix {
@@ -142,4 +138,20 @@ func adapterVisible(netAdapters []netAdapter, macAddress string, adapterName str
 		}
 	}
 	return false
+}
+
+// isAzureUnmanagedSRIOV returns true when the udev database tags the interface
+// with AZURE_UNMANAGED_SRIOV=1. The azure-vm-utils package applies this property
+// to SR-IOV VF devices transparently bonded under an hv_netvsc synthetic
+// interface, signaling that the IP layer should not configure them.
+func (d linuxMacAddressDetector) isAzureUnmanagedSRIOV(sysClassNetPath string) bool {
+	ifindex, err := d.fs.ReadFileString(path.Join(sysClassNetPath, "ifindex"))
+	if err != nil {
+		return false
+	}
+	contents, err := d.fs.ReadFileString(path.Join(udevDataDir, "n"+strings.TrimSpace(ifindex)))
+	if err != nil {
+		return false
+	}
+	return slices.Contains(strings.Split(contents, "\n"), azureUnmanagedSRIOVUdevTag)
 }
