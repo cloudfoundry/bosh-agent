@@ -36,7 +36,7 @@ func NewFileSettingsSource(
 
 func (s *FileSettingsSource) PublicSSHKeyForUsername(string) (string, error) {
 	if !s.fs.FileExists(s.settingsFilePath) {
-		return "", bosherr.Error("File for settings source does not exist")
+		return "", bosherr.Errorf("File for settings source does not exist: '%s'", s.settingsFilePath)
 	}
 	return "", nil
 }
