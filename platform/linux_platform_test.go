@@ -1999,44 +1999,31 @@ Number  Start   End     Size    File system  Name             Flags
 				Expect(err.Error()).To(ContainSubstring("Globbing NVMe devices"))
 			})
 
-			It("skips symlinks that fail to resolve and continues", func() {
+			It("returns an error when a managed volume symlink cannot be resolved", func() {
 				// Create the NVMe device files
 				err := fs.WriteFileString("/dev/nvme0n1", "")
 				Expect(err).ToNot(HaveOccurred())
 				err = fs.WriteFileString("/dev/nvme1n1", "")
-				Expect(err).ToNot(HaveOccurred())
-				err = fs.WriteFileString("/dev/nvme2n1", "")
 				Expect(err).ToNot(HaveOccurred())
 
 				// Create symlink directory
 				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
 				Expect(err).ToNot(HaveOccurred())
 
-				// Set up NVMe devices: nvme0n1 (EBS), nvme1n1 and nvme2n1 (instance storage)
-				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"})
+				// Set up NVMe devices: nvme0n1 (EBS), nvme1n1 (instance storage)
+				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1", "/dev/nvme1n1"})
 				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
 					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
 					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_broken", // broken symlink
 				})
 				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
 				Expect(err).ToNot(HaveOccurred())
-				// Note: nvme-Amazon_Elastic_Block_Store_broken has no symlink target - it will be skipped
+				// nvme-Amazon_Elastic_Block_Store_broken has no symlink target - must fail hard
 
-				// Mock parted for nvme1n1 and nvme2n1 (instance storage)
-				cmdRunner.AddCmdResult("parted -s /dev/nvme1n1 p", fakesys.FakeCmdResult{
-					Error:  errors.New("unrecognised disk label"),
-					Stdout: "Error: /dev/nvme1n1: unrecognised disk label",
-				})
-				cmdRunner.AddCmdResult("parted -s /dev/nvme2n1 p", fakesys.FakeCmdResult{
-					Error:  errors.New("unrecognised disk label"),
-					Stdout: "Error: /dev/nvme2n1: unrecognised disk label",
-				})
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}})
 
-				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}, {Path: "/dev/nvme1n1"}})
-
-				Expect(err).ToNot(HaveOccurred())
-				// Should partition nvme1n1 and nvme2n1 (only nvme0n1 was identified as EBS)
-				Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("nvme-Amazon_Elastic_Block_Store_broken"))
 			})
 
 			It("uses CPI paths directly for non-NVMe devices", func() {
