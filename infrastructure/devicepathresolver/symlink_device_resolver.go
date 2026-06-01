@@ -63,8 +63,7 @@ func (r *SymlinkDeviceResolver) ResolveSymlinksToDevices(symlinkPattern string) 
 	for _, symlink := range symlinks {
 		absPath, err := r.fs.ReadAndFollowLink(symlink)
 		if err != nil {
-			r.logger.Warn(r.logTag, "Skipping unresolvable symlink '%s': %s", symlink, err.Error())
-			continue
+			return nil, bosherr.WrapErrorf(err, "Resolving symlink '%s'", symlink)
 		}
 
 		r.logger.Debug(r.logTag, "Resolved symlink: %s -> %s", symlink, absPath)
