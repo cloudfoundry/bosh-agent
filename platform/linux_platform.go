@@ -881,9 +881,12 @@ func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) 
 func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
 	paths := make([]string, len(devices))
 	for i, device := range devices {
-		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
+		realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(device)
 		if err != nil {
 			return nil, bosherr.WrapErrorf(err, "Getting device %+v path", device)
+		}
+		if timedOut {
+			return nil, bosherr.Errorf("Timed out resolving device path for %+v", device)
 		}
 		paths[i] = realPath
 	}
