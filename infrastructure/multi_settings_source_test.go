@@ -85,6 +85,11 @@ var _ = Describe("MultiSettingsSource", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(publicKey).To(Equal("fake-public-key-2"))
 				})
+
+				It("logs a warning for the first source", func() {
+					_, _ = source.PublicSSHKeyForUsername("fake-username") //nolint:errcheck
+					Expect(logBuffer.String()).To(ContainSubstring("fake-public-key-err-1"))
+				})
 			})
 
 			Context("when both sources fail to get ssh key", func() {
@@ -92,6 +97,11 @@ var _ = Describe("MultiSettingsSource", func() {
 					_, err := source.PublicSSHKeyForUsername("fake-username")
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("fake-public-key-err-2"))
+				})
+
+				It("logs a warning for the first source", func() {
+					_, _ = source.PublicSSHKeyForUsername("fake-username") //nolint:errcheck
+					Expect(logBuffer.String()).To(ContainSubstring("fake-public-key-err-1"))
 				})
 			})
 		})

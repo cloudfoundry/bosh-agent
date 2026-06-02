@@ -42,6 +42,7 @@ func (s *MultiSettingsSource) PublicSSHKeyForUsername(username string) (string, 
 			s.selectedSSHKeySource = source
 			return publicSSHKey, nil
 		}
+		s.logger.Warn("multi-settings-source", "Failed to get public SSH key from source: %v", err)
 	}
 
 	return "", bosherr.WrapErrorf(err, "Getting public SSH key for '%s'", username)

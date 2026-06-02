@@ -26,10 +26,32 @@ var _ = Describe("FileSettingsSource", func() {
 	})
 
 	Describe("PublicSSHKeyForUsername", func() {
-		It("returns an empty string", func() {
-			publicKey, err := source.PublicSSHKeyForUsername("fake-username")
-			Expect(err).ToNot(HaveOccurred())
-			Expect(publicKey).To(Equal(""))
+		Context("when the settings file exists", func() {
+			BeforeEach(func() {
+				settingsFileName := "/fake-settings-file-path"
+				source = infrastructure.NewFileSettingsSource(settingsFileName, fs, logger)
+				err := fs.WriteFileString(settingsFileName, "{}")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns an empty string", func() {
+				publicKey, err := source.PublicSSHKeyForUsername("fake-username")
+				Expect(err).ToNot(HaveOccurred())
+				Expect(publicKey).To(Equal(""))
+			})
+		})
+
+		Context("when the settings file does not exist", func() {
+			BeforeEach(func() {
+				source = infrastructure.NewFileSettingsSource("/missing-settings-file-path", fs, logger)
+			})
+
+			It("returns an error with the file path", func() {
+				_, err := source.PublicSSHKeyForUsername("fake-username")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("File for settings source does not exist"))
+				Expect(err.Error()).To(ContainSubstring("/missing-settings-file-path"))
+			})
 		})
 	})
 
