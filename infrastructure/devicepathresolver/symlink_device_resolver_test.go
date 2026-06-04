@@ -85,9 +85,10 @@ var _ = Describe("SymlinkDeviceResolver", func() {
 			Expect(err).ToNot(HaveOccurred())
 			// nvme-invalid has no symlink target — resolution must fail hard
 
-			_, err = resolver.ResolveSymlinksToDevices("/dev/disk/by-id/nvme-*")
+			result, err := resolver.ResolveSymlinksToDevices("/dev/disk/by-id/nvme-*")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("nvme-invalid"))
+			Expect(result).To(BeNil())
 		})
 
 		It("returns error when glob fails", func() {

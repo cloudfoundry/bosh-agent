@@ -882,11 +882,11 @@ func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettin
 	paths := make([]string, len(devices))
 	for i, device := range devices {
 		realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(device)
-		if err != nil {
-			return nil, bosherr.WrapErrorf(err, "Getting device %+v path", device)
-		}
 		if timedOut {
 			return nil, bosherr.Errorf("Timed out resolving device path for %+v", device)
+		}
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Getting device %+v path", device)
 		}
 		paths[i] = realPath
 	}
