@@ -13,7 +13,6 @@ import (
 )
 
 // cmdRoutesSearcher uses `route -n` command to list routes
-// which routes in a same format on Ubuntu and CentOS
 type cmdRoutesSearcher struct {
 	runner boshsys.CmdRunner
 	logger boshlog.Logger
