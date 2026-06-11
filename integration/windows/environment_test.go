@@ -28,52 +28,60 @@ type WindowsEnvironment struct {
 }
 
 func (e *WindowsEnvironment) ShrinkRootPartition() {
-	retryableFailure := "Resize-Partition : Size Not Supported"
+	// Shrink C: by a small fixed amount from its current size rather than
+	// trying to reach the theoretical SizeMin.
+	//
+	// On stemcell 2019.99 the gap between SizeMin and the partition size is
+	// only ~950 MB, so a large shrink (e.g. 10 GB) would request a target
+	// below SizeMin and silently fail (Resize-Partition returns exit code 0
+	// but leaves the partition unchanged). Using a small amount (200 MB)
+	// keeps the target safely above SizeMin while giving the agent more than
+	// enough room to create an ephemeral partition (minimum is 1 MB).
+	//
+	// Using (Get-Partition -DriveLetter C).Size (current size) rather than
+	// (Get-PartitionSupportedSize -DriveLetter C).SizeMax ensures we are
+	// always shrinking: SizeMax includes adjacent unallocated space and can
+	// be larger than the current partition size.
+	const MB = 1024 * 1024
+	const shrinkBy = 200 * MB
+	cmd := fmt.Sprintf(
+		"$currentSize = (Get-Partition -DriveLetter C).Size; Get-Partition -DriveLetter C | Resize-Partition -Size ($currentSize - %d)",
+		shrinkBy,
+	)
+
 	retryableError := "net/http: timeout awaiting response headers"
-	retryableSizeMin := "Resize-Partition : Not enough available capacity"
-
-	sizeMinBuffer := 1 * GB
-	cmdFmtString := "Get-Partition -DriveLetter C | Resize-Partition -Size $((Get-PartitionSupportedSize -DriveLetter C).SizeMin + %d)"
-
-	for i := 0; i < 5; i++ {
-		cmd := fmt.Sprintf(cmdFmtString, sizeMinBuffer)
+	const maxAttempts = 5
+	var lastStderr string
+	for i := 0; i < maxAttempts; i++ {
 		stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(cmd)
+		lastStderr = stderr
 
 		if err != nil {
 			if strings.Contains(err.Error(), retryableError) {
-				fmt.Printf("WinRM timed out on attempt %d of 5, waiting 5 seconds to retry command: %s\n", i+1, cmd)
+				fmt.Printf("WinRM timed out on attempt %d of %d, waiting 5 seconds to retry\n", i+1, maxAttempts)
 				time.Sleep(5 * time.Second)
 				continue
-			} else {
-				Expect(err).WithOffset(1).NotTo(
-					HaveOccurred(),
-					fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, stdout, stderr),
-				)
 			}
+			Expect(err).WithOffset(1).NotTo(
+				HaveOccurred(),
+				fmt.Sprintf(`Command "%s" failed with stdout: %s; stderr: %s`, cmd, stdout, stderr),
+			)
 		}
 
 		if exitCode != 0 {
-			if strings.Contains(stderr, retryableFailure) {
-				fmt.Printf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
-				time.Sleep(5 * time.Second)
-				continue
-			} else if strings.Contains(stderr, retryableSizeMin) {
-				fmt.Printf("Failed to shrink disk on attempt %d of 5, waiting 5 seconds to retry\n", i+1)
-				time.Sleep(5 * time.Second)
-				sizeMinBuffer += 2 * GB
-				continue
-			} else {
-				Expect(exitCode).WithOffset(1).To(
-					BeZero(),
-					fmt.Sprintf(
-						`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, stdout, stderr,
-					),
-				)
-			}
+			Expect(exitCode).WithOffset(1).To(
+				BeZero(),
+				fmt.Sprintf(`Command "%s" failed with exit code: %d; stdout: %s; stderr: %s`, cmd, exitCode, stdout, stderr),
+			)
 		}
 
-		break
+		return
 	}
+
+	Expect(false).WithOffset(1).To(
+		BeTrue(),
+		fmt.Sprintf("ShrinkRootPartition: WinRM timed out on all %d attempts; last error: %s", maxAttempts, lastStderr),
+	)
 }
 
 func (e *WindowsEnvironment) EnsureRootPartitionAtMaxSize() {

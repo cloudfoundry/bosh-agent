@@ -14,15 +14,18 @@ import (
 	"inet.af/wf"
 )
 
-func SetupNatsFirewall(mbus string) error {
-	// return early if we get an empty string for mbus. this is the case when the network for the host is just getting setup or in unit tests.
-	if mbus == "" || strings.HasPrefix(mbus, "https://") {
+func SetupNatsFirewall(mbusURLs []string) error {
+	// Filter out empty and https URLs up front.
+	var natsURLs []string
+	for _, mbus := range mbusURLs {
+		if mbus != "" && !strings.HasPrefix(mbus, "https://") {
+			natsURLs = append(natsURLs, mbus)
+		}
+	}
+	if len(natsURLs) == 0 {
 		return nil
 	}
-	natsURI, err := gonetURL.Parse(mbus)
-	if err != nil || natsURI.Hostname() == "" {
-		return bosherr.WrapError(err, "Error parsing MbusURL")
-	}
+
 	session, err := wf.New(&wf.Options{
 		Name:    "Windows Firewall Session for Bosh Agent",
 		Dynamic: true, // setting this to true will create an ephemeral FW Rule that lasts as long as the Agent Process runs.
@@ -59,61 +62,72 @@ func SetupNatsFirewall(mbus string) error {
 		return bosherr.WrapError(err, "Getting the windows app id for bosh-agent.exe")
 	}
 
-	// We could technically have a hostname in the agent-settings.json for the mbus.
-	// If it is already an IP LookupHost will return an Array containing the IP addr.
-	natsIPs, err := gonet.LookupHost(natsURI.Hostname())
-	if err != nil {
-		return bosherr.WrapError(err, "Resolving mbus ips from settings")
-	}
-	natsPort, err := strconv.Atoi(natsURI.Port())
-	if err != nil {
-		return bosherr.WrapError(err, "Parsing Nats Port from URI")
-	}
-	for _, natsIPString := range natsIPs {
-		natsIP, err := gonetIP.ParseAddr(natsIPString)
-		if err != nil {
-			return bosherr.WrapError(err, "Parsing mbus ip")
+	for _, mbus := range natsURLs {
+		natsURI, err := gonetURL.Parse(mbus)
+		if err != nil || natsURI.Hostname() == "" {
+			return bosherr.WrapError(err, "Error parsing MbusURL")
 		}
-		// The Firewall rule will check if the Target IP is within natsIp/32 Range, thus matching exactly the NatsIP
-		natsIPCidr, err := natsIP.Prefix(32)
-		if err != nil {
-			return bosherr.WrapError(err, "Converting ip address to cidr annotation")
-		}
-		for _, layer := range layers {
-			guid, err := windows.GenerateGUID()
-			if err != nil {
-				return bosherr.WrapError(err, "Generating windows guid")
-			}
 
-			err = session.AddRule(&wf.Rule{
-				ID:       wf.RuleID(guid),
-				Name:     "Allow traffic to remote bosh nats for bosh-agent app id, block everything else",
-				Layer:    layer,
-				Sublayer: sublayerID,
-				Weight:   1000,
-				Conditions: []*wf.Match{
-					// Block traffic to natsIp:natsPort
-					{
-						Field: wf.FieldIPRemoteAddress,
-						Op:    wf.MatchTypePrefix,
-						Value: natsIPCidr,
-					},
-					{
-						Field: wf.FieldIPRemotePort,
-						Op:    wf.MatchTypeEqual,
-						Value: uint16(natsPort),
-					},
-					// Exemption for bosh-agent appID
-					{
-						Field: wf.FieldALEAppID,
-						Op:    wf.MatchTypeNotEqual,
-						Value: appID,
-					},
-				},
-				Action: wf.ActionBlock,
-			})
+		// We could technically have a hostname in the agent-settings.json for the mbus.
+		// If it is already an IP LookupHost will return an Array containing the IP addr.
+		natsIPs, err := gonet.LookupHost(natsURI.Hostname())
+		if err != nil {
+			return bosherr.WrapError(err, "Resolving mbus ips from settings")
+		}
+		natsPort, err := strconv.Atoi(natsURI.Port())
+		if err != nil {
+			return bosherr.WrapError(err, "Parsing Nats Port from URI")
+		}
+		for _, natsIPString := range natsIPs {
+			natsIP, err := gonetIP.ParseAddr(natsIPString)
 			if err != nil {
-				return bosherr.WrapError(err, "Adding firewall rule to limit remote nats access to bosh-agent")
+				return bosherr.WrapError(err, "Parsing mbus ip")
+			}
+			// Only IPv4 ALE layers are currently active; skip IPv6 addresses.
+			if natsIP.Is6() && !natsIP.Is4In6() {
+				continue
+			}
+			// The Firewall rule will check if the Target IP is within natsIp/32 Range, thus matching exactly the NatsIP
+			natsIPCidr, err := natsIP.Prefix(32)
+			if err != nil {
+				return bosherr.WrapError(err, "Converting ip address to cidr annotation")
+			}
+			for _, layer := range layers {
+				guid, err := windows.GenerateGUID()
+				if err != nil {
+					return bosherr.WrapError(err, "Generating windows guid")
+				}
+
+				err = session.AddRule(&wf.Rule{
+					ID:       wf.RuleID(guid),
+					Name:     "Allow traffic to remote bosh nats for bosh-agent app id, block everything else",
+					Layer:    layer,
+					Sublayer: sublayerID,
+					Weight:   1000,
+					Conditions: []*wf.Match{
+						// Block traffic to natsIp:natsPort
+						{
+							Field: wf.FieldIPRemoteAddress,
+							Op:    wf.MatchTypePrefix,
+							Value: natsIPCidr,
+						},
+						{
+							Field: wf.FieldIPRemotePort,
+							Op:    wf.MatchTypeEqual,
+							Value: uint16(natsPort),
+						},
+						// Exemption for bosh-agent appID
+						{
+							Field: wf.FieldALEAppID,
+							Op:    wf.MatchTypeNotEqual,
+							Value: appID,
+						},
+					},
+					Action: wf.ActionBlock,
+				})
+				if err != nil {
+					return bosherr.WrapError(err, "Adding firewall rule to limit remote nats access to bosh-agent")
+				}
 			}
 		}
 	}

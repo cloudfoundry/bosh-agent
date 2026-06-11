@@ -228,6 +228,31 @@ var _ = Describe("ubuntuNetManager", func() {
 				Expect(dhcpInterfaceConfigurations).To(BeEmpty())
 				Expect(dnsServers).To(Equal([]string{"54.209.78.6", "127.0.0.5"}))
 			})
+
+			It("returns an error when alias is invalid", func() {
+				networks := boshsettings.Networks{
+					"default": factory.Network{
+						IP:      "10.10.0.32",
+						Netmask: "255.255.255.0",
+						Mac:     "mac-1",
+						Default: []string{"dns", "gateway"},
+						DNS:     &[]string{"8.8.8.8"},
+						Gateway: "10.10.0.1",
+					}.Build(),
+					"second": factory.Network{
+						IP:      "10.10.0.33",
+						Netmask: "255.255.255.0",
+						DNS:     &[]string{"8.8.8.8"},
+						Gateway: "10.10.0.1",
+						Alias:   "/../../../../foo/bar",
+					}.Build(),
+				}
+				addresses := map[string]string{"mac-1": "eth0"}
+				fakeMACAddressDetector.DetectMacAddressesReturns(addresses, nil)
+
+				_, _, _, err := netManager.ComputeNetworkConfig(networks)
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 
@@ -320,7 +345,7 @@ dns-nameservers 8.8.8.8 9.9.9.9`
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"static-1": staticNetwork,
 				"static-2": secondStaticNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -391,7 +416,7 @@ DNS=8.8.8.8
 				err := netManager.SetupNetworking(boshsettings.Networks{
 					"static-1": staticNetwork,
 					"static-2": secondStaticNetwork,
-				}, "", nil)
+				}, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				matches, err := fs.Ls("/etc/systemd/network/")
@@ -428,7 +453,7 @@ DNS=8.8.8.8
 
 				err := netManager.SetupNetworking(boshsettings.Networks{
 					"static-1": staticNetwork,
-				}, "", nil)
+				}, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				matches, err := fs.Ls("/etc/systemd/network/")
@@ -497,7 +522,7 @@ DNS=8.8.8.8
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"static-1": staticNetwork,
 				"static-2": secondStaticNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -577,7 +602,7 @@ DNS=8.8.8.8
 
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"static-1": staticNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -624,7 +649,7 @@ Gateway=3.4.5.6
 				"ethstatic": staticNetworkWithoutDNS,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetworkWithoutDNS}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetworkWithoutDNS}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -653,7 +678,7 @@ Gateway=3.4.5.6
 				"static": staticNetwork,
 			})
 			fs.WriteFileError = errors.New("fs-write-file-error")
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("fs-write-file-error"))
 		})
@@ -664,7 +689,7 @@ Gateway=3.4.5.6
 				"ethstatic": staticNetwork,
 			})
 			staticNetwork.Netmask = "not an ip" // will cause InterfaceConfigurationCreator to fail
-			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("Creating interface configurations"))
 		})
@@ -688,7 +713,7 @@ Gateway=3.4.5.6
 
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"static-1": staticNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(`Updating network configs: Writing network configuration: Updating network configuration for eth0: netmask cannot be converted to CIDR: 255.0.255.0`))
 		})
@@ -699,7 +724,7 @@ Gateway=3.4.5.6
 				"ethstatic": staticNetwork,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -730,7 +755,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				"ethdhcp": dhcpNetwork,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetworkWithoutDNS}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetworkWithoutDNS}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -758,7 +783,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 
 			fs.WriteFileErrors["/etc/dhcp/dhclient.conf"] = errors.New("dhclient.conf-write-error")
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("dhclient.conf-write-error"))
 		})
@@ -768,7 +793,7 @@ request subnet-mask, broadcast-address, time-offset, routers,
 				"ethstatic": staticNetwork,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
@@ -814,7 +839,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
 
-			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
@@ -827,7 +852,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 
 			By("Setting up the networks with the same inputs, we do not restart networking")
 			cmdRunner.ClearCommandHistory()
-			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -855,7 +880,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err = fs.WriteFileString("/etc/dhcp/dhclient.conf", initialDhcpConfig)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			networkConfig := fs.GetFileTestStat("/etc/network/interfaces")
@@ -897,7 +922,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 			})
 
-			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
@@ -915,7 +940,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				"ethstatic": staticNetwork,
 			})
 
-			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, "", nil)
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.Value() }).Should(
@@ -944,7 +969,7 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 				"dhcp-network":   dhcpNetwork,
 				"static-network": staticNetwork,
 				"vip-network":    vipNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")
@@ -1002,7 +1027,7 @@ DNS=9.9.9.9
 				})
 
 				errCh := make(chan error)
-				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, "", errCh)
+				err := netManager.SetupNetworking(boshsettings.Networks{"static-network": staticNetwork}, nil, errCh)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Validating static network configuration"))
 			})
@@ -1029,7 +1054,7 @@ DNS=9.9.9.9
 
 				err := netManager.SetupNetworking(boshsettings.Networks{
 					"static-network": staticNetworkWithoutMAC,
-				}, "", nil)
+				}, nil, nil)
 				Expect(err).ToNot(HaveOccurred())
 
 				matches, err := fs.Ls("/etc/systemd/network/")
@@ -1115,7 +1140,7 @@ nameserver 10.0.80.12
 					"eth0": staticNetwork1,
 				})
 
-				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, "", nil)
+				err := netManager.SetupNetworking(boshsettings.Networks{"default": portableNetwork, "dynamic": staticNetwork, "dynamic_1": staticNetwork1}, nil, nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				Eventually(func() []boship.InterfaceAddress { return addressBroadcaster.Value() }).Should(
@@ -1205,7 +1230,7 @@ DNS=10.0.80.12
 
 			err = netManager.SetupNetworking(boshsettings.Networks{
 				"static": staticNetwork,
-			}, "", nil)
+			}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
 			matches, err := fs.Ls("/etc/systemd/network/")

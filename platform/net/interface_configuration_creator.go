@@ -2,6 +2,7 @@ package net
 
 import (
 	"net"
+	"unicode"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -126,6 +127,25 @@ func NewInterfaceConfigurationCreator(logger boshlog.Logger) InterfaceConfigurat
 	}
 }
 
+// validateInterfaceName follows the rules of the Linux kernel's dev_valid_name()
+// (net/core/dev.c) but permits ':' for IP alias names (e.g. eth0:0) and omits
+// the IFNAMSIZ length check since aliases are configuration labels, not kernel
+// device names.
+func validateInterfaceName(name string) error {
+	if name == "" {
+		return bosherr.Errorf("interface name must not be empty")
+	}
+	if name == "." || name == ".." {
+		return bosherr.Errorf("invalid interface name %q", name)
+	}
+	for _, c := range name {
+		if c == '/' || unicode.IsSpace(c) {
+			return bosherr.Errorf("invalid interface name %q: must not contain '/' or whitespace", name)
+		}
+	}
+	return nil
+}
+
 func (creator interfaceConfigurationCreator) CreateInterfaceConfigurations(networks boshsettings.Networks, interfacesByMAC map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error) {
 	// In cases where we only have one network and it has no MAC address (either because the IAAS doesn't give us one or
 	// it's an old CPI), if we only have one interface, we should map them
@@ -173,6 +193,10 @@ func (creator interfaceConfigurationCreator) createMultipleInterfaceConfiguratio
 	for _, networkSettings = range networks {
 		if networkSettings.Mac != "" || networkSettings.Alias == "" {
 			continue
+		}
+
+		if err = validateInterfaceName(networkSettings.Alias); err != nil {
+			return nil, nil, bosherr.WrapError(err, "Creating interface configuration using alias")
 		}
 
 		staticConfigs, dhcpConfigs, err = creator.createInterfaceConfiguration(staticConfigs, dhcpConfigs, networkSettings.Alias, networkSettings)

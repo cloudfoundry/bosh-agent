@@ -567,6 +567,7 @@ jobs:
                 delete:
                   enabled: true
                   force: true
+
   - name: bosh-integration-tests
     serial: true
     plan:

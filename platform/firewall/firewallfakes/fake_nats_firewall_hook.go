@@ -8,10 +8,10 @@ import (
 )
 
 type FakeNatsFirewallHook struct {
-	BeforeConnectStub        func(string) error
+	BeforeConnectStub        func([]string) error
 	beforeConnectMutex       sync.RWMutex
 	beforeConnectArgsForCall []struct {
-		arg1 string
+		arg1 []string
 	}
 	beforeConnectReturns struct {
 		result1 error
@@ -23,15 +23,20 @@ type FakeNatsFirewallHook struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeNatsFirewallHook) BeforeConnect(arg1 string) error {
+func (fake *FakeNatsFirewallHook) BeforeConnect(arg1 []string) error {
+	var arg1Copy []string
+	if arg1 != nil {
+		arg1Copy = make([]string, len(arg1))
+		copy(arg1Copy, arg1)
+	}
 	fake.beforeConnectMutex.Lock()
 	ret, specificReturn := fake.beforeConnectReturnsOnCall[len(fake.beforeConnectArgsForCall)]
 	fake.beforeConnectArgsForCall = append(fake.beforeConnectArgsForCall, struct {
-		arg1 string
-	}{arg1})
+		arg1 []string
+	}{arg1Copy})
 	stub := fake.BeforeConnectStub
 	fakeReturns := fake.beforeConnectReturns
-	fake.recordInvocation("BeforeConnect", []interface{}{arg1})
+	fake.recordInvocation("BeforeConnect", []interface{}{arg1Copy})
 	fake.beforeConnectMutex.Unlock()
 	if stub != nil {
 		return stub(arg1)
@@ -48,13 +53,13 @@ func (fake *FakeNatsFirewallHook) BeforeConnectCallCount() int {
 	return len(fake.beforeConnectArgsForCall)
 }
 
-func (fake *FakeNatsFirewallHook) BeforeConnectCalls(stub func(string) error) {
+func (fake *FakeNatsFirewallHook) BeforeConnectCalls(stub func([]string) error) {
 	fake.beforeConnectMutex.Lock()
 	defer fake.beforeConnectMutex.Unlock()
 	fake.BeforeConnectStub = stub
 }
 
-func (fake *FakeNatsFirewallHook) BeforeConnectArgsForCall(i int) string {
+func (fake *FakeNatsFirewallHook) BeforeConnectArgsForCall(i int) []string {
 	fake.beforeConnectMutex.RLock()
 	defer fake.beforeConnectMutex.RUnlock()
 	argsForCall := fake.beforeConnectArgsForCall[i]

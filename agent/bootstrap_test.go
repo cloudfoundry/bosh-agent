@@ -267,9 +267,9 @@ var _ = Describe("bootstrap", func() {
 			err := bootstrap()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(platform.SetupNetworkingCallCount()).To(Equal(1))
-			net, mbusURL := platform.SetupNetworkingArgsForCall(0)
+			net, mbusURLs := platform.SetupNetworkingArgsForCall(0)
 			Expect(net).To(Equal(networks))
-			Expect(mbusURL).To(Equal(mbus))
+			Expect(mbusURLs).To(Equal([]string{mbus}))
 
 		})
 

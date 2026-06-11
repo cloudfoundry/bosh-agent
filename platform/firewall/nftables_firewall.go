@@ -225,60 +225,85 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 }
 
 // SetupNATSFirewall creates firewall rules to protect NATS.
+// It accepts a slice of NATS URLs, resolves each host, and adds allow+block rules
+// for every resolved IP in a single nftables flush.
 // This resolves DNS and should be called before each connection attempt.
-func (f *NftablesFirewall) SetupNATSFirewall(mbusURL string) error {
-	// Parse URL to get host and port
-	host, port, err := parseNATSURL(mbusURL)
-	if err != nil {
-		// Not an error for https URLs or empty URLs (create-env case)
-		f.logger.Info(f.logTag, "Skipping NATS firewall: %s", err)
+func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
+	type hostPort struct {
+		host string
+		port int
+	}
+
+	var targets []hostPort
+	for _, mbusURL := range mbusURLs {
+		host, port, err := parseNATSURL(mbusURL)
+		if err != nil {
+			// Not an error for https URLs or empty URLs (create-env case)
+			f.logger.Info(f.logTag, "Skipping NATS firewall for %q: %s", mbusURL, err)
+			continue
+		}
+		targets = append(targets, hostPort{host, port})
+	}
+
+	if len(targets) == 0 {
 		return nil
 	}
 
-	// Resolve host to IP addresses
-	var addrs []net.IP
-	if ip := net.ParseIP(host); ip != nil {
-		addrs = []net.IP{ip}
-	} else {
-		addrs, err = f.resolver.LookupIP(host)
-		if err != nil {
-			f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", host, err)
-			return nil
+	// Resolve all hosts first so we can decide whether to flush.
+	type resolvedTarget struct {
+		addrs []net.IP
+		port  int
+		host  string
+	}
+	var resolved []resolvedTarget
+	for _, t := range targets {
+		var addrs []net.IP
+		if ip := net.ParseIP(t.host); ip != nil {
+			addrs = []net.IP{ip}
+		} else {
+			var err error
+			addrs, err = f.resolver.LookupIP(t.host)
+			if err != nil {
+				f.logger.Warn(f.logTag, "DNS resolution failed for %s: %s", t.host, err)
+				continue
+			}
 		}
+		resolved = append(resolved, resolvedTarget{addrs: addrs, port: t.port, host: t.host})
 	}
 
-	f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", host, port, addrs)
+	if len(resolved) == 0 {
+		f.logger.Warn(f.logTag, "Skipping NATS firewall update: no targets resolved")
+		return nil
+	}
 
-	// Ensure table exists
+	// At least one address resolved — safe to flush stale rules and replace them.
 	f.ensureTable()
-
-	// Ensure NATS chain exists
 	f.ensureNATSChain()
-
-	// Flush NATS chain (removes old rules for previous IPs)
 	f.conn.FlushChain(f.natsChain)
 
-	// Allow return traffic for established/related connections
+	// Allow return traffic for established/related connections.
 	f.addConntrackRule(f.natsChain)
 
-	// Add rules for each resolved IP
-	for _, addr := range addrs {
-		f.addNATSAllowRule(addr, port)
-		f.addNATSBlockRule(addr, port)
+	// Add allow+block rules for every resolved IP — all in one pending batch.
+	for _, rt := range resolved {
+		f.logger.Debug(f.logTag, "Setting up NATS firewall for %s:%d (resolved to %v)", rt.host, rt.port, rt.addrs)
+		for _, addr := range rt.addrs {
+			f.addNATSAllowRule(addr, rt.port)
+			f.addNATSBlockRule(addr, rt.port)
+		}
+		f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", rt.host, rt.port)
 	}
 
-	// Commit
 	if err := f.conn.Flush(); err != nil {
 		return bosherr.WrapError(err, "Flushing nftables rules")
 	}
 
-	f.logger.Info(f.logTag, "Updated NATS firewall rules for %s:%d", host, port)
 	return nil
 }
 
 // BeforeConnect implements NatsFirewallHook. Called before each NATS connection attempt.
-func (f *NftablesFirewall) BeforeConnect(mbusURL string) error {
-	return f.SetupNATSFirewall(mbusURL)
+func (f *NftablesFirewall) BeforeConnect(mbusURLs []string) error {
+	return f.SetupNATSFirewall(mbusURLs)
 }
 
 func (f *NftablesFirewall) Cleanup() error {
@@ -745,8 +770,7 @@ func parseNATSURL(mbusURL string) (string, int, error) {
 
 	host, portStr, err := net.SplitHostPort(u.Host)
 	if err != nil {
-		host = u.Hostname()
-		portStr = "4222"
+		return "", 0, fmt.Errorf("missing or invalid port in NATS URL %q: %w", mbusURL, err)
 	}
 
 	port, err := strconv.Atoi(portStr)

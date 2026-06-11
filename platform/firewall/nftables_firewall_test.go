@@ -340,9 +340,9 @@ var _ = Describe("NftablesFirewall", func() {
 	})
 
 	Describe("SetupNATSFirewall", func() {
-		Context("with an IPv4 address URL", func() {
+		Context("with a single IPv4 address URL", func() {
 			It("creates rules for the IPv4 address", func() {
-				err := manager.SetupNATSFirewall("nats://user:pass@192.168.1.100:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://user:pass@192.168.1.100:4222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddTableCallCount()).To(Equal(1))
@@ -354,7 +354,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("creates chain with correct configuration", func() {
-				err := manager.SetupNATSFirewall("nats://192.168.1.100:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100:4222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				chain := fakeConn.AddChainArgsForCall(0)
@@ -364,7 +364,7 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			It("adds conntrack established,related rule as first rule", func() {
-				err := manager.SetupNATSFirewall("nats://192.168.1.100:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100:4222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				ctRule := fakeConn.AddRuleArgsForCall(0)
@@ -385,9 +385,36 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 		})
 
+		Context("with multiple URLs", func() {
+			It("creates rules for all URLs in a single flush", func() {
+				err := manager.SetupNATSFirewall([]string{
+					"nats://192.168.1.100:4222",
+					"nats://192.168.1.200:4222",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// Only one flush of the chain and one Flush() call for all URLs combined
+				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+				Expect(fakeConn.FlushCallCount()).To(Equal(1))
+				// conntrack + (allow + block) * 2 IPs = 5 rules
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(5))
+			})
+
+			It("skips https URLs and adds rules only for nats URLs", func() {
+				err := manager.SetupNATSFirewall([]string{
+					"https://director.example.com:25555",
+					"nats://192.168.1.100:4222",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				// conntrack + allow + block for the one nats URL
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
+			})
+		})
+
 		Context("with an IPv6 address URL", func() {
 			It("creates rules for the IPv6 address", func() {
-				err := manager.SetupNATSFirewall("nats://user:pass@[2001:db8::1]:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://user:pass@[2001:db8::1]:4222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
@@ -402,7 +429,7 @@ var _ = Describe("NftablesFirewall", func() {
 					net.ParseIP("10.0.0.2"),
 				}, nil)
 
-				err := manager.SetupNATSFirewall("nats://user:pass@nats.example.com:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://user:pass@nats.example.com:4222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
@@ -415,26 +442,29 @@ var _ = Describe("NftablesFirewall", func() {
 			It("handles DNS resolution failure gracefully", func() {
 				fakeResolver.LookupIPReturns(nil, errors.New("dns lookup failed"))
 
-				err := manager.SetupNATSFirewall("nats://user:pass@nats.example.com:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://user:pass@nats.example.com:4222"})
 				Expect(err).NotTo(HaveOccurred()) // Should not return error, just log warning
 
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(0)) // No rules added
+				// Chain is not flushed and no rules are added when all DNS lookups fail.
+				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 			})
 		})
 
-		Context("with default port", func() {
-			It("uses port 4222 when not specified", func() {
-				err := manager.SetupNATSFirewall("nats://192.168.1.100")
+		Context("with missing port", func() {
+			It("skips the URL and adds no rules", func() {
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100"})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
+				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
 			})
 		})
 
 		Context("with custom port", func() {
 			It("uses the specified port", func() {
-				err := manager.SetupNATSFirewall("nats://192.168.1.100:5222")
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100:5222"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(3))
@@ -443,7 +473,7 @@ var _ = Describe("NftablesFirewall", func() {
 
 		Context("with https URL", func() {
 			It("skips setup and returns nil", func() {
-				err := manager.SetupNATSFirewall("https://director.example.com:25555")
+				err := manager.SetupNATSFirewall([]string{"https://director.example.com:25555"})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
@@ -451,9 +481,19 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 		})
 
-		Context("with empty URL", func() {
+		Context("with empty slice", func() {
 			It("skips setup and returns nil", func() {
-				err := manager.SetupNATSFirewall("")
+				err := manager.SetupNATSFirewall([]string{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
+				Expect(fakeConn.AddRuleCallCount()).To(Equal(0))
+			})
+		})
+
+		Context("with a single empty string in slice", func() {
+			It("skips setup and returns nil", func() {
+				err := manager.SetupNATSFirewall([]string{""})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeConn.AddTableCallCount()).To(Equal(0))
@@ -463,11 +503,11 @@ var _ = Describe("NftablesFirewall", func() {
 
 		Context("when called multiple times", func() {
 			It("flushes existing NATS chain before adding new rules", func() {
-				err := manager.SetupNATSFirewall("nats://192.168.1.100:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100:4222"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
 
-				err = manager.SetupNATSFirewall("nats://192.168.1.200:4222")
+				err = manager.SetupNATSFirewall([]string{"nats://192.168.1.200:4222"})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fakeConn.FlushChainCallCount()).To(Equal(2))
 			})
@@ -477,7 +517,7 @@ var _ = Describe("NftablesFirewall", func() {
 			It("returns an error", func() {
 				fakeConn.FlushReturns(errors.New("flush failed"))
 
-				err := manager.SetupNATSFirewall("nats://192.168.1.100:4222")
+				err := manager.SetupNATSFirewall([]string{"nats://192.168.1.100:4222"})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Flushing nftables rules"))
 			})
@@ -492,7 +532,7 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		It("delegates to SetupNATSFirewall", func() {
-			err := hook.BeforeConnect("nats://192.168.1.100:4222")
+			err := hook.BeforeConnect([]string{"nats://192.168.1.100:4222"})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fakeConn.AddTableCallCount()).To(Equal(1))
@@ -501,15 +541,27 @@ var _ = Describe("NftablesFirewall", func() {
 		})
 
 		It("returns nil on success", func() {
-			err := hook.BeforeConnect("nats://192.168.1.100:4222")
+			err := hook.BeforeConnect([]string{"nats://192.168.1.100:4222"})
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("returns error when SetupNATSFirewall fails", func() {
 			fakeConn.FlushReturns(errors.New("flush failed"))
 
-			err := hook.BeforeConnect("nats://192.168.1.100:4222")
+			err := hook.BeforeConnect([]string{"nats://192.168.1.100:4222"})
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("accepts multiple URLs and creates rules for each", func() {
+			err := hook.BeforeConnect([]string{
+				"nats://192.168.1.100:4222",
+				"nats://192.168.1.200:4222",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			// conntrack + (allow + block) * 2 = 5 rules, all in one flush
+			Expect(fakeConn.AddRuleCallCount()).To(Equal(5))
+			Expect(fakeConn.FlushCallCount()).To(Equal(1))
 		})
 	})
 

@@ -48,6 +48,7 @@ var _ = BeforeSuite(func() {
 	templateEphemeralDiskSettings(natsIP, `"/dev/sdb"`, "second-disk-settings.json")
 	templateEphemeralDiskSettings(natsIP, `"1"`, "second-disk-digit-settings.json")
 	templateEphemeralDiskSettings(natsIP, `{"path": "/dev/sdc"}`, "third-disk-settings.json")
+	templateMultiNatsSettings(natsIP, `""`, "multi-nats-settings.json")
 
 	sshClient, err := utils.GetSSHTunnelClient()
 	Expect(err).ToNot(HaveOccurred())
@@ -102,6 +103,37 @@ func templateEphemeralDiskSettings(natsPrivateIP, ephemeralDiskConfig, filename 
 	Expect(err).NotTo(HaveOccurred())
 
 	outputFile, err := os.CreateTemp("", "agent-settings")
+	Expect(err).NotTo(HaveOccurred())
+	defer outputFile.Close() //nolint:errcheck
+
+	err = settingsTmpl.Execute(outputFile, agentSettings)
+	Expect(err).ToNot(HaveOccurred())
+	err = outputFile.Close()
+	Expect(err).ToNot(HaveOccurred())
+
+	command := exec.Command("scp", outputFile.Name(), fmt.Sprintf("%s:/bosh/agent-configuration/%s", utils.AgentIP(), filename))
+	session, err := gexec.Start(command, io.Discard, io.Discard)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+}
+
+func templateMultiNatsSettings(natsPrivateIP, ephemeralDiskConfig, filename string) {
+	agentSettings := BoshAgentSettings{
+		NatsPrivateIP:       natsPrivateIP,
+		EphemeralDiskConfig: ephemeralDiskConfig,
+		AgentIP:             utils.AgentIP(),
+		AgentNetmask:        utils.AgentNetmask(),
+		AgentGateway:        utils.AgentGateway(),
+		NatsCA:              strings.Replace(utils.NatsCA(), "\n", "\\n", -1),          //nolint:staticcheck
+		NatsCertificate:     strings.Replace(utils.NatsCertificate(), "\n", "\\n", -1), //nolint:staticcheck
+		NatsPrivateKey:      strings.Replace(utils.NatsPrivateKey(), "\n", "\\n", -1),  //nolint:staticcheck
+	}
+	settingsTmpl, err := template.ParseFiles(
+		filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "agent-configuration", "multi-nats-settings.json.tmpl"),
+	)
+	Expect(err).NotTo(HaveOccurred())
+
+	outputFile, err := os.CreateTemp("", "multi-nats-agent-settings")
 	Expect(err).NotTo(HaveOccurred())
 	defer outputFile.Close() //nolint:errcheck
 
