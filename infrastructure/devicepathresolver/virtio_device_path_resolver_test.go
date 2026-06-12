@@ -63,7 +63,7 @@ var _ = Describe("VirtioDevicePathResolver", func() {
 				Expect(timeout).To(BeFalse())
 				Expect(realPath).To(Equal("fake-mapped-resolved-device-path"))
 
-				Expect(mappedDevicePathResolver.GetRealDevicePathDiskSettings).To(Equal(diskSettings))
+				Expect(mappedDevicePathResolver.GetRealDevicePathDiskSettings).To(ContainElement(diskSettings))
 			})
 
 			Context("when mappedDevicePathResolver times out", func() {

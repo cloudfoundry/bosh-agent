@@ -156,6 +156,8 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 		devicePathResolver = devicepathresolver.NewFallbackDevicePathResolver(symlinkLunResolver, devicePathResolver, logger)
 	}
 
+	// Symlink device resolver for NVMe instance storage discovery (filtering out EBS/managed disks)
+	symlinkDeviceResolver := devicepathresolver.NewSymlinkDeviceResolver(fs, udev, logger)
 	uuidGenerator := boshuuid.NewGenerator()
 	logsTarProvider := boshlogstarprovider.NewLogsTarProvider(compressor, copier, dirProvider)
 
@@ -174,6 +176,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 			ubuntuCertManager,
 			monitRetryStrategy,
 			devicePathResolver,
+			symlinkDeviceResolver,
 			bootstrapState,
 			options.Linux,
 			logger,

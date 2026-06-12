@@ -22,6 +22,7 @@ import (
 	fakeuuidgen "github.com/cloudfoundry/bosh-utils/uuid/fakes"
 
 	fakelogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider/logstarproviderfakes"
+	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	fakedpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver/fakes"
 	. "github.com/cloudfoundry/bosh-agent/v2/platform"
 	fakecdrom "github.com/cloudfoundry/bosh-agent/v2/platform/cdrom/fakes"
@@ -33,6 +34,7 @@ import (
 	fakenet "github.com/cloudfoundry/bosh-agent/v2/platform/net/fakes"
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
 	fakestats "github.com/cloudfoundry/bosh-agent/v2/platform/stats/fakes"
+	fakeudev "github.com/cloudfoundry/bosh-agent/v2/platform/udevdevice/fakes"
 	boshvitals "github.com/cloudfoundry/bosh-agent/v2/platform/vitals"
 	"github.com/cloudfoundry/bosh-agent/v2/servicemanager/servicemanagerfakes"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -47,6 +49,7 @@ var _ = Describe("LinuxPlatform", func() {
 		diskManager                *diskfakes.FakeManager
 		dirProvider                boshdirs.Provider
 		devicePathResolver         *fakedpresolv.FakeDevicePathResolver
+		symlinkDeviceResolver      *boshdpresolv.SymlinkDeviceResolver
 		platform                   Platform
 		cdutil                     *fakecdrom.FakeCDUtil
 		compressor                 boshcmd.Compressor
@@ -89,6 +92,8 @@ var _ = Describe("LinuxPlatform", func() {
 		certManager = new(certfakes.FakeManager)
 		monitRetryStrategy = fakeretry.NewFakeRetryStrategy()
 		devicePathResolver = fakedpresolv.NewFakeDevicePathResolver()
+		symlinkDeviceResolver = boshdpresolv.NewSymlinkDeviceResolver(fs, fakeudev.NewFakeUdevDevice(), logger)
+
 		fakeDefaultNetworkResolver = &fakenet.FakeDefaultNetworkResolver{}
 		serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
@@ -148,6 +153,7 @@ var _ = Describe("LinuxPlatform", func() {
 			certManager,
 			monitRetryStrategy,
 			devicePathResolver,
+			symlinkDeviceResolver,
 			state,
 			options,
 			logger,
@@ -466,6 +472,7 @@ bosh_foobar:...`
 					certManager,
 					monitRetryStrategy,
 					devicePathResolver,
+					symlinkDeviceResolver,
 					state,
 					options,
 					logger,
@@ -703,6 +710,7 @@ bosh_foobar:...`
 						certManager,
 						monitRetryStrategy,
 						devicePathResolver,
+						symlinkDeviceResolver,
 						state,
 						options,
 						logger,
@@ -1904,6 +1912,135 @@ Number  Start   End     Size    File system  Name             Flags
 
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(cmdRunner.RunCommands)).To(Equal(0))
+			})
+		})
+
+		Context("NVMe instance storage discovery", func() {
+			BeforeEach(func() {
+				// Enable NVMe instance storage discovery by setting the managed volume pattern
+				options.InstanceStorageManagedVolumePattern = "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*"
+
+				devicePathResolver.GetRealDevicePathStub = func(diskSettings boshsettings.DiskSettings) (string, bool, error) {
+					return diskSettings.Path, false, nil
+				}
+			})
+
+			It("discovers instance storage by excluding EBS volumes via symlinks", func() {
+				// Setup: 3 NVMe devices, 2 are EBS (nvme0n1, nvme1n1), 1 is instance storage (nvme2n1)
+
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme2n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlinks for EBS volumes
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.Symlink("/dev/nvme1n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Set up glob patterns for the symlinkDeviceResolver
+				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1", "/dev/nvme1n1", "/dev/nvme2n1"})
+				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
+					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol456",
+				})
+
+				// Mock parted output for nvme2n1 (instance storage - needs partitioning)
+				cmdRunner.AddCmdResult("parted -s /dev/nvme2n1 p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/nvme2n1: unrecognised disk label",
+				})
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/nvme2n1", "p"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/nvme2n1", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
+			})
+
+			It("returns error when no instance storage devices found but CPI expects some", func() {
+				// Create the NVMe device file
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
+				// All NVMe devices are EBS - no instance storage available
+				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1"})
+				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
+					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+				})
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme2n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Expected 1 instance storage devices but discovered 0"))
+			})
+
+			It("returns error when globbing NVMe devices fails", func() {
+				fs.GlobErr = errors.New("permission denied reading /dev")
+
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme1n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Globbing NVMe devices"))
+			})
+
+			It("returns an error when a managed volume symlink cannot be resolved", func() {
+				// Create the NVMe device files
+				err := fs.WriteFileString("/dev/nvme0n1", "")
+				Expect(err).ToNot(HaveOccurred())
+				err = fs.WriteFileString("/dev/nvme1n1", "")
+				Expect(err).ToNot(HaveOccurred())
+
+				// Create symlink directory
+				err = fs.MkdirAll("/dev/disk/by-id", os.FileMode(0750))
+				Expect(err).ToNot(HaveOccurred())
+
+				// Set up NVMe devices: nvme0n1 (EBS), nvme1n1 (instance storage)
+				fs.SetGlob("/dev/nvme*n1", []string{"/dev/nvme0n1", "/dev/nvme1n1"})
+				fs.SetGlob("/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_*", []string{
+					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123",
+					"/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_broken", // broken symlink
+				})
+				err = fs.Symlink("/dev/nvme0n1", "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_vol123")
+				Expect(err).ToNot(HaveOccurred())
+				// nvme-Amazon_Elastic_Block_Store_broken has no symlink target - must fail hard
+
+				err = platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/nvme0n1"}})
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("nvme-Amazon_Elastic_Block_Store_broken"))
+			})
+
+			It("uses CPI paths directly for non-NVMe devices", func() {
+				// For non-NVMe devices, the device path resolver is used directly
+				devicePathResolver.RealDevicePath = "/dev/xvdb"
+
+				cmdRunner.AddCmdResult("parted -s /dev/xvdb p", fakesys.FakeCmdResult{
+					Error:  errors.New("unrecognised disk label"),
+					Stdout: "Error: /dev/xvdb: unrecognised disk label",
+				})
+
+				err := platform.SetupRawEphemeralDisks([]boshsettings.DiskSettings{{Path: "/dev/xvdb"}})
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(cmdRunner.RunCommands)).To(Equal(2))
+				Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "p"}))
+				Expect(cmdRunner.RunCommands[1]).To(Equal([]string{"parted", "-s", "/dev/xvdb", "mklabel", "gpt", "unit", "%", "mkpart", "raw-ephemeral-0", "0", "100"}))
 			})
 		})
 	})
@@ -3799,6 +3936,7 @@ from-device-path  dm-0 NETAPP  ,LUN C-Mode
 					certManager,
 					monitRetryStrategy,
 					devicePathResolver,
+					symlinkDeviceResolver,
 					state,
 					options,
 					logger,

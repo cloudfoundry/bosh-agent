@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -78,6 +79,14 @@ type LinuxOptions struct {
 	// possible values: virtio, scsi, iscsi, ""
 	DevicePathResolutionType string
 
+	// Pattern for identifying IaaS-managed volumes (e.g., EBS on AWS)
+	// Used to filter out non-instance storage on NVMe systems
+	InstanceStorageManagedVolumePattern string
+
+	// Pattern for discovering all potential instance storage devices
+	// Used for device enumeration on NVMe systems
+	InstanceStorageDevicePattern string
+
 	// Strategy for resolving ephemeral & persistent disk partitioners;
 	// possible values: parted, "" (default is sfdisk if disk < 2TB, parted otherwise)
 	PartitionerType string
@@ -114,6 +123,7 @@ type linux struct {
 	certManager            boshcert.Manager
 	monitRetryStrategy     boshretry.RetryStrategy
 	devicePathResolver     boshdpresolv.DevicePathResolver
+	symlinkDeviceResolver  *boshdpresolv.SymlinkDeviceResolver
 	options                LinuxOptions
 	state                  *BootstrapState
 	logger                 boshlog.Logger
@@ -139,6 +149,7 @@ func NewLinuxPlatform(
 	certManager boshcert.Manager,
 	monitRetryStrategy boshretry.RetryStrategy,
 	devicePathResolver boshdpresolv.DevicePathResolver,
+	symlinkDeviceResolver *boshdpresolv.SymlinkDeviceResolver,
 	state *BootstrapState,
 	options LinuxOptions,
 	logger boshlog.Logger,
@@ -162,6 +173,7 @@ func NewLinuxPlatform(
 		certManager:            certManager,
 		monitRetryStrategy:     monitRetryStrategy,
 		devicePathResolver:     devicePathResolver,
+		symlinkDeviceResolver:  symlinkDeviceResolver,
 		state:                  state,
 		options:                options,
 		logger:                 logger,
@@ -735,19 +747,24 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		return nil
 	}
 
-	p.logger.Info(logTag, "Setting up raw ephemeral disks")
+	if len(devices) == 0 {
+		return nil
+	}
 
-	for i, device := range devices {
-		realPath, _, err := p.devicePathResolver.GetRealDevicePath(device)
-		if err != nil {
-			return bosherr.WrapError(err, "Getting real device path")
-		}
+	p.logger.Info(logTag, "Setting up %d raw ephemeral disk(s)", len(devices))
 
+	instanceStorageDevices, err := p.discoverInstanceStorageDevices(devices)
+	if err != nil {
+		return bosherr.WrapError(err, "Discovering instance storage devices")
+	}
+
+	// Partition each discovered device
+	for i, devicePath := range instanceStorageDevices {
 		// check if device is already partitioned correctly
 		stdout, stderr, _, err := p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"p",
 		)
 
@@ -755,21 +772,22 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 			// "unrecognised disk label" is acceptable, since the disk may not have been partitioned
 			if !strings.Contains(stdout, "unrecognised disk label") &&
 				!strings.Contains(stderr, "unrecognised disk label") {
-				return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+				return bosherr.WrapErrorf(err, "Checking partition on %s", devicePath)
 			}
 		}
 
 		if strings.Contains(stdout, "Partition Table: gpt") &&
 			strings.Contains(stdout, "raw-ephemeral-") {
+			p.logger.Info(logTag, "Device %s already partitioned, skipping", devicePath)
 			continue
 		}
 
 		// change to gpt partition type, change units to percentage, make partition with name and span from 0-100%
-		p.logger.Info(logTag, "Creating partition on `%s'", realPath)
+		p.logger.Info(logTag, "Creating partition on %s as raw-ephemeral-%d", devicePath, i)
 		_, _, _, err = p.cmdRunner.RunCommand(
 			"parted",
 			"-s",
-			realPath,
+			devicePath,
 			"mklabel",
 			"gpt",
 			"unit",
@@ -781,11 +799,98 @@ func (p linux) SetupRawEphemeralDisks(devices []boshsettings.DiskSettings) (err 
 		)
 
 		if err != nil {
-			return bosherr.WrapError(err, "Setting up raw ephemeral disks")
+			return bosherr.WrapErrorf(err, "Creating partition on %s", devicePath)
 		}
 	}
 
 	return nil
+}
+
+// discoverInstanceStorageDevices finds the actual device paths for instance storage.
+// For NVMe devices with a configured managed volume pattern, it uses symlink-based
+// filtering to exclude IaaS-managed volumes (e.g., EBS on AWS).
+// Otherwise, it uses the DevicePathResolver to resolve each device directly.
+func (p linux) discoverInstanceStorageDevices(devices []boshsettings.DiskSettings) ([]string, error) {
+	if len(devices) == 0 {
+		return []string{}, nil
+	}
+
+	// Use NVMe symlink filtering if:
+	// 1. A managed volume pattern is configured (tells us what to exclude)
+	// 2. The CPI reports NVMe device paths
+	// 3. The symlink resolver is available
+	hasPattern := p.options.InstanceStorageManagedVolumePattern != ""
+	hasResolver := p.symlinkDeviceResolver != nil
+	hasNVMe := p.hasNVMeDevices(devices)
+	p.logger.Debug(logTag, "Instance storage resolution: hasPattern=%v, hasResolver=%v, hasNVMe=%v", hasPattern, hasResolver, hasNVMe)
+
+	if hasPattern && hasResolver && hasNVMe {
+		return p.discoverNVMeInstanceStorage(devices)
+	}
+
+	return p.discoverIdentityInstanceStorage(devices)
+}
+
+// hasNVMeDevices checks if any device path from the CPI is an NVMe device.
+func (p linux) hasNVMeDevices(devices []boshsettings.DiskSettings) bool {
+	for _, device := range devices {
+		if strings.HasPrefix(device.Path, boshdpresolv.NVMeDevicePathPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// discoverNVMeInstanceStorage discovers NVMe instance storage by filtering out
+// IaaS-managed volumes (e.g., EBS on AWS, Managed Disks on Azure) using symlinks.
+func (p linux) discoverNVMeInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
+	nvmePattern := p.options.InstanceStorageDevicePattern
+	if nvmePattern == "" {
+		nvmePattern = boshdpresolv.NVMeDevicePattern
+	}
+	p.logger.Debug(logTag, "Discovering NVMe instance storage: device pattern=%s, managed volume pattern=%s", nvmePattern, p.options.InstanceStorageManagedVolumePattern)
+
+	allNvmeDevices, err := p.symlinkDeviceResolver.GetDevicesByPattern(nvmePattern)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Globbing NVMe devices")
+	}
+	p.logger.Debug(logTag, "Found NVMe devices: %v", allNvmeDevices)
+
+	managedDevices, err := p.symlinkDeviceResolver.ResolveSymlinksToDevices(p.options.InstanceStorageManagedVolumePattern)
+	if err != nil {
+		return nil, bosherr.WrapError(err, "Resolving managed disk symlinks")
+	}
+	p.logger.Debug(logTag, "Found %d managed (IaaS) devices to exclude: %v", len(managedDevices), managedDevices)
+
+	instanceStorage := p.symlinkDeviceResolver.FilterDevices(allNvmeDevices, managedDevices)
+	sort.Strings(instanceStorage)
+
+	for _, devicePath := range instanceStorage {
+		p.logger.Info(logTag, "Discovered instance storage: %s", devicePath)
+	}
+
+	if len(instanceStorage) != len(devices) {
+		return nil, bosherr.Errorf("Expected %d instance storage devices but discovered %d: %v",
+			len(devices), len(instanceStorage), instanceStorage)
+	}
+
+	return instanceStorage, nil
+}
+
+// discoverIdentityInstanceStorage uses the DevicePathResolver for each device.
+func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettings) ([]string, error) {
+	paths := make([]string, len(devices))
+	for i, device := range devices {
+		realPath, timedOut, err := p.devicePathResolver.GetRealDevicePath(device)
+		if timedOut {
+			return nil, bosherr.Errorf("Timed out resolving device path for %+v", device)
+		}
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Getting device %+v path", device)
+		}
+		paths[i] = realPath
+	}
+	return paths, nil
 }
 
 func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
