@@ -91,9 +91,10 @@ resources:
     tags: [ broadcom ]
 
   - name: bosh-agent-docker-image
-    type: docker-image
+    type: registry-image
     source:
-      repository: bosh/agent
+      repository: docker.io/bosh/agent
+      tag: latest
       username: ((docker.username))
       password: ((docker.password))
 
@@ -270,10 +271,28 @@ jobs:
       - task: build-docker-args
         file: bosh-agent-ci/ci/docker/build-args.yml
         image: bosh-agent-registry-image
+      - task: build-image
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-agent-ci
+            - name: docker-build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-agent-ci/ci/docker
+            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+          run:
+            path: build
       - put: bosh-agent-docker-image
+        no_get: true
         params:
-          build: bosh-agent-ci/ci/docker/
-          build_args_file: docker-build-args/docker-build-args.json
+          image: image/image.tar
 
   - name: test-unit
     plan:
