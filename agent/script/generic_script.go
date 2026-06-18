@@ -84,6 +84,7 @@ func (s GenericScript) Run() error {
 	command := cmd.BuildCommand(s.path)
 	command.Stdout = stdoutFile
 	command.Stderr = stderrFile
+	command.SpawnWithLowerPriority = true
 
 	for key, val := range s.env {
 		command.Env[key] = val
