@@ -140,10 +140,23 @@ var _ = Describe("MacAddressDetector", func() {
 					}))
 				})
 
+				It("includes the interface when the ifindex file is missing", func() {
+					stubInterfacesWithVirtual(map[string]string{
+						"aa:bb": "eth0",
+					}, nil, nil)
+
+					interfacesByMacAddress, err := macAddressDetector.DetectMacAddresses()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(interfacesByMacAddress).To(HaveKeyWithValue("aa:bb", "eth0"))
+				})
+
 				It("includes the interface when the udev data file is missing", func() {
 					stubInterfacesWithVirtual(map[string]string{
 						"aa:bb": "eth0",
 					}, nil, nil)
+					// ifindex present but no /run/udev/data/n<ifindex> file
+					err := fs.WriteFileString("/sys/class/net/eth0/ifindex", "2\n")
+					Expect(err).NotTo(HaveOccurred())
 
 					interfacesByMacAddress, err := macAddressDetector.DetectMacAddresses()
 					Expect(err).ToNot(HaveOccurred())
