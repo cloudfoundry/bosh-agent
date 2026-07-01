@@ -20,6 +20,7 @@ See [previous release notes](https://github.com/cloudfoundry/bosh-agent/releases
 _Does this introduce changes that would require operators to take care in order to upgrade without a failure?_
 
 ### Tag your pair, your PM, and/or team!
+
 _It's helpful to tag a few other folks on your team or your team alias in case we need to follow up later._
 
 ### AI Review Feedback
