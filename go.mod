@@ -3,13 +3,13 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.25.0
 
 require (
-	code.cloudfoundry.org/clock v1.76.0
+	code.cloudfoundry.org/clock v1.77.0
 	code.cloudfoundry.org/tlsconfig v0.53.0
 	github.com/Microsoft/hcsshim v0.14.1
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.6
-	github.com/cloudfoundry/bosh-davcli v0.0.484
-	github.com/cloudfoundry/bosh-utils v0.0.623
+	github.com/cloudfoundry/bosh-davcli v0.0.485
+	github.com/cloudfoundry/bosh-utils v0.0.624
 	github.com/cloudfoundry/gosigar v1.3.122
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -63,7 +63,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/jpillora/backoff v1.0.0 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/mdlayher/netlink v1.11.2 // indirect
 	github.com/mdlayher/socket v0.6.1 // indirect
@@ -81,8 +81,8 @@ require (
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/telemetry v0.0.0-20260626140120-b709645a9e92 // indirect
 	golang.org/x/text v0.38.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260622175928-b703f567277d // indirect
-	google.golang.org/grpc v1.81.1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
+	google.golang.org/grpc v1.82.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	honnef.co/go/tools v0.7.0 // indirect
 )
