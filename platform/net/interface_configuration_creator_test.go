@@ -281,6 +281,26 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 					})
 				})
 
+				Context("and the dhcp network has default gateway", func() {
+					BeforeEach(func() {
+						dhcpNetwork.Default = []string{"gateway"}
+						networks["foo"] = staticNetwork
+						networks["bar"] = dhcpNetwork
+						interfacesByMAC[staticNetwork.Mac] = "static-interface-name"
+						interfacesByMAC[dhcpNetwork.Mac] = "dhcp-interface-name"
+					})
+
+					It("sets IsDefaultForGateway=true on the DHCP configuration", func() {
+						_, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(dhcpInterfaceConfigurations).To(ConsistOf(DHCPInterfaceConfiguration{
+							Name:                "dhcp-interface-name",
+							IsDefaultForGateway: true,
+						}))
+					})
+				})
+
 				Context("and some networks have no MAC address", func() {
 					BeforeEach(func() {
 						networks["foo"] = staticNetworkWithoutMAC

@@ -531,6 +531,9 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInter
 	dhcpSection := &ini.Section{Name: "DHCP"}
 	dhcpSection.AddKey("UseDomains", "yes")
 	dhcpSection.AddKey("UseMTU", "yes")
+	if !configs[0].IsDefaultForGateway {
+		dhcpSection.AddKey("UseRoutes", "no")
+	}
 	file.AppendSection(dhcpSection)
 
 	// Route Sections
