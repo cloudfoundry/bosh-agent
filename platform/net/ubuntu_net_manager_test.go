@@ -623,7 +623,6 @@ DNS=8.8.8.8
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseGateway=no
 
 [Route]
 Destination=10.0.0.0/8
