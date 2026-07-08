@@ -999,7 +999,7 @@ DNS=9.9.9.9
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseGateway=no
+UseRoutes=no
 
 `))
 
@@ -1021,7 +1021,7 @@ DNS=9.9.9.9
 `))
 		})
 
-		It("writes UseGateway=no for non-gateway DHCP NIC in multi-NIC setup", func() {
+		It("writes UseRoutes=no for non-gateway DHCP NIC in multi-NIC setup", func() {
 			primaryDHCPNetwork := boshsettings.Network{
 				Type:    "dynamic",
 				Default: []string{"gateway", "dns"},
@@ -1073,12 +1073,12 @@ DNS=8.8.8.8
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseGateway=no
+UseRoutes=no
 
 `))
 		})
 
-		It("does not write UseGateway=no when one of the DHCP networks on a shared interface is the gateway default", func() {
+		It("does not write UseRoutes=no when one of the DHCP networks on a shared interface is the gateway default", func() {
 			sharedMAC := "fake-shared-mac-address"
 			gatewayDHCPNetwork := boshsettings.Network{
 				Type:    "dynamic",
