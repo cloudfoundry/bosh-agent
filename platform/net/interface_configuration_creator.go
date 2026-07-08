@@ -112,6 +112,15 @@ func (configs DHCPInterfaceConfigurations) HasVersion6() bool {
 	return false
 }
 
+func (configs DHCPInterfaceConfigurations) IsDefaultForGateway() bool {
+	for _, config := range configs {
+		if config.IsDefaultForGateway {
+			return true
+		}
+	}
+	return false
+}
+
 type InterfaceConfigurationCreator interface {
 	CreateInterfaceConfigurations(boshsettings.Networks, map[string]string) ([]StaticInterfaceConfiguration, []DHCPInterfaceConfiguration, error)
 }
