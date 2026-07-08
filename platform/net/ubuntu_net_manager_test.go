@@ -623,7 +623,7 @@ DNS=8.8.8.8
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseRoutes=no
+UseGateway=no
 
 [Route]
 Destination=10.0.0.0/8
@@ -843,11 +843,13 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"networkctl", "reload"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
 
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).To(Equal(initialDhcpConfig))
 
@@ -889,11 +891,13 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			dhcpConfig := fs.GetFileTestStat("/etc/dhcp/dhclient.conf")
 			Expect(dhcpConfig.StringContents()).To(Equal(initialDhcpConfig))
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"networkctl", "reload"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
 		})
 
 		It("restarts the networks if /etc/dhcp/dhclient.conf changes", func() {
@@ -926,11 +930,13 @@ prepend domain-name-servers 8.8.8.8, 9.9.9.9;
 			err = netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetwork, "static-network": staticNetwork}, nil, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(len(cmdRunner.RunCommands)).To(Equal(4))
+			Expect(len(cmdRunner.RunCommands)).To(Equal(6))
 			Expect(cmdRunner.RunCommands[0]).To(Equal([]string{"pkill", "dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethdhcp.dhclient"}))
 			Expect(cmdRunner.RunCommands[1:3]).To(ContainElement([]string{"resolvconf", "-d", "ethstatic.dhclient"}))
-			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"/var/vcap/bosh/bin/restart_networking"}))
+			Expect(cmdRunner.RunCommands[3]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
+			Expect(cmdRunner.RunCommands[4]).To(Equal([]string{"networkctl", "reload"}))
+			Expect(cmdRunner.RunCommands[5]).To(Equal([]string{"networkctl", "--no-pager", "status", "eth0", "eth1"}))
 
 			Expect(fs.ReadFileString("/etc/dhcp/dhclient.conf")).ToNot(Equal(initialDhcpConfig))
 		})
@@ -994,7 +1000,7 @@ DNS=9.9.9.9
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseRoutes=no
+UseGateway=no
 
 `))
 
@@ -1016,7 +1022,7 @@ DNS=9.9.9.9
 `))
 		})
 
-		It("writes UseRoutes=no for non-gateway DHCP NIC in multi-NIC setup", func() {
+		It("writes UseGateway=no for non-gateway DHCP NIC in multi-NIC setup", func() {
 			primaryDHCPNetwork := boshsettings.Network{
 				Type:    "dynamic",
 				Default: []string{"gateway", "dns"},
@@ -1068,12 +1074,12 @@ DNS=8.8.8.8
 [DHCP]
 UseDomains=yes
 UseMTU=yes
-UseRoutes=no
+UseGateway=no
 
 `))
 		})
 
-		It("does not write UseRoutes=no when one of the DHCP networks on a shared interface is the gateway default", func() {
+		It("does not write UseGateway=no when one of the DHCP networks on a shared interface is the gateway default", func() {
 			sharedMAC := "fake-shared-mac-address"
 			gatewayDHCPNetwork := boshsettings.Network{
 				Type:    "dynamic",

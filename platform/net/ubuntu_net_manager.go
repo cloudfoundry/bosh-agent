@@ -320,10 +320,23 @@ func (net UbuntuNetManager) ifaceAddresses(staticConfigs []StaticInterfaceConfig
 }
 
 func (net UbuntuNetManager) restartNetworking() error {
-	_, _, _, err := net.cmdRunner.RunCommand("/var/vcap/bosh/bin/restart_networking")
+	// Log current networkd state before applying changes.
+	stdout, stderr, _, _ := net.cmdRunner.RunCommand("networkctl", "--no-pager", "status", "eth0", "eth1")
+	net.logger.Info(UbuntuNetManagerLogTag, "networkctl status (before reload): stdout=%s stderr=%s", stdout, stderr)
+
+	// Use networkctl reload instead of a full daemon restart: reload re-reads the
+	// .network files on disk and reconfigures affected interfaces in-place, leaving
+	// existing DHCP leases and IP addresses intact.  This avoids the brief complete
+	// network outage that `systemctl restart systemd-networkd` would cause.
+	_, _, _, err := net.cmdRunner.RunCommand("networkctl", "reload")
 	if err != nil {
-		return err
+		return bosherr.WrapError(err, "Reloading networkd configuration")
 	}
+
+	// Brief pause for networkd to apply route changes, then log the resulting state.
+	time.Sleep(2 * time.Second)
+	stdout, stderr, _, _ = net.cmdRunner.RunCommand("networkctl", "--no-pager", "status", "eth0", "eth1")
+	net.logger.Info(UbuntuNetManagerLogTag, "networkctl status (after reload): stdout=%s stderr=%s", stdout, stderr)
 	return nil
 }
 
@@ -532,7 +545,7 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInter
 	dhcpSection.AddKey("UseDomains", "yes")
 	dhcpSection.AddKey("UseMTU", "yes")
 	if !configs.IsDefaultForGateway() {
-		dhcpSection.AddKey("UseRoutes", "no")
+		dhcpSection.AddKey("UseGateway", "no")
 	}
 	file.AppendSection(dhcpSection)
 
