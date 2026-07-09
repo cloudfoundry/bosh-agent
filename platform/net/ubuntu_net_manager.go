@@ -380,6 +380,16 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 
 	anyChanged := false
 
+	anyIsDefaultForGateway := dhcpConfigs.IsDefaultForGateway()
+	if !anyIsDefaultForGateway {
+		for _, c := range staticConfigs {
+			if c.IsDefaultForGateway {
+				anyIsDefaultForGateway = true
+				break
+			}
+		}
+	}
+
 	dhcpConfigsForOneInterface := make(map[string]DHCPInterfaceConfigurations)
 	for _, dynamicAddressConfiguration := range dhcpConfigs {
 		dhcpConfigsForOneInterface[dynamicAddressConfiguration.Name] = append(
@@ -389,7 +399,8 @@ func (net UbuntuNetManager) writeNetworkInterfaces(
 	}
 
 	for interfaceName, dynamicAddressConfigurations := range dhcpConfigsForOneInterface {
-		changed, err := net.writeDynamicInterfaceConfiguration(dynamicAddressConfigurations, dnsServers, opts)
+		isDefaultGateway := !anyIsDefaultForGateway || dynamicAddressConfigurations.IsDefaultForGateway()
+		changed, err := net.writeDynamicInterfaceConfiguration(dynamicAddressConfigurations, dnsServers, isDefaultGateway, opts)
 		if err != nil {
 			return false, bosherr.WrapError(err, fmt.Sprintf("Updating network configuration for %s", interfaceName))
 		}
@@ -502,7 +513,7 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(config StaticInter
 	return net.fs.ConvergeFileContents(configPath, buffer.Bytes(), opts)
 }
 
-func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInterfaceConfigurations, dnsServers []string, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
+func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInterfaceConfigurations, dnsServers []string, isDefaultGateway bool, opts boshsys.ConvergeFileContentsOpts) (bool, error) {
 	var err error
 	// all configs share the same name, so we just use the name from the first config
 	configPath := interfaceConfigurationFile(configs[0].Name)
@@ -531,6 +542,17 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInter
 	dhcpSection := &ini.Section{Name: "DHCP"}
 	dhcpSection.AddKey("UseDomains", "yes")
 	dhcpSection.AddKey("UseMTU", "yes")
+	if !isDefaultGateway {
+		// UseRoutes=no prevents systemd-networkd from installing the DHCP-supplied
+		// default gateway (and any classless static routes) for this NIC, so only
+		// the designated default-gateway NIC installs a default route.
+		//
+		// UseGateway=no would be more precise (gateway only, routes kept), but it
+		// was introduced in systemd 250. Ubuntu 22.04 Jammy ships systemd 249, so
+		// UseGateway= is silently ignored on current stemcells. UseRoutes=no has
+		// been supported since systemd 217 and works on all supported stemcells.
+		dhcpSection.AddKey("UseRoutes", "no")
+	}
 	file.AppendSection(dhcpSection)
 
 	// Route Sections
