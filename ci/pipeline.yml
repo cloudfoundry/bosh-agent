@@ -93,17 +93,17 @@ resources:
   - name: bosh-agent-docker-image
     type: registry-image
     source:
-      repository: docker.io/bosh/agent
+      repository: ghcr.io/cloudfoundry/bosh-agent
       tag: latest
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: bosh-agent-registry-image
     type: registry-image
     source:
-      repository: docker.io/bosh/agent
-      username: ((docker.username))
-      password: ((docker.password))
+      repository: ghcr.io/cloudfoundry/bosh-agent
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: golang-release-image
     type: registry-image
@@ -113,10 +113,10 @@ resources:
   - name: integration-postgres-15-image
     type: registry-image
     source:
-      repository: docker.io/bosh/main-postgres-15
+      repository: ghcr.io/cloudfoundry/bosh/main-postgres-15
       tag: main
-      username: ((docker.username))
-      password: ((docker.password))
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
 
   - name: bosh
     type: git
@@ -249,7 +249,6 @@ jobs:
       - in_parallel:
           - get: bosh-agent
           - get: bosh-agent-ci
-          - get: bosh-agent-registry-image
           - get: bosh-cli-github-release
             resource: bosh-cli
             trigger: true
@@ -270,7 +269,7 @@ jobs:
             trigger: true
       - task: build-docker-args
         file: bosh-agent-ci/ci/docker/build-args.yml
-        image: bosh-agent-registry-image
+        image: golang-release-image
       - task: build-image
         privileged: true
         config:
