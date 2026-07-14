@@ -206,6 +206,57 @@ Gateway=2001:db8::1
 `)).To(BeTrue())
 		})
 
+		It("groups aliased IPv4 and IPv6 DHCP networks into one networkd configuration", func() {
+			ipv4Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "1.2.3.4",
+				Netmask: "255.255.255.0",
+				Gateway: "3.4.5.6",
+				UseDHCP: true,
+				Alias:   "eth0",
+			}
+			ipv6Net := boshsettings.Network{
+				Type:    "manual",
+				IP:      "2001:db8::103",
+				Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+				Gateway: "2001:db8::1",
+				Default: []string{"dns"},
+				DNS:     []string{"2001:4860:4860::8888", "2001:4860:4860::8844"},
+				UseDHCP: true,
+				Alias:   "eth0",
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"eth0": {Mac: "mac1"},
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"ipv4": ipv4Net, "ipv6": ipv6Net}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(kernelIPv6.Enabled).To(BeTrue())
+
+			matches, err := fs.Ls("/etc/systemd/network/")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(matches).To(ConsistOf(
+				"/etc/systemd/network/10_eth0.network",
+			))
+
+			networkConfig := fs.GetFileTestStat("/etc/systemd/network/10_eth0.network")
+			Expect(networkConfig).ToNot(BeNil())
+			Expect(networkConfig.StringContents()).To(ContainSubstring(`
+[Match]
+Name=eth0
+`))
+			Expect(networkConfig.StringContents()).To(ContainSubstring(`
+[Network]
+DHCP=yes
+IPv6AcceptRA=true
+DNS=2001:4860:4860::8888
+DNS=2001:4860:4860::8844
+`))
+			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("[Address]"))
+		})
+
 		It("returns error if enabling IPv6 in kernel fails", func() {
 			static1Net := boshsettings.Network{
 				Type:    "manual",
