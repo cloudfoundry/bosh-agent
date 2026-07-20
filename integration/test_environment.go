@@ -603,7 +603,15 @@ func (t *TestEnvironment) RestartAgent() error {
 }
 
 func (t *TestEnvironment) StopAgent() error {
-	_, err := t.RunCommand("nohup sudo sv stop agent &")
+	waitSeconds := 30
+	if raw := os.Getenv("BOSH_AGENT_SV_STOP_TIMEOUT"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed <= 0 {
+			return fmt.Errorf("BOSH_AGENT_SV_STOP_TIMEOUT must be a positive integer, got %q", raw)
+		}
+		waitSeconds = parsed
+	}
+	_, err := t.RunCommand(fmt.Sprintf("sudo sv -w %d stop agent", waitSeconds))
 	return err
 }
 
