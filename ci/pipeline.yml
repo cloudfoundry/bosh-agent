@@ -623,6 +623,7 @@ jobs:
           DB: postgresql
           RAKE_TASK: "spec:integration"
           COVERAGE: false
+          PARALLEL_TEST_MULTIPLY_PROCESSES: "0.6"
 
   - name: promote
     serial: true
