@@ -150,6 +150,11 @@ resources:
     source:
       name: bosh-azure-hyperv-ubuntu-jammy-go_agent
 
+  - name: azure-stemcell-resolute
+    type: bosh-io-stemcell
+    source:
+      name: bosh-azure-hyperv-ubuntu-resolute
+
   - name: integration-vm-deployment
     type: bosh-deployment
     source:
@@ -315,6 +320,127 @@ jobs:
       - task: test-unit
         file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
         tags: [*worker_tag_windows]
+
+  - name: test-integration-resolute
+    serial: true
+    plan:
+      - in_parallel:
+          - get: bosh-agent
+            trigger: true
+          - get: bosh-agent-ci
+          - get: bosh-ecosystem-concourse
+            tags: [ broadcom ]
+          - get: bosh-agent-registry-image
+            trigger: true
+          - get: azure-stemcell-resolute
+            trigger: true
+      - do:
+          - task: update-resurrection-config
+            image: bosh-agent-registry-image
+            config:
+              platform: linux
+              inputs:
+                - name: bosh-agent
+                - name: bosh-ecosystem-concourse
+              params:
+                BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
+              run:
+                path: /bin/bash
+                args:
+                  - -c
+                  - |
+                    source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
+                    bosh -n update-config --name main-resurrection --type resurrection --var deployment_name=bosh-agent-integration-main bosh-agent/integration/assets/resurrection_config.yml
+          - put: integration-vm-deployment
+            params:
+              cleanup: true
+              manifest: "bosh-agent/integration/assets/agent-deployment.yml"
+              stemcells:
+                - "azure-stemcell-resolute/*.tgz"
+              vars:
+                deployment_name: bosh-agent-integration-main
+                stemcell_os: ubuntu-jammy
+                az: z1
+                vm_type: root_disk_integration
+
+          - task: get-agent-info
+            image: bosh-agent-registry-image
+            config:
+              platform: linux
+              inputs:
+                - name: bosh-agent
+                - name: bosh-ecosystem-concourse
+              outputs:
+                - name: agent-info
+              params:
+                BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                JUMPBOX_URL: "((iaas_directors_azure-director_bosh_jumpbox_ip)):22"
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_azure-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_azure-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_azure-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_azure-director_bosh_credhub_server))
+              run:
+                path: /bin/bash
+                args:
+                  - -c
+                  - |
+                    source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
+                    bosh -d bosh-agent-integration-main instances --json --column ips | jq -r .Tables[].Rows[].ips > agent-info/agent_ip
+                    credhub get -n /concourse/bosh-agent-integration-main/ssh_creds -k private_key > agent-info/agent-creds.pem
+                    chmod 600 agent-info/agent-creds.pem
+          - task: test-integration
+            image: bosh-agent-registry-image
+            file: bosh-agent-ci/ci/tasks/test-integration.yml
+            params:
+              BOSH_DEPLOYMENT: bosh-agent-integration-main
+              BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+              BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+              BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+              BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+              JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+              JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+              JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
+        ensure:
+          in_parallel:
+            - task: update-resurrection-config
+              image: bosh-agent-registry-image
+              config:
+                platform: linux
+                inputs:
+                  - name: bosh-agent
+                  - name: bosh-ecosystem-concourse
+                params:
+                  BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
+                  BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+                  BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
+                  BOSH_CLIENT_SECRET: ((iaas_directors_azure-director_bosh_client.password))
+                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                  JUMPBOX_USERNAME: ((iaas_directors_azure-director_bosh_jumpbox_username))
+                  JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
+                run:
+                  path: /bin/bash
+                  args:
+                    - -c
+                    - |
+                      source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
+                      bosh -n delete-config --name main-resurrection --type resurrection
+            - put: integration-vm-deployment
+              params:
+                cleanup: true
+                delete:
+                  enabled: true
+                  force: true
 
   - name: test-integration
     serial: true
