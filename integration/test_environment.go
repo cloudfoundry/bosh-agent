@@ -611,12 +611,12 @@ func (t *TestEnvironment) StopAgent() error {
 		}
 		waitSeconds = parsed
 	}
-	_, err := t.RunCommand(fmt.Sprintf("if command -v sv >/dev/null 2>&1; then sudo sv -w %d stop agent; else sudo systemctl stop agent; fi", waitSeconds))
+	_, err := t.RunCommand(fmt.Sprintf("if [ -d /run/systemd/system ]; then sudo systemctl stop agent; elif command -v sv >/dev/null 2>&1; then sudo sv -w %d stop agent; fi", waitSeconds))
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
-	_, err := t.RunCommand("if command -v sv >/dev/null 2>&1; then nohup sudo sv start agent & else sudo systemctl start agent; fi")
+	_, err := t.RunCommand("if [ -d /run/systemd/system ]; then sudo systemctl start agent; elif command -v sv >/dev/null 2>&1; then nohup sudo sv start agent & fi")
 	return err
 }
 
@@ -667,6 +667,13 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 			return nil
 		}
 	}
+	
+	logs, _ := t.GetFileContents("/var/vcap/bosh/log/current")
+	t.writerPrinter.Printf("\n--- AGENT LOGS ---\n%s\n------------------\n", logs)
+	
+	journal, _ := t.RunCommand("sudo journalctl -u agent --no-pager | tail -n 100")
+	t.writerPrinter.Printf("\n--- SYSTEMD JOURNAL ---\n%s\n-----------------------\n", journal)
+
 	t.writerPrinter.Printf("StartAgentTunnel %s", err.Error())
 	return err
 }
