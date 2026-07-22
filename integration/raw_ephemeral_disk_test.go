@@ -21,7 +21,7 @@ var _ = Describe("RawEphemeralDisk", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		networks, err := testEnvironment.GetVMNetworks()

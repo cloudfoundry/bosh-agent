@@ -63,11 +63,12 @@ pushd "${bosh_agent_dir}"
 popd
 
 echo -e "\n Installing agent..."
-${ssh_command} "if command -v sv >/dev/null 2>&1; then sudo sv stop agent; else sudo systemctl stop agent; fi" >/dev/null 2>&1
+${ssh_command} "if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then echo "runit detected"; else echo "systemd detected"; fi"
+${ssh_command} "if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then sudo sv stop agent; else sudo systemctl stop agent; fi" >/dev/null 2>&1
 copy_to_remote_host "${bosh_agent_dir}/out/bosh-agent" /var/vcap/bosh/bin/bosh-agent
 
-echo -e "\n Shutting down rsyslog..."
-${ssh_command}  "sudo systemctl disable --now syslog.socket rsyslog.service" >/dev/null 2>&1
+echo -e "\n Shutting down rsyslog (sv-based stemcells only)..."
+${ssh_command} "if [ -f /etc/service/agent/ ] >/dev/null 2>&1; then sudo systemctl disable --now syslog.socket rsyslog.service; fi" >/dev/null 2>&1
 
 echo -e "\n Installing fake blobstore..."
 pushd "${bosh_agent_dir}/integration/fake-blobstore"

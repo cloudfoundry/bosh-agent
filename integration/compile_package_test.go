@@ -29,7 +29,7 @@ var _ = Describe("compile_package", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
