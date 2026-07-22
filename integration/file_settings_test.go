@@ -26,7 +26,7 @@ var _ = Describe("FileSettings", func() {
 			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
