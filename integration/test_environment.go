@@ -69,6 +69,8 @@ tSMBlZwsd6DRlK7dWJ/WHZXuXNeOX6ehSQFmql5/XPNd7INa5My6DDPZr1chh0WJ
 QgK94NXJDoDd1OZjpUBMPLVa8d20/RdGNW8OMolJpzEPhg0r7Ac=
 -----END RSA PRIVATE KEY-----`
 
+const SERVICE_MANAGER_SYSTEMD = "systemd"
+
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
@@ -81,6 +83,7 @@ type TestEnvironment struct {
 	mbusUser         string
 	mbusPass         string
 	mbusPort         int
+	serviceManager   string
 }
 
 type writerPrinter interface {
@@ -611,13 +614,42 @@ func (t *TestEnvironment) StopAgent() error {
 		}
 		waitSeconds = parsed
 	}
-	_, err := t.RunCommand(fmt.Sprintf("if [ -d /run/systemd/system ]; then sudo systemctl stop agent; elif command -v sv >/dev/null 2>&1; then sudo sv -w %d stop agent; fi", waitSeconds))
+	var err error
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		_, err = t.RunCommand("sudo systemctl stop agent")
+	} else {
+		_, err = t.RunCommand(fmt.Sprintf("sudo sv -w %d stop agent", waitSeconds))
+	}
+
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
-	_, err := t.RunCommand("if [ -d /run/systemd/system ]; then sudo systemctl start agent; elif command -v sv >/dev/null 2>&1; then nohup sudo sv start agent & fi")
+	var err error
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		_, err = t.RunCommand("sudo systemctl start agent")
+	} else {
+		_, err = t.RunCommand("nohup sudo sv start agent &")
+	}
+
 	return err
+}
+
+func (t *TestEnvironment) DetectServiceManager() error {
+	out, err := t.RunCommand("if command -v sv >/dev/null 2>&1; then echo sv; else echo systemd fi")
+	if err != nil {
+		return err
+	}
+
+	if out == "systemd" {
+		t.serviceManager = SERVICE_MANAGER_SYSTEMD
+	}
+
+	return nil
+}
+
+func (t *TestEnvironment) GetServiceManager() string {
+	return t.serviceManager
 }
 
 type emptyReader struct{}
@@ -667,10 +699,10 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 			return nil
 		}
 	}
-	
+
 	logs, _ := t.GetFileContents("/var/vcap/bosh/log/current")
 	t.writerPrinter.Printf("\n--- AGENT LOGS ---\n%s\n------------------\n", logs)
-	
+
 	journal, _ := t.RunCommand("sudo journalctl -u agent --no-pager | tail -n 100")
 	t.writerPrinter.Printf("\n--- SYSTEMD JOURNAL ---\n%s\n-----------------------\n", journal)
 
