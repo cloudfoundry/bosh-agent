@@ -611,12 +611,12 @@ func (t *TestEnvironment) StopAgent() error {
 		}
 		waitSeconds = parsed
 	}
-	_, err := t.RunCommand(fmt.Sprintf("sudo sv -w %d stop agent", waitSeconds))
+	_, err := t.RunCommand(fmt.Sprintf("if command -v sv >/dev/null 2>&1; then sudo sv -w %d stop agent; else sudo systemctl stop agent; fi", waitSeconds))
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
-	_, err := t.RunCommand("nohup sudo sv start agent &")
+	_, err := t.RunCommand("if command -v sv >/dev/null 2>&1; then nohup sudo sv start agent & else sudo systemctl start agent; fi")
 	return err
 }
 
