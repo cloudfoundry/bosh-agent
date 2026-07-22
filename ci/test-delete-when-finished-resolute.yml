@@ -1,7 +1,5 @@
+# TODO: Delete this test pipeline file before merging.
 ---
-vars:
-  - &worker_tag_windows windows-nimbus
-
 resource_types:
   - name: bosh-deployment
     type: registry-image
@@ -9,24 +7,13 @@ resource_types:
       repository: cloudfoundry/bosh-deployment-resource
       username: ((docker.username))
       password: ((docker.password))
-  - name: metalink-resource
-    type: registry-image
-    source:
-      repository: dpb587/metalink-repository-resource
-      username: ((docker.username))
-      password: ((docker.password))
-  - name: semver
-    type: registry-image
-    source:
-      repository: concourse/semver-resource
-      tag: "1.6"
 
 resources:
   - name: bosh-agent
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-agent.git
-      branch: main
+      branch: resolute-integ-test
       username: bosh-admin-bot
       password: ((github_read_write_token))
 
@@ -34,53 +21,9 @@ resources:
     type: git
     source:
       uri: https://github.com/cloudfoundry/bosh-agent.git
-      branch: main
+      branch: resolute-integ-test
       paths:
         - ci
-
-  - name: config-server
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/config-server.git
-      branch: develop
-      username: bosh-admin-bot
-      password: ((github_public_repo_token))
-
-  - name: bosh-agent-index
-    type: metalink-resource
-    source:
-      uri: git+ssh://git@github.com:cloudfoundry/bosh-agent-index.git//
-      mirror_files:
-        - destination: s3://s3-external-1.amazonaws.com/bosh-agent-binaries/{{.Name}}
-      options:
-        private_key: ((github_deploy_key_bosh-agent-index.private_key))
-      url_handlers:
-        - type: s3
-          options:
-            access_key: ((bosh-agent-s3-assume.username))
-            secret_key: ((bosh-agent-s3-assume.password))
-            role_arn: ((bosh-agent-s3-assume.role_arn))
-
-  - name: bosh-cli
-    type: github-release
-    source:
-      owner: cloudfoundry
-      repository: bosh-cli
-      access_token: ((github_public_repo_token))
-
-  - name: credhub-cli-github-release
-    type: github-release
-    source:
-      access_token: ((github_public_repo_token))
-      owner: cloudfoundry-incubator
-      repository: credhub-cli
-
-  - name: jq-github-release
-    type: github-release
-    source:
-      access_token: ((github_public_repo_token))
-      owner: stedolan
-      repository: jq
 
   - name: bosh-ecosystem-concourse
     type: git
@@ -90,14 +33,6 @@ resources:
       password: ((svc-bosh-ecosystem-ghe-personal-access-token))
     tags: [ broadcom ]
 
-  - name: bosh-agent-docker-image
-    type: registry-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh-agent
-      tag: latest
-      username: ((github_read_write_packages.username))
-      password: ((github_read_write_packages.password))
-
   - name: bosh-agent-registry-image
     type: registry-image
     source:
@@ -105,60 +40,20 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  - name: golang-release-image
-    type: registry-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh/golang-release
-
-  - name: integration-postgres-15-image
-    type: registry-image
-    source:
-      repository: ghcr.io/cloudfoundry/bosh/main-postgres-15
-      tag: main
-      username: ((github_read_write_packages.username))
-      password: ((github_read_write_packages.password))
-
-  - name: bosh
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh.git
-
-  - name: bosh-ci
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh.git
-      paths:
-        - ci
-
-  - name: golang-release
-    type: git
-    source:
-      uri: https://github.com/cloudfoundry/bosh-package-golang-release.git
-
-  - name: aws-stemcell
+  - name: azure-stemcell-resolute
     type: bosh-io-stemcell
     source:
-      name: bosh-aws-xen-hvm-ubuntu-jammy-go_agent
-
-  - name: aws-windows-stemcell
-    type: bosh-io-stemcell
-    source:
-      name: bosh-aws-xen-hvm-windows2019-go_agent
-
-  - name: azure-stemcell
-    type: bosh-io-stemcell
-    source:
-      name: bosh-azure-hyperv-ubuntu-jammy-go_agent
+      name: bosh-azure-hyperv-ubuntu-resolute
 
   - name: azure-stemcell-noble
     type: bosh-io-stemcell
     source:
       name: bosh-azure-hyperv-ubuntu-noble
 
-  - name: azure-stemcell-resolute
+  - name: azure-stemcell
     type: bosh-io-stemcell
     source:
-      name: bosh-azure-hyperv-ubuntu-resolute
+      name: bosh-azure-hyperv-ubuntu-jammy-go_agent
 
   - name: integration-vm-deployment-resolute
     type: bosh-deployment
@@ -196,159 +91,25 @@ resources:
       jumpbox_username: ((iaas_directors_azure-director_bosh_jumpbox_username))
       jumpbox_url: ((iaas_directors_azure-director_bosh_jumpbox_ip)):22
 
-  - name: windows-integration-vm-deployment
-    type: bosh-deployment
-    source:
-      deployment: bosh-agent-integration-windows-main
-      target: ((iaas_directors_aws-director_bosh_environment))
-      client: ((iaas_directors_aws-director_bosh_client.username))
-      client_secret: ((iaas_directors_aws-director_bosh_client.password))
-      ca_cert: ((iaas_directors_aws-director_bosh_ca_cert.ca))
-      jumpbox_ssh_key: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-      jumpbox_username: ((iaas_directors_aws-director_bosh_jumpbox_username))
-      jumpbox_url: ((iaas_directors_aws-director_bosh_jumpbox_ip)):22
-
-  - name: bosh-bosh-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry/bosh
-
-  - name: bpm-bosh-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry/bpm-release
-
-  - name: nats-bosh-release
-    type: bosh-io-release
-    source:
-      repository: cloudfoundry/nats-release
-
-  - name: version-semver
-    type: semver
-    source:
-      key: agent-current-version
-      bucket: bosh-agent-semver
-      region_name: us-east-1
-      access_key_id: ((bosh-agent-s3-assume.username))
-      secret_access_key: ((bosh-agent-s3-assume.password))
-      assume_role_arn: ((bosh-agent-s3-assume.role_arn))
-
-  - name: weekly
-    type: time
-    source:
-      start: 3:00 -0700
-      stop: 4:30 -0700
-      days: [ Saturday ]
-
-
 jobs:
-  - name: bump-deps
+  - name: where-am-i-defined
     plan:
-      - in_parallel:
-        - get: golang-release-image
-        - get: weekly
-          trigger: true
-        - get: bosh-agent
-        - get: bosh-agent-ci
-        - get: golang-release
-      - task: bump-deps
-        file: golang-release/ci/tasks/shared/bump-deps.yml
-        image: golang-release-image
-        input_mapping:
-          input_repo: bosh-agent
-        output_mapping:
-          output_repo: bumped-bosh-agent
-        params:
-          GOPROXY: ((repository_mirrors.goproxy))
-          GOSUMDB: ((repository_mirrors.gosumdb))
-          GOOS_LIST: linux,windows
-      - in_parallel:
-        - task: test-unit
-          file: bosh-agent-ci/ci/tasks/test-unit.yml
-          input_mapping:
-            bosh-agent: bumped-bosh-agent
-        - task: test-unit-windows
-          file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
-          input_mapping:
-            bosh-agent: bumped-bosh-agent
-          tags:
-            - windows-2019
-      - put: bosh-agent
-        params:
-          repository: bumped-bosh-agent
-          rebase: true
-
-  - name: build-docker-image
-    plan:
-      - in_parallel:
-          - get: bosh-agent
-          - get: bosh-agent-ci
-          - get: bosh-agent-registry-image
-          - get: bosh-cli-github-release
-            resource: bosh-cli
-            trigger: true
-            params:
-              globs:
-                - "no-files-needed"
-          - get: credhub-cli-github-release
-            trigger: true
-            params:
-              globs:
-                - "no-files-needed"
-          - get: jq-github-release
-            trigger: true
-            params:
-              globs:
-                - "no-files-needed"
-          - get: golang-release-image
-            trigger: true
-      - task: build-docker-args
-        file: bosh-agent-ci/ci/docker/build-args.yml
-        image: bosh-agent-registry-image
-      - task: build-image
-        privileged: true
+      - task: where-am-i-defined
         config:
           platform: linux
           image_resource:
             type: registry-image
             source:
-              repository: concourse/oci-build-task
-          inputs:
-            - name: bosh-agent-ci
-            - name: docker-build-args
-          outputs:
-            - name: image
-          params:
-            CONTEXT: bosh-agent-ci/ci/docker
-            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+              repository: bash
           run:
-            path: build
-      - put: bosh-agent-docker-image
-        no_get: true
-        params:
-          image: image/image.tar
-
-  - name: test-unit
-    plan:
-      - get: bosh-agent
-        trigger: true
-      - get: bosh-agent-ci
-      - get: bosh-agent-registry-image
-        trigger: true
-      - task: test-unit
-        file: bosh-agent-ci/ci/tasks/test-unit.yml
-
-  - name: test-unit-windows
-    serial: true
-    plan:
-      - get: bosh-agent
-        trigger: true
-      - get: bosh-agent-ci
-      - get: bosh-agent-registry-image
-        trigger: true
-      - task: test-unit
-        file: bosh-agent-ci/ci/tasks/test-unit-windows.yml
-        tags: [*worker_tag_windows]
+            path: bash
+            args:
+              - -ec
+              - |
+                echo '🧭'
+                echo 'Repo:   bosh-agent'
+                echo 'Branch: resolute-integ-test'
+                echo 'File:   ci/test-delete-when-finished-resolute.yml'
 
   - name: test-integration-resolute
     plan:
@@ -745,231 +506,3 @@ jobs:
                 delete:
                   enabled: true
                   force: true
-
-  - name: test-integration-windows
-    serial: true
-    plan:
-      - in_parallel:
-        - get: bosh-agent
-          trigger: true
-        - get: bosh-agent-ci
-        - get: bosh-ecosystem-concourse
-          tags: [ broadcom ]
-        - get: bosh-agent-registry-image
-          trigger: true
-        - get: aws-stemcell
-        - get: bosh-bosh-release
-        - get: bpm-bosh-release
-        - get: nats-bosh-release
-        - get: aws-windows-stemcell
-          trigger: true
-      - do:
-        - task: update-resurrection-config
-          image: bosh-agent-registry-image
-          config:
-            platform: linux
-            inputs:
-              - name: bosh-agent
-              - name: bosh-ecosystem-concourse
-            params:
-              BOSH_ENVIRONMENT: ((iaas_directors_aws-director_bosh_environment))
-              BOSH_CA_CERT: ((iaas_directors_aws-director_bosh_ca_cert.ca))
-              BOSH_CLIENT: ((iaas_directors_aws-director_bosh_client.username))
-              BOSH_CLIENT_SECRET: ((iaas_directors_aws-director_bosh_client.password))
-              JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-              JUMPBOX_USERNAME: ((iaas_directors_aws-director_bosh_jumpbox_username))
-              JUMPBOX_IP: ((iaas_directors_aws-director_bosh_jumpbox_ip))
-            run:
-              path: /bin/bash
-              args:
-                - -c
-                - |
-                  source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                  bosh -n update-config --name main-windows-resurrection --type resurrection --var deployment_name=bosh-agent-integration-windows-main bosh-agent/integration/assets/resurrection_config.yml
-        - put: windows-integration-vm-deployment
-          params:
-            manifest: "bosh-agent/integration/assets/agent-windows-deployment.yml"
-            stemcells:
-              - "aws-stemcell/*.tgz"
-              - "aws-windows-stemcell/*.tgz"
-            vars:
-              deployment_name: bosh-agent-integration-windows-main
-        - task: get-agent-info
-          image: bosh-agent-registry-image
-          config:
-            platform: linux
-            inputs:
-              - name: bosh-ecosystem-concourse
-            outputs:
-              - name: agent-info
-            params:
-              BOSH_ENVIRONMENT: ((iaas_directors_aws-director_bosh_environment))
-              BOSH_CA_CERT: ((iaas_directors_aws-director_bosh_ca_cert.ca))
-              BOSH_CLIENT: ((iaas_directors_aws-director_bosh_client.username))
-              BOSH_CLIENT_SECRET: ((iaas_directors_aws-director_bosh_client.password))
-              JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-              JUMPBOX_USERNAME: ((iaas_directors_aws-director_bosh_jumpbox_username))
-              JUMPBOX_URL: "((iaas_directors_aws-director_bosh_jumpbox_ip)):22"
-              CREDHUB_CA_CERT_STRING: ((iaas_directors_aws-director_bosh_credhub_ca_cert.ca))
-              CREDHUB_CLIENT: ((iaas_directors_aws-director_bosh_credhub_client.username))
-              CREDHUB_SECRET: ((iaas_directors_aws-director_bosh_credhub_client.password))
-              CREDHUB_SERVER: ((iaas_directors_aws-director_bosh_credhub_server))
-            run:
-              path: /bin/bash
-              args:
-                - -c
-                - |
-                  source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
-                  bosh -d bosh-agent-integration-windows-main instances --json --column ips --column instance > ./vm_ips
-                  cat ./vm_ips| jq -r '.Tables[].Rows[]  | select( .instance | contains("agent_test")).ips' > agent-info/agent_ip
-                  cat ./vm_ips| jq -r '.Tables[].Rows[]  | select( .instance | contains("fake_director")).ips' > agent-info/fake_director_ip
-                  echo "ip_address: $(cat agent-info/fake_director_ip)" > agent-info/fake_director_ip_vars
-                  credhub get -n /concourse/bosh-agent-integration-windows-main/ssh_creds -k private_key > agent-info/agent-creds.pem
-                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k ca > agent-info/nats-ca.pem
-                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k certificate > agent-info/nats-certificate.pem
-                  credhub get -n /concourse/bosh-agent-integration-windows-main/client_tls -k private_key > agent-info/nats-private-key.pem
-                  chmod 600 agent-info/agent-creds.pem
-        - put: windows-integration-vm-deployment
-          params:
-            manifest: "bosh-agent/integration/assets/agent-windows-deployment.yml"
-            stemcells:
-              - "aws-stemcell/*.tgz"
-              - "aws-windows-stemcell/*.tgz"
-            ops_files:
-              - "bosh-agent/integration/assets/agent-windows-nats-blobstore.yml"
-            releases:
-              - bosh-bosh-release/release.tgz
-              - bpm-bosh-release/release.tgz
-              - nats-bosh-release/release.tgz
-            vars:
-              deployment_name: bosh-agent-integration-windows-main
-            vars_files:
-              - "agent-info/fake_director_ip_vars"
-        - task: test-integration
-          file: bosh-agent-ci/ci/tasks/test-integration-windows.yml
-          image: bosh-agent-registry-image
-          params:
-            AGENT_GATEWAY: 10.0.16.1
-            AGENT_NETMASK: 255.255.240.0
-            JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-            JUMPBOX_USERNAME: ((iaas_directors_aws-director_bosh_jumpbox_username))
-            JUMPBOX_IP: ((iaas_directors_aws-director_bosh_jumpbox_ip))
-        ensure:
-          in_parallel:
-            - task: clean-credhub
-              file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
-              image: bosh-agent-registry-image
-              params:
-                CREDHUB_CA_CERT_STRING: ((iaas_directors_aws-director_bosh_credhub_ca_cert.ca))
-                CREDHUB_CLIENT: ((iaas_directors_aws-director_bosh_credhub_client.username))
-                CREDHUB_SECRET: ((iaas_directors_aws-director_bosh_credhub_client.password))
-                CREDHUB_SERVER: ((iaas_directors_aws-director_bosh_credhub_server))
-                JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-                JUMPBOX_URL: "((iaas_directors_aws-director_bosh_jumpbox_ip)):22"
-                PATH_TO_DELETE: "/concourse/bosh-agent-integration-windows-main"
-            - task: update-resurrection-config
-              image: bosh-agent-registry-image
-              config:
-                platform: linux
-                inputs:
-                  - name: bosh-agent
-                  - name: bosh-ecosystem-concourse
-                params:
-                  BOSH_ENVIRONMENT: ((iaas_directors_aws-director_bosh_environment))
-                  BOSH_CA_CERT: ((iaas_directors_aws-director_bosh_ca_cert.ca))
-                  BOSH_CLIENT: ((iaas_directors_aws-director_bosh_client.username))
-                  BOSH_CLIENT_SECRET: ((iaas_directors_aws-director_bosh_client.password))
-                  JUMPBOX_PRIVATE_KEY: ((iaas_directors_aws-director_bosh_jumpbox_ssh.private_key))
-                  JUMPBOX_USERNAME: ((iaas_directors_aws-director_bosh_jumpbox_username))
-                  JUMPBOX_IP: ((iaas_directors_aws-director_bosh_jumpbox_ip))
-                run:
-                  path: /bin/bash
-                  args:
-                    - -c
-                    - |
-                      source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                      bosh -n delete-config --name main-windows-resurrection --type resurrection
-            - put: windows-integration-vm-deployment
-              params:
-                cleanup: true
-                delete:
-                  enabled: true
-                  force: true
-
-  - name: bosh-integration-tests
-    serial: true
-    plan:
-      - in_parallel:
-          - get: bosh
-          - get: bosh-ci
-          - get: config-server
-          - get: bosh-cli
-            params:
-              globs:
-                - "bosh-cli-*-linux-amd64"
-          - get: bosh-agent
-            trigger: true
-            passed:
-              - test-unit
-              - test-integration
-              - test-unit-windows
-              - test-integration-windows
-          - get: bosh-agent-ci
-          - get: bosh-agent-registry-image
-            trigger: true
-            passed:
-              - test-unit
-              - test-integration
-              - test-unit-windows
-              - test-integration-windows
-          - get: integration-postgres-15-image
-
-      - task: tests
-        privileged: true
-        file: bosh-ci/ci/tasks/test-rake-task.yml
-        image: integration-postgres-15-image
-        params:
-          DB: postgresql
-          RAKE_TASK: "spec:integration"
-          COVERAGE: false
-
-  - name: promote
-    serial: true
-    plan:
-      - in_parallel:
-          - get: bosh-agent
-            trigger: true
-            passed:
-              - bosh-integration-tests
-          - get: bosh-agent-ci
-          - get: bosh-agent-registry-image
-            trigger: true
-            passed:
-              - bosh-integration-tests
-          - get: version-semver
-            params:
-              bump: minor
-      - task: assert-version-aligns
-        file: bosh-agent-ci/ci/tasks/assert-version-aligns.yml
-      - put: version-semver
-        params:
-          file: version-semver/number
-      - put: bosh-agent
-        params:
-          only_tag: true
-          repository: bosh-agent
-          tag: version-semver/number
-          tag_prefix: v
-      - in_parallel:
-        - task: build-linux
-          image: bosh-agent-registry-image
-          file: bosh-agent-ci/ci/tasks/build-linux.yml
-        - task: build-windows
-          image: bosh-agent-registry-image
-          file: bosh-agent-ci/ci/tasks/build-windows.yml
-      - put: bosh-agent-index
-        params:
-          files:
-            - compiled-linux-amd64/*
-            - compiled-windows-amd64/*
-          version: version-semver/number
