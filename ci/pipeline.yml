@@ -365,7 +365,7 @@ jobs:
                 - "azure-stemcell-resolute/*.tgz"
               vars:
                 deployment_name: bosh-agent-integration-main
-                stemcell_os: ubuntu-jammy
+                stemcell_os: ubuntu-resolute
                 az: z1
                 vm_type: root_disk_integration
 
