@@ -160,10 +160,34 @@ resources:
     source:
       name: bosh-azure-hyperv-ubuntu-resolute
 
-  - name: integration-vm-deployment
+  - name: integration-vm-deployment-resolute
     type: bosh-deployment
     source:
-      deployment: bosh-agent-integration-main
+      deployment: bosh-agent-integration-resolute
+      target: ((iaas_directors_azure-director_bosh_environment))
+      client: ((iaas_directors_azure-director_bosh_client.username))
+      client_secret: ((iaas_directors_azure-director_bosh_client.password))
+      ca_cert: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+      jumpbox_ssh_key: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+      jumpbox_username: ((iaas_directors_azure-director_bosh_jumpbox_username))
+      jumpbox_url: ((iaas_directors_azure-director_bosh_jumpbox_ip)):22
+
+  - name: integration-vm-deployment-noble
+    type: bosh-deployment
+    source:
+      deployment: bosh-agent-integration-noble
+      target: ((iaas_directors_azure-director_bosh_environment))
+      client: ((iaas_directors_azure-director_bosh_client.username))
+      client_secret: ((iaas_directors_azure-director_bosh_client.password))
+      ca_cert: ((iaas_directors_azure-director_bosh_ca_cert.ca))
+      jumpbox_ssh_key: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+      jumpbox_username: ((iaas_directors_azure-director_bosh_jumpbox_username))
+      jumpbox_url: ((iaas_directors_azure-director_bosh_jumpbox_ip)):22
+
+  - name: integration-vm-deployment-jammy
+    type: bosh-deployment
+    source:
+      deployment: bosh-agent-integration-jammy
       target: ((iaas_directors_azure-director_bosh_environment))
       client: ((iaas_directors_azure-director_bosh_client.username))
       client_secret: ((iaas_directors_azure-director_bosh_client.password))
@@ -327,7 +351,6 @@ jobs:
         tags: [*worker_tag_windows]
 
   - name: test-integration-resolute
-    serial: true
     plan:
       - in_parallel:
           - get: bosh-agent
@@ -361,15 +384,15 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                    bosh -n update-config --name main-resurrection --type resurrection --var deployment_name=bosh-agent-integration-main bosh-agent/integration/assets/resurrection_config.yml
-          - put: integration-vm-deployment
+                    bosh -n update-config --name resolute-resurrection --type resurrection --var deployment_name=bosh-agent-integration-resolute bosh-agent/integration/assets/resurrection_config.yml
+          - put: integration-vm-deployment-resolute
             params:
               cleanup: true
               manifest: "bosh-agent/integration/assets/agent-deployment.yml"
               stemcells:
                 - "azure-stemcell-resolute/*.tgz"
               vars:
-                deployment_name: bosh-agent-integration-main
+                deployment_name: bosh-agent-integration-resolute
                 stemcell_os: ubuntu-resolute
                 az: z1
                 vm_type: root_disk_integration
@@ -401,14 +424,14 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
-                    bosh -d bosh-agent-integration-main instances --json --column ips | jq -r .Tables[].Rows[].ips > agent-info/agent_ip
-                    credhub get -n /concourse/bosh-agent-integration-main/ssh_creds -k private_key > agent-info/agent-creds.pem
+                    bosh -d bosh-agent-integration-resolute instances --json --column ips | jq -r '.Tables[].Rows[]?.ips // empty' > agent-info/agent_ip
+                    credhub get -n /concourse/bosh-agent-integration-resolute/ssh_creds -k private_key > agent-info/agent-creds.pem
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
             image: bosh-agent-registry-image
             file: bosh-agent-ci/ci/tasks/test-integration.yml
             params:
-              BOSH_DEPLOYMENT: bosh-agent-integration-main
+              BOSH_DEPLOYMENT: bosh-agent-integration-resolute
               BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
               BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
               BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
@@ -418,6 +441,17 @@ jobs:
               JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
         ensure:
           in_parallel:
+            - task: clean-credhub
+              file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
+              image: bosh-agent-registry-image
+              params:
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_azure-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_azure-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_azure-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_azure-director_bosh_credhub_server))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_URL: "((iaas_directors_azure-director_bosh_jumpbox_ip)):22"
+                PATH_TO_DELETE: "/concourse/bosh-agent-integration-resolute"
             - task: update-resurrection-config
               image: bosh-agent-registry-image
               config:
@@ -439,8 +473,8 @@ jobs:
                     - -c
                     - |
                       source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                      bosh -n delete-config --name main-resurrection --type resurrection
-            - put: integration-vm-deployment
+                      bosh -n delete-config --name resolute-resurrection --type resurrection
+            - put: integration-vm-deployment-resolute
               params:
                 cleanup: true
                 delete:
@@ -448,7 +482,6 @@ jobs:
                   force: true
 
   - name: test-integration-noble
-    serial: true
     plan:
       - in_parallel:
           - get: bosh-agent
@@ -482,15 +515,15 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                    bosh -n update-config --name main-resurrection --type resurrection --var deployment_name=bosh-agent-integration-main bosh-agent/integration/assets/resurrection_config.yml
-          - put: integration-vm-deployment
+                    bosh -n update-config --name noble-resurrection --type resurrection --var deployment_name=bosh-agent-integration-noble bosh-agent/integration/assets/resurrection_config.yml
+          - put: integration-vm-deployment-noble
             params:
               cleanup: true
               manifest: "bosh-agent/integration/assets/agent-deployment.yml"
               stemcells:
                 - "azure-stemcell-noble/*.tgz"
               vars:
-                deployment_name: bosh-agent-integration-main
+                deployment_name: bosh-agent-integration-noble
                 stemcell_os: ubuntu-noble
                 az: z1
                 vm_type: root_disk_integration
@@ -522,14 +555,14 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
-                    bosh -d bosh-agent-integration-main instances --json --column ips | jq -r .Tables[].Rows[].ips > agent-info/agent_ip
-                    credhub get -n /concourse/bosh-agent-integration-main/ssh_creds -k private_key > agent-info/agent-creds.pem
+                    bosh -d bosh-agent-integration-noble instances --json --column ips | jq -r '.Tables[].Rows[]?.ips // empty' > agent-info/agent_ip
+                    credhub get -n /concourse/bosh-agent-integration-noble/ssh_creds -k private_key > agent-info/agent-creds.pem
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
             image: bosh-agent-registry-image
             file: bosh-agent-ci/ci/tasks/test-integration.yml
             params:
-              BOSH_DEPLOYMENT: bosh-agent-integration-main
+              BOSH_DEPLOYMENT: bosh-agent-integration-noble
               BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
               BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
               BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
@@ -539,6 +572,17 @@ jobs:
               JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
         ensure:
           in_parallel:
+            - task: clean-credhub
+              file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
+              image: bosh-agent-registry-image
+              params:
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_azure-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_azure-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_azure-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_azure-director_bosh_credhub_server))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_URL: "((iaas_directors_azure-director_bosh_jumpbox_ip)):22"
+                PATH_TO_DELETE: "/concourse/bosh-agent-integration-noble"
             - task: update-resurrection-config
               image: bosh-agent-registry-image
               config:
@@ -560,8 +604,8 @@ jobs:
                     - -c
                     - |
                       source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                      bosh -n delete-config --name main-resurrection --type resurrection
-            - put: integration-vm-deployment
+                      bosh -n delete-config --name noble-resurrection --type resurrection
+            - put: integration-vm-deployment-noble
               params:
                 cleanup: true
                 delete:
@@ -569,7 +613,6 @@ jobs:
                   force: true
 
   - name: test-integration
-    serial: true
     plan:
       - in_parallel:
           - get: bosh-agent
@@ -603,15 +646,15 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                    bosh -n update-config --name main-resurrection --type resurrection --var deployment_name=bosh-agent-integration-main bosh-agent/integration/assets/resurrection_config.yml
-          - put: integration-vm-deployment
+                    bosh -n update-config --name jammy-resurrection --type resurrection --var deployment_name=bosh-agent-integration-jammy bosh-agent/integration/assets/resurrection_config.yml
+          - put: integration-vm-deployment-jammy
             params:
               cleanup: true
               manifest: "bosh-agent/integration/assets/agent-deployment.yml"
               stemcells:
                 - "azure-stemcell/*.tgz"
               vars:
-                deployment_name: bosh-agent-integration-main
+                deployment_name: bosh-agent-integration-jammy
                 stemcell_os: ubuntu-jammy
                 az: z1
                 vm_type: root_disk_integration
@@ -643,14 +686,14 @@ jobs:
                   - -c
                   - |
                     source bosh-ecosystem-concourse/tasks/shared/configure_credhub_proxies.sh
-                    bosh -d bosh-agent-integration-main instances --json --column ips | jq -r .Tables[].Rows[].ips > agent-info/agent_ip
-                    credhub get -n /concourse/bosh-agent-integration-main/ssh_creds -k private_key > agent-info/agent-creds.pem
+                    bosh -d bosh-agent-integration-jammy instances --json --column ips | jq -r '.Tables[].Rows[]?.ips // empty' > agent-info/agent_ip
+                    credhub get -n /concourse/bosh-agent-integration-jammy/ssh_creds -k private_key > agent-info/agent-creds.pem
                     chmod 600 agent-info/agent-creds.pem
           - task: test-integration
             image: bosh-agent-registry-image
             file: bosh-agent-ci/ci/tasks/test-integration.yml
             params:
-              BOSH_DEPLOYMENT: bosh-agent-integration-main
+              BOSH_DEPLOYMENT: bosh-agent-integration-jammy
               BOSH_ENVIRONMENT: ((iaas_directors_azure-director_bosh_environment))
               BOSH_CA_CERT: ((iaas_directors_azure-director_bosh_ca_cert.ca))
               BOSH_CLIENT: ((iaas_directors_azure-director_bosh_client.username))
@@ -660,6 +703,17 @@ jobs:
               JUMPBOX_IP: ((iaas_directors_azure-director_bosh_jumpbox_ip))
         ensure:
           in_parallel:
+            - task: clean-credhub
+              file: bosh-ecosystem-concourse/tasks/shared/delete-credhub-entries.yml
+              image: bosh-agent-registry-image
+              params:
+                CREDHUB_CA_CERT_STRING: ((iaas_directors_azure-director_bosh_credhub_ca_cert.ca))
+                CREDHUB_CLIENT: ((iaas_directors_azure-director_bosh_credhub_client.username))
+                CREDHUB_SECRET: ((iaas_directors_azure-director_bosh_credhub_client.password))
+                CREDHUB_SERVER: ((iaas_directors_azure-director_bosh_credhub_server))
+                JUMPBOX_PRIVATE_KEY: ((iaas_directors_azure-director_bosh_jumpbox_ssh.private_key))
+                JUMPBOX_URL: "((iaas_directors_azure-director_bosh_jumpbox_ip)):22"
+                PATH_TO_DELETE: "/concourse/bosh-agent-integration-jammy"
             - task: update-resurrection-config
               image: bosh-agent-registry-image
               config:
@@ -681,8 +735,8 @@ jobs:
                     - -c
                     - |
                       source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
-                      bosh -n delete-config --name main-resurrection --type resurrection
-            - put: integration-vm-deployment
+                      bosh -n delete-config --name jammy-resurrection --type resurrection
+            - put: integration-vm-deployment-jammy
               params:
                 cleanup: true
                 delete:
