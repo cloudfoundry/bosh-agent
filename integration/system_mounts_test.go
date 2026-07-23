@@ -19,7 +19,7 @@ var _ = Describe("SystemMounts", func() {
 
 		BeforeEach(func() {
 
-			err := testEnvironment.UpdateAgentConfig("file-settings-agent-no-default-tmp-dir.json")
+			err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()

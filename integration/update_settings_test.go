@@ -1,7 +1,6 @@
 package integration_test
 
 import (
-	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -20,12 +19,7 @@ var _ = Describe("CertManager", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		settingsFile := "file-settings-agent.json"
-		if testEnvironment.GetServiceManager() == integration.SERVICE_MANAGER_SYSTEMD {
-			settingsFile = "file-settings-agent-sytemd.json"
-		}
-
-		err = testEnvironment.UpdateAgentConfig(settingsFile)
+		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

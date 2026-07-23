@@ -1,0 +1,21 @@
+{
+  "Platform": {
+    "Linux": {
+      "UseDefaultTmpDir": false,
+      "UsePreformattedPersistentDisk": true,
+      "BindMountPersistentDisk": false,
+      "DevicePathResolutionType": "virtio"
+    }
+  },
+  "Infrastructure": {
+    "Settings": {
+      "Sources": [
+        {
+          "Type": "File",
+          "SettingsPath": "/var/vcap/settings.json"
+
+        }
+      ]
+    }
+  }
+}

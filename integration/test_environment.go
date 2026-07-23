@@ -641,7 +641,7 @@ func (t *TestEnvironment) DetectServiceManager() error {
 		return err
 	}
 
-	if out == "systemd" {
+	if strings.TrimSpace(out) == "systemd" {
 		t.serviceManager = SERVICE_MANAGER_SYSTEMD
 	}
 
@@ -650,6 +650,22 @@ func (t *TestEnvironment) DetectServiceManager() error {
 
 func (t *TestEnvironment) GetServiceManager() string {
 	return t.serviceManager
+}
+
+func (t *TestEnvironment) GetSettingsFile(specification string) string {
+	suffix := ""
+
+	if specification != "" {
+		suffix += "-"
+		suffix += specification
+	}
+
+	if sm := t.GetServiceManager(); sm != "" {
+		suffix += "-"
+		suffix += sm
+	}
+
+	return fmt.Sprintf("file-settings-agent%s.json", suffix)
 }
 
 type emptyReader struct{}
