@@ -336,7 +336,20 @@ func (t *TestEnvironment) CleanupSSH() error {
 
 func (t *TestEnvironment) LogFileContains(content string) bool {
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
-	return err == nil
+	if err == nil {
+		return true
+	}
+
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Bootstrap failures that occur before SetupLoggingAndAuditing runs (see agent/bootstrap.go)
+		// happen before rsyslog is restarted, so they never reach /var/vcap/bosh/log/current -
+		// they only ever land in the journal. Fall back to journalctl for that case, without
+		// weakening the primary file-based check that exercises the real logging pipeline.
+		_, err = t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
+		return err == nil
+	}
+
+	return false
 }
 
 func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
