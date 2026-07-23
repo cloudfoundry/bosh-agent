@@ -125,6 +125,18 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		return err
 	}
 
+	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for
+		// the whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log,
+		// which /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount
+		// below, so it cleanly releases its open file handles on /var/log instead of racing the lazy
+		// unmount. CleanupDataDir restarts it once /var/log has been recreated.
+		_, ignoredErr := t.RunCommand("sudo systemctl stop rsyslog.service")
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
+		}
+	}
+
 	mountPointsSlice := strings.Split(mountPoints, "\n")
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
@@ -230,6 +242,13 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		_, err = t.RunCommand("sudo systemctl start rsyslog.service")
+		if err != nil {
+			return err
+		}
+	}
+
 	_, err = t.RunCommand("sudo mkdir -p /var/opt")
 	if err != nil {
 		return err
@@ -320,10 +339,6 @@ func (t *TestEnvironment) CleanupSSH() error {
 }
 
 func (t *TestEnvironment) LogFileContains(content string) bool {
-	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		_, err := t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
-		return err == nil
-	}
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
 	return err == nil
 }
