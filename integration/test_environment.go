@@ -716,12 +716,6 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 		}
 	}
 
-	logs, _ := t.GetFileContents("/var/vcap/bosh/log/current")
-	t.writerPrinter.Printf("\n--- AGENT LOGS ---\n%s\n------------------\n", logs)
-
-	journal, _ := t.RunCommand("sudo journalctl -u agent --no-pager | tail -n 100")
-	t.writerPrinter.Printf("\n--- SYSTEMD JOURNAL ---\n%s\n-----------------------\n", journal)
-
 	t.writerPrinter.Printf("StartAgentTunnel %s", err.Error())
 	return err
 }
