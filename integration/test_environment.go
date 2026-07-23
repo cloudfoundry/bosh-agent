@@ -636,7 +636,7 @@ func (t *TestEnvironment) StartAgent() error {
 }
 
 func (t *TestEnvironment) DetectServiceManager() error {
-	out, err := t.RunCommand("if command -v sv >/dev/null 2>&1; then echo sv; else echo systemd fi")
+	out, err := t.RunCommand("if command -v sv >/dev/null 2>&1; then echo sv; else echo systemd; fi")
 	if err != nil {
 		return err
 	}
