@@ -125,6 +125,21 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		return err
 	}
 
+	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the
+		// whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
+		// /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount below,
+		// so it cleanly releases its open file handles on /var/log instead of racing the lazy unmount.
+		// We deliberately do NOT restart it afterward: /var/log is about to become a plain directory on
+		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
+		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
+		// bind mount and restarts logging, in that order, the next time StartAgent() runs.
+		_, ignoredErr := t.RunCommand("sudo systemctl stop syslog.socket rsyslog.service")
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
+		}
+	}
+
 	mountPointsSlice := strings.Split(mountPoints, "\n")
 	sort.Sort(byLen(mountPointsSlice))
 	for _, mountPoint := range mountPointsSlice {
@@ -311,6 +326,17 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 
 func (t *TestEnvironment) CleanupLogFile() error {
 	_, err := t.RunCommand("sudo truncate -s 0 /var/vcap/bosh/log/current")
+
+	if err != nil {
+		return err
+	}
+
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Clear the journal to prevent JournalContains from leaking state across tests.
+		// --vacuum-time=1s removes archived files older than 1s; --rotate archives the active file first.
+		_, err = t.RunCommand("sudo journalctl --flush --rotate --vacuum-time=1s")
+	}
+
 	return err
 }
 
@@ -322,6 +348,19 @@ func (t *TestEnvironment) CleanupSSH() error {
 func (t *TestEnvironment) LogFileContains(content string) bool {
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
 	return err == nil
+}
+
+func (t *TestEnvironment) JournalContains(content string) bool {
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Bootstrap failures that occur before SetupLoggingAndAuditing runs (see agent/bootstrap.go)
+		// happen before rsyslog is restarted, so they never reach /var/vcap/bosh/log/current -
+		// they only ever land in the journal. Fall back to journalctl for that case, without
+		// weakening the primary file-based check that exercises the real logging pipeline.
+		_, err := t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
+		return err == nil
+	}
+
+	return false
 }
 
 func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
@@ -627,7 +666,24 @@ func (t *TestEnvironment) StopAgent() error {
 func (t *TestEnvironment) StartAgent() error {
 	var err error
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// systemctl start agent will return immediately, but agent takes a moment to bootstrap and mount /var/log.
+		// If we start rsyslog.service now, it will block in ExecStartPre waiting for the agent to mount /var/log.
+		// Since we run both asynchronously via systemd, this correctly simulates the system boot dependency.
+		_, err = t.RunCommand("sudo systemctl start rsyslog.service --no-block")
+		if err != nil {
+			return err
+		}
 		_, err = t.RunCommand("sudo systemctl start agent")
+
+		// Wait for rsyslog to create the log file to avoid failures from when the symlink target has not been created yet.
+		_, err = t.RunCommand("for i in {1..200}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
+		if err != nil {
+			return err
+		}
+		_, err = t.RunCommand("sudo stat /var/log/bosh-agent.log >/dev/null 2>&1")
+		if err != nil {
+			return err
+		}
 	} else {
 		_, err = t.RunCommand("nohup sudo sv start agent &")
 	}
@@ -715,12 +771,6 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 			return nil
 		}
 	}
-
-	logs, _ := t.GetFileContents("/var/vcap/bosh/log/current")
-	t.writerPrinter.Printf("\n--- AGENT LOGS ---\n%s\n------------------\n", logs)
-
-	journal, _ := t.RunCommand("sudo journalctl -u agent --no-pager | tail -n 100")
-	t.writerPrinter.Printf("\n--- SYSTEMD JOURNAL ---\n%s\n-----------------------\n", journal)
 
 	t.writerPrinter.Printf("StartAgentTunnel %s", err.Error())
 	return err

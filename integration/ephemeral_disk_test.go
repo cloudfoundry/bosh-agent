@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -118,7 +119,11 @@ var _ = Describe("EphemeralDisk", func() {
 				})
 				It("agent fails with error", func() {
 					Eventually(func() bool {
-						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
+						if testEnvironment.GetServiceManager() == integration.SERVICE_MANAGER_SYSTEMD {
+							return testEnvironment.JournalContains("ERROR .* App setup .* No ephemeral disk found")
+						} else {
+							return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
+						}
 					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 				})
 			})
@@ -191,7 +196,11 @@ var _ = Describe("EphemeralDisk", func() {
 			Context("when root disk can not be used as ephemeral", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
-						return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
+						if testEnvironment.GetServiceManager() == integration.SERVICE_MANAGER_SYSTEMD {
+							return testEnvironment.JournalContains("ERROR .* App setup .* No ephemeral disk found")
+						} else {
+							return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
+						}
 					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 				})
 			})
