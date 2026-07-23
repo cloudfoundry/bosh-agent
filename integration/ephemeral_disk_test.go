@@ -82,7 +82,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 				Context("when bind mount /var/vcap/data/root_tmp on /tmp", func() {
 					BeforeEach(func() {
-						err := testEnvironment.UpdateAgentConfig("bind-mount-agent.json")
+						err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
 						Expect(err).ToNot(HaveOccurred())
 					})
 
