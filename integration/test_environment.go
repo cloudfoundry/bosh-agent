@@ -320,6 +320,10 @@ func (t *TestEnvironment) CleanupSSH() error {
 }
 
 func (t *TestEnvironment) LogFileContains(content string) bool {
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		_, err := t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
+		return err == nil
+	}
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
 	return err == nil
 }
