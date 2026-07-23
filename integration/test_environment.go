@@ -126,11 +126,14 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	}
 
 	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for
-		// the whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log,
-		// which /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount
-		// below, so it cleanly releases its open file handles on /var/log instead of racing the lazy
-		// unmount. CleanupDataDir restarts it once /var/log has been recreated.
+		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the
+		// whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
+		// /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount below,
+		// so it cleanly releases its open file handles on /var/log instead of racing the lazy unmount.
+		// We deliberately do NOT restart it afterward: /var/log is about to become a plain directory on
+		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
+		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
+		// bind mount and restarts logging, in that order, the next time StartAgent() runs.
 		_, ignoredErr := t.RunCommand("sudo systemctl stop rsyslog.service")
 		if ignoredErr != nil {
 			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
@@ -240,13 +243,6 @@ func (t *TestEnvironment) CleanupDataDir() error {
 	_, err = t.RunCommand("sudo chown root:syslog /var/log")
 	if err != nil {
 		return err
-	}
-
-	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		_, err = t.RunCommand("sudo systemctl start rsyslog.service")
-		if err != nil {
-			return err
-		}
 	}
 
 	_, err = t.RunCommand("sudo mkdir -p /var/opt")
