@@ -327,9 +327,13 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 func (t *TestEnvironment) CleanupLogFile() error {
 	_, err := t.RunCommand("sudo truncate -s 0 /var/vcap/bosh/log/current")
 
+	if err != nil {
+		return err
+	}
+
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
 		// Clear the journal to prevent LogFileContains fallback from leaking state across tests
-		_, _ = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-time=1s")
+		_, err = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-time=1s")
 	}
 
 	return err
