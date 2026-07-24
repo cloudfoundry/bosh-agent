@@ -326,6 +326,12 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 
 func (t *TestEnvironment) CleanupLogFile() error {
 	_, err := t.RunCommand("sudo truncate -s 0 /var/vcap/bosh/log/current")
+
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Clear the journal to prevent LogFileContains fallback from leaking state across tests
+		_, _ = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-time=1s")
+	}
+
 	return err
 }
 
@@ -663,6 +669,9 @@ func (t *TestEnvironment) StartAgent() error {
 			return err
 		}
 		_, err = t.RunCommand("sudo systemctl start agent")
+
+		// Wait for rsyslog to create the log file to avoid races where the symlink is temporarily broken
+		_, _ = t.RunCommand("for i in {1..100}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
 	} else {
 		_, err = t.RunCommand("nohup sudo sv start agent &")
 	}
