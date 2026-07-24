@@ -15,7 +15,7 @@ var _ = Describe("fetch_logs", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

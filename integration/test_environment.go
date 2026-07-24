@@ -69,6 +69,8 @@ tSMBlZwsd6DRlK7dWJ/WHZXuXNeOX6ehSQFmql5/XPNd7INa5My6DDPZr1chh0WJ
 QgK94NXJDoDd1OZjpUBMPLVa8d20/RdGNW8OMolJpzEPhg0r7Ac=
 -----END RSA PRIVATE KEY-----`
 
+const SERVICE_MANAGER_SYSTEMD = "systemd"
+
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
@@ -81,6 +83,7 @@ type TestEnvironment struct {
 	mbusUser         string
 	mbusPass         string
 	mbusPort         int
+	serviceManager   string
 }
 
 type writerPrinter interface {
@@ -120,6 +123,21 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	if err != nil {
 		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
 		return err
+	}
+
+	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the
+		// whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
+		// /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount below,
+		// so it cleanly releases its open file handles on /var/log instead of racing the lazy unmount.
+		// We deliberately do NOT restart it afterward: /var/log is about to become a plain directory on
+		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
+		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
+		// bind mount and restarts logging, in that order, the next time StartAgent() runs.
+		_, ignoredErr := t.RunCommand("sudo systemctl stop rsyslog.service")
+		if ignoredErr != nil {
+			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
+		}
 	}
 
 	mountPointsSlice := strings.Split(mountPoints, "\n")
@@ -308,6 +326,16 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 
 func (t *TestEnvironment) CleanupLogFile() error {
 	_, err := t.RunCommand("sudo truncate -s 0 /var/vcap/bosh/log/current")
+
+	if err != nil {
+		return err
+	}
+
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Clear the journal to prevent LogFileContains fallback from leaking state across tests
+		_, err = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-time=1s")
+	}
+
 	return err
 }
 
@@ -318,7 +346,20 @@ func (t *TestEnvironment) CleanupSSH() error {
 
 func (t *TestEnvironment) LogFileContains(content string) bool {
 	_, err := t.RunCommand(fmt.Sprintf(`sudo grep "%s" /var/vcap/bosh/log/current`, content))
-	return err == nil
+	if err == nil {
+		return true
+	}
+
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Bootstrap failures that occur before SetupLoggingAndAuditing runs (see agent/bootstrap.go)
+		// happen before rsyslog is restarted, so they never reach /var/vcap/bosh/log/current -
+		// they only ever land in the journal. Fall back to journalctl for that case, without
+		// weakening the primary file-based check that exercises the real logging pipeline.
+		_, err = t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
+		return err == nil
+	}
+
+	return false
 }
 
 func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
@@ -611,13 +652,68 @@ func (t *TestEnvironment) StopAgent() error {
 		}
 		waitSeconds = parsed
 	}
-	_, err := t.RunCommand(fmt.Sprintf("sudo sv -w %d stop agent", waitSeconds))
+	var err error
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		_, err = t.RunCommand("sudo systemctl stop agent")
+	} else {
+		_, err = t.RunCommand(fmt.Sprintf("sudo sv -w %d stop agent", waitSeconds))
+	}
+
 	return err
 }
 
 func (t *TestEnvironment) StartAgent() error {
-	_, err := t.RunCommand("nohup sudo sv start agent &")
+	var err error
+	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// systemctl start agent will return immediately, but agent takes a moment to bootstrap and mount /var/log.
+		// If we start rsyslog.service now, it will block in ExecStartPre waiting for the agent to mount /var/log.
+		// Since we run both asynchronously via systemd, this correctly simulates the system boot dependency.
+		_, err = t.RunCommand("sudo systemctl start rsyslog.service --no-block")
+		if err != nil {
+			return err
+		}
+		_, err = t.RunCommand("sudo systemctl start agent")
+
+		// Wait for rsyslog to create the log file to avoid races where the symlink is temporarily broken
+		_, _ = t.RunCommand("for i in {1..100}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
+	} else {
+		_, err = t.RunCommand("nohup sudo sv start agent &")
+	}
+
 	return err
+}
+
+func (t *TestEnvironment) DetectServiceManager() error {
+	out, err := t.RunCommand(fmt.Sprintf("if command -v sv >/dev/null 2>&1; then echo sv; else echo %s; fi", SERVICE_MANAGER_SYSTEMD))
+	if err != nil {
+		return err
+	}
+
+	if result := strings.TrimSpace(out); result == SERVICE_MANAGER_SYSTEMD {
+		t.serviceManager = result
+	}
+
+	return nil
+}
+
+func (t *TestEnvironment) GetServiceManager() string {
+	return t.serviceManager
+}
+
+func (t *TestEnvironment) GetSettingsFile(specification string) string {
+	suffix := ""
+
+	if specification != "" {
+		suffix += "-"
+		suffix += specification
+	}
+
+	if sm := t.GetServiceManager(); sm != "" {
+		suffix += "-"
+		suffix += sm
+	}
+
+	return fmt.Sprintf("file-settings-agent%s.json", suffix)
 }
 
 type emptyReader struct{}
@@ -667,6 +763,7 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 			return nil
 		}
 	}
+
 	t.writerPrinter.Printf("StartAgentTunnel %s", err.Error())
 	return err
 }

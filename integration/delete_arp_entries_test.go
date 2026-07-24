@@ -56,7 +56,7 @@ var _ = Describe("DeleteARPEntries", func() {
 		err := testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

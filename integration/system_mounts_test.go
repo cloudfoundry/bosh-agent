@@ -19,7 +19,7 @@ var _ = Describe("SystemMounts", func() {
 
 		BeforeEach(func() {
 
-			err := testEnvironment.UpdateAgentConfig("file-settings-agent-no-default-tmp-dir.json")
+			err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
@@ -88,7 +88,7 @@ var _ = Describe("SystemMounts", func() {
 				It("does not change mounts and permissions", func() {
 					waitForAgentAndExpectMounts := func() {
 						Eventually(func() bool {
-							return testEnvironment.LogFileContains("sv start monit")
+							return testEnvironment.LogFileContains("sv start monit") || testEnvironment.LogFileContains("systemctl start monit")
 						}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
 						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'") //nolint:errcheck

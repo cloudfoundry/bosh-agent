@@ -23,7 +23,7 @@ var _ = Describe("EphemeralDisk", func() {
 			err = testEnvironment.CleanupLogFile()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig("file-settings-agent.json")
+			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
@@ -82,7 +82,7 @@ var _ = Describe("EphemeralDisk", func() {
 
 				Context("when bind mount /var/vcap/data/root_tmp on /tmp", func() {
 					BeforeEach(func() {
-						err := testEnvironment.UpdateAgentConfig("bind-mount-agent.json")
+						err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
 						Expect(err).ToNot(HaveOccurred())
 					})
 
@@ -131,7 +131,7 @@ var _ = Describe("EphemeralDisk", func() {
 				)
 
 				BeforeEach(func() {
-					err := testEnvironment.UpdateAgentConfig("root-partition-agent.json")
+					err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("root-partition"))
 					Expect(err).ToNot(HaveOccurred())
 
 					oldRootDevice, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 1224, 128)

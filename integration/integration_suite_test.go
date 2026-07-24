@@ -27,6 +27,9 @@ func TestIntegration(t *testing.T) {
 		testEnvironment, err = integration.NewTestEnvironment(cmdRunner, GinkgoWriter)
 		Expect(err).ToNot(HaveOccurred())
 
+		err = testEnvironment.DetectServiceManager()
+		Expect(err).ToNot(HaveOccurred())
+
 		err = testEnvironment.StopAgent()
 		Expect(err).ToNot(HaveOccurred())
 		// create a backup of original settings for nats FW tests

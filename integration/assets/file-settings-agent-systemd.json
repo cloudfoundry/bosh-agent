@@ -1,10 +1,11 @@
 {
   "Platform": {
     "Linux": {
-      "UseDefaultTmpDir": false,
+      "UseDefaultTmpDir": true,
       "UsePreformattedPersistentDisk": true,
       "BindMountPersistentDisk": false,
-      "DevicePathResolutionType": "virtio"
+      "DevicePathResolutionType": "virtio",
+      "ServiceManager": "systemd"
     }
   },
   "Infrastructure": {
