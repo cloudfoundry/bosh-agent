@@ -68,7 +68,7 @@ ${ssh_command} "if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then sudo sv stop
 copy_to_remote_host "${bosh_agent_dir}/out/bosh-agent" /var/vcap/bosh/bin/bosh-agent
 
 echo -e "\n Shutting down rsyslog (sv-based stemcells only)..."
-${ssh_command} "if [ -f /etc/service/agent/ ] >/dev/null 2>&1; then sudo systemctl disable --now syslog.socket rsyslog.service; fi" >/dev/null 2>&1
+${ssh_command} "if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then sudo systemctl disable --now syslog.socket rsyslog.service; fi" >/dev/null 2>&1
 
 echo -e "\n Installing fake blobstore..."
 pushd "${bosh_agent_dir}/integration/fake-blobstore"

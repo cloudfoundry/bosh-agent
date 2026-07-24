@@ -119,6 +119,17 @@ func (a byLen) Less(i, j int) bool { return len(a[i]) > len(a[j]) }
 func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 func (t *TestEnvironment) DetachDevice(dir string) error {
+	if strings.HasPrefix(dir, "/dev/") {
+		for i := 0; i <= 3; i++ {
+			p := dir
+			if i > 0 {
+				p = fmt.Sprintf("%s%d", dir, i)
+			}
+			_ = t.RemoveDevice(p)
+		}
+		return nil
+	}
+
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
 		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
@@ -674,6 +685,9 @@ func (t *TestEnvironment) StartAgent() error {
 			return err
 		}
 		_, err = t.RunCommand("sudo systemctl start agent")
+		if err != nil {
+			return err
+		}
 
 		// Wait for rsyslog to create the log file to avoid failures from when the symlink target has not been created yet.
 		_, err = t.RunCommand("for i in {1..200}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
