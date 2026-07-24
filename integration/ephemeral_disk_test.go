@@ -131,7 +131,7 @@ var _ = Describe("EphemeralDisk", func() {
 				)
 
 				BeforeEach(func() {
-					err := testEnvironment.UpdateAgentConfig("root-partition-agent.json")
+					err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("root-partition"))
 					Expect(err).ToNot(HaveOccurred())
 
 					oldRootDevice, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 1224, 128)
