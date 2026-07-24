@@ -29,10 +29,9 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats firewall", func() {
 			format.MaxLength = 0
 
-			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
-				return logs
-			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
+			Eventually(func() bool {
+				return testEnvironment.LogFileContains("Updated NATS firewall rules")
+			}, 300).Should(BeTrue())
 
 			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
 
@@ -106,10 +105,9 @@ var _ = Describe("nats firewall", func() {
 			format.MaxLength = 0
 			boshEnv := os.Getenv("BOSH_ENVIRONMENT")
 
-			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
-				return logs
-			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
+			Eventually(func() bool {
+				return testEnvironment.LogFileContains("Updated NATS firewall rules")
+			}, 300).Should(BeTrue())
 
 			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
@@ -159,10 +157,9 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats for firewall ipv6", func() {
 			format.MaxLength = 0
 
-			Eventually(func() string {
-				logs, _ := testEnvironment.RunCommand("sudo cat /var/vcap/bosh/log/current") //nolint:errcheck
-				return logs
-			}, 300).Should(ContainSubstring("Updated NATS firewall rules"))
+			Eventually(func() bool {
+				return testEnvironment.LogFileContains("Updated NATS firewall rules")
+			}, 300).Should(BeTrue())
 
 			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
