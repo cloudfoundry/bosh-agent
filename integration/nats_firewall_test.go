@@ -158,7 +158,7 @@ var _ = Describe("nats firewall", func() {
 			format.MaxLength = 0
 
 			Eventually(func() bool {
-				return testEnvironment.LogFileContains("Updated NATS firewall rules")
+				return testEnvironment.LogFileContains("Updated NATS firewall rules") || testEnvironment.JournalContains("Updated NATS firewall rules")
 			}, 300).Should(BeTrue())
 
 			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
