@@ -134,7 +134,7 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
 		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
 		// bind mount and restarts logging, in that order, the next time StartAgent() runs.
-		_, ignoredErr := t.RunCommand("sudo systemctl stop rsyslog.service")
+		_, ignoredErr := t.RunCommand("sudo systemctl stop syslog.socket rsyslog.service")
 		if ignoredErr != nil {
 			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
 		}
@@ -668,14 +668,21 @@ func (t *TestEnvironment) StartAgent() error {
 		// systemctl start agent will return immediately, but agent takes a moment to bootstrap and mount /var/log.
 		// If we start rsyslog.service now, it will block in ExecStartPre waiting for the agent to mount /var/log.
 		// Since we run both asynchronously via systemd, this correctly simulates the system boot dependency.
-		_, err = t.RunCommand("sudo systemctl start rsyslog.service --no-block")
+		_, err = t.RunCommand("sudo systemctl start rsyslog.service")
 		if err != nil {
 			return err
 		}
 		_, err = t.RunCommand("sudo systemctl start agent")
 
-		// Wait for rsyslog to create the log file to avoid races where the symlink is temporarily broken
-		_, _ = t.RunCommand("for i in {1..100}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
+		// Wait for rsyslog to create the log file to avoid failures from when the symlink target has not been created yet.
+		_, err = t.RunCommand("for i in {1..200}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
+		if err != nil {
+			return err
+		}
+		_, err = t.RunCommand("sudo stat /var/log/bosh-agent.log >/dev/null 2>&1")
+		if err != nil {
+			return err
+		}
 	} else {
 		_, err = t.RunCommand("nohup sudo sv start agent &")
 	}
