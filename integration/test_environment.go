@@ -668,7 +668,7 @@ func (t *TestEnvironment) StartAgent() error {
 		// systemctl start agent will return immediately, but agent takes a moment to bootstrap and mount /var/log.
 		// If we start rsyslog.service now, it will block in ExecStartPre waiting for the agent to mount /var/log.
 		// Since we run both asynchronously via systemd, this correctly simulates the system boot dependency.
-		_, err = t.RunCommand("sudo systemctl start rsyslog.service")
+		_, err = t.RunCommand("sudo systemctl start rsyslog.service --no-block")
 		if err != nil {
 			return err
 		}
