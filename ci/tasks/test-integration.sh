@@ -63,6 +63,7 @@ pushd "${bosh_agent_dir}"
 popd
 
 echo -e "\n Installing agent..."
+sleep 1200
 ${ssh_command} "if command -v sv >/dev/null 2>&1; then sudo sv stop agent; else sudo systemctl stop agent; fi" >/dev/null 2>&1
 copy_to_remote_host "${bosh_agent_dir}/out/bosh-agent" /var/vcap/bosh/bin/bosh-agent
 
