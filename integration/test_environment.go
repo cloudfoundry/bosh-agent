@@ -691,7 +691,7 @@ func (t *TestEnvironment) StartAgent() error {
 }
 
 func (t *TestEnvironment) DetectServiceManager() error {
-	out, err := t.RunCommand(fmt.Sprintf("if command -v sv >/dev/null 2>&1; then echo sv; else echo %s; fi", SERVICE_MANAGER_SYSTEMD))
+	out, err := t.RunCommand(fmt.Sprintf("if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then echo sv; else echo %s; fi", SERVICE_MANAGER_SYSTEMD))
 	if err != nil {
 		return err
 	}
