@@ -24,6 +24,16 @@ var _ = Describe("nats firewall", func() {
 			// that doesn't match the old cgroup.
 			_, _ = testEnvironment.RunCommand("sudo iptables -t mangle -F")  //nolint:errcheck
 			_, _ = testEnvironment.RunCommand("sudo ip6tables -t mangle -F") //nolint:errcheck
+
+			// The backup settings reference /dev/sdh as the ephemeral disk. Create a fake
+			// device so the agent can bootstrap without hanging on the 30-second disk-wait timeout.
+			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err := testEnvironment.DetachDevice("/dev/sdh")
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("sets up the outgoing nats firewall", func() {
