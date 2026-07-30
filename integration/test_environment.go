@@ -163,19 +163,21 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 				t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", ignoredErr, out)
 			}
 
-			// Retry unmounting to allow processes terminated by fuser -k time to release open file handles on the mount point.
-			// Avoid lazy unmounts (--lazy) as they leave underlying bind mounts active on /var/vcap/data/root_log,
-			// causing subsequent unmounts of /var/vcap/data to fail with "device or resource busy".
-			var umountErr error
-			for attempt := 0; attempt < 20; attempt++ {
-				_, umountErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
-				if umountErr == nil {
-					break
-				}
-				time.Sleep(100 * time.Millisecond)
+			// Lazily unmount /var/log to prevent intermittent test failures. As of 2024-06-24, this mount point
+			// is a bind mount of /var/vcap/data/root_log. For reasons we don't currently understand the
+			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount, but this is
+			// the only mount that has this problem.
+			//
+			// Because we later unmount /var/vcap/data, lazily unmounting /var/log will eventually alert us if
+			// anyone has handles open in that mount point... so we'll eventually fail loudly, making this not
+			// a catastrophically bad thing to do.
+			if mountPoint == "/var/log" {
+				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
+			} else {
+				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
 			}
-			if umountErr != nil {
-				t.writerPrinter.Printf("DetachDevice: failed to unmount %s after retries: %s", mountPoint, umountErr)
+			if ignoredErr != nil {
+				t.writerPrinter.Printf("DetachDevice: %s", ignoredErr)
 			}
 		}
 	}
