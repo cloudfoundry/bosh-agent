@@ -56,8 +56,10 @@ func TestIntegration(t *testing.T) {
 	})
 
 	AfterEach(func() {
+		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		Expect(err).ToNot(HaveOccurred())
 
-		err := testEnvironment.CleanupDataDir()
+		err = testEnvironment.CleanupDataDir()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupLogFile()
