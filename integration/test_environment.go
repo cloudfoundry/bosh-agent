@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -206,6 +207,11 @@ func (t *TestEnvironment) CleanupDataDir() error {
 		return err
 	}
 
+	_, err = t.RunCommand("sudo rm -f /var/log/bosh-agent.log")
+	if err != nil {
+		return err
+	}
+
 	err = t.DetachDevice("/var/log")
 	if err != nil {
 		return err
@@ -343,8 +349,9 @@ func (t *TestEnvironment) CleanupLogFile() error {
 	}
 
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// Clear the journal to prevent LogFileContains fallback from leaking state across tests
-		_, err = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-time=1s")
+		// Clear the journal to prevent JournalContains from leaking state across tests.
+		// --vacuum-size=0 removes all archived files; --rotate archives the active file first.
+		_, err = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-size=0")
 	}
 
 	return err
@@ -444,9 +451,16 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 			return err
 		}
 
-		c := fmt.Sprintf("ls -al %s | cut -d' ' -f 6", t.deviceMap[deviceNum])
+		loopDev := t.deviceMap[deviceNum]
+		t.writerPrinter.Printf("AttachDevice[%s]: loop device is %s\n", partitionPath, loopDev)
+
+		lsOut, lsErr := t.RunCommand(fmt.Sprintf("ls -al %s", loopDev))
+		t.writerPrinter.Printf("AttachDevice[%s]: ls -al output: %q (err: %v)\n", partitionPath, strings.TrimSpace(lsOut), lsErr)
+
+		c := fmt.Sprintf("ls -al %s | cut -d' ' -f 6", loopDev)
 		output, err := t.RunCommand(c)
 		minorNum := strings.TrimSpace(output)
+		t.writerPrinter.Printf("AttachDevice[%s]: extracted minor number: %q (err: %v)\n", partitionPath, minorNum, err)
 		if err != nil {
 			return err
 		}
@@ -456,11 +470,16 @@ func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPart
 			return err
 		}
 
-		c = fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum)
-		_, err = t.RunCommand(c)
+		mknodCmd := fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum)
+		t.writerPrinter.Printf("AttachDevice[%s]: running: %s\n", partitionPath, mknodCmd)
+		mknodOut, err := t.RunCommand(mknodCmd)
+		t.writerPrinter.Printf("AttachDevice[%s]: mknod output: %q (err: %v)\n", partitionPath, strings.TrimSpace(mknodOut), err)
 		if err != nil {
 			return err
 		}
+
+		statOut, _ := t.RunCommand(fmt.Sprintf("ls -al %s", partitionPath)) //nolint:errcheck
+		t.writerPrinter.Printf("AttachDevice[%s]: node created: %s\n", partitionPath, strings.TrimSpace(statOut))
 	}
 	return nil
 }
@@ -748,6 +767,9 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 	if t.sshTunnelProc != nil {
 		return fmt.Errorf("already running")
 	}
+
+	// Clean up any zombie ssh tunnels on the local machine from aborted test runs
+	_ = exec.Command("pkill", "-f", "--", fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort)).Run()
 
 	sshCmd := boshsys.Command{
 		Name: "ssh",
