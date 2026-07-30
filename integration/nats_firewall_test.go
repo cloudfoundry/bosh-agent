@@ -75,13 +75,16 @@ var _ = Describe("nats firewall", func() {
 			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, directorIP))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
+			// The drop rule silently drops packets, causing a timeout. We add the dummy IP to the loopback interface
+			// before testing so that the routing table has a valid route. Without a valid route, nc would fail instantly 
+			// with "Network is unreachable" rather than sending the packet through the firewall to be dropped.
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr add %s/32 dev lo || true", directorIP))
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", directorIP))
 			Expect(err).NotTo(BeNil())
 			Expect(out).To(ContainSubstring("timed out"))
 
 			// root (UID 0) is allowed through the nftables firewall
 			// Set up a quick dummy listener using nc so we can prove root can connect
-			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr add %s/32 dev lo || true", directorIP))
 			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo nohup nc -l -p 4222 -s %s >/dev/null 2>&1 &", directorIP))
 
 			out, err = testEnvironment.RunCommand(fmt.Sprintf("sudo nc -z -w2 %v 4222 -v", directorIP))
@@ -226,13 +229,15 @@ var _ = Describe("nats firewall", func() {
 			Expect(output).To(MatchRegexp(`ip6 daddr %s tcp dport 4222 drop`, directorIP))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
+			// We add the dummy IP to the loopback interface before testing so that the routing table has a valid route. 
+			// Without a valid route, nc would fail instantly with "Network is unreachable" rather than sending the packet to the firewall.
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr add %s/128 dev lo || true", directorIP))
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc -6 %v 4222 -w2 -v", directorIP))
 			Expect(err).NotTo(BeNil())
 			Expect(out).To(ContainSubstring("timed out"))
 
 			// root (UID 0) is allowed through the nftables firewall
 			// Set up a quick dummy listener using nc so we can prove root can connect
-			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr add %s/128 dev lo || true", directorIP))
 			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo nohup nc -6 -l -p 4222 -s %s >/dev/null 2>&1 &", directorIP))
 
 			out, err = testEnvironment.RunCommand(fmt.Sprintf("sudo nc -6 -z -w2 %v 4222 -v", directorIP))
