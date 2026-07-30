@@ -673,6 +673,9 @@ func (t *TestEnvironment) StartAgent() error {
 			return err
 		}
 		_, err = t.RunCommand("sudo systemctl start agent")
+		if err != nil {
+			return err
+		}
 
 		// Wait for rsyslog to create the log file to avoid failures from when the symlink target has not been created yet.
 		_, err = t.RunCommand("for i in {1..200}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
