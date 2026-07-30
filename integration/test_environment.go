@@ -119,11 +119,6 @@ func (a byLen) Len() int           { return len(a) }
 func (a byLen) Less(i, j int) bool { return len(a[i]) > len(a[j]) }
 func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
-func (t *TestEnvironment) IsMounted(dir string) bool {
-	_, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep -q "on %s "`, dir))
-	return err == nil
-}
-
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	if strings.HasPrefix(dir, "/dev/") {
 		for i := 0; i <= 3; i++ {
@@ -136,19 +131,17 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		return nil
 	}
 
-	if !t.IsMounted(dir) {
-		return nil
-	}
-
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
 		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
 		return err
 	}
 
-	if dir == "/var/log" {
-		// Stop rsyslog and syslog.socket before fuser-kill/unmount so rsyslog cleanly releases
-		// its open file handles on /var/log and systemd socket activation doesn't restart it.
+	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the
+		// whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
+		// /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount below,
+		// so it cleanly releases its open file handles on /var/log instead of racing the lazy unmount.
 		// We deliberately do NOT restart it afterward: /var/log is about to become a plain directory on
 		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
 		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
@@ -182,8 +175,7 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 				time.Sleep(100 * time.Millisecond)
 			}
 			if umountErr != nil {
-				t.writerPrinter.Printf("DetachDevice: strict umount %s failed, falling back to --lazy: %s", mountPoint, umountErr)
-				_, _ = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
+				t.writerPrinter.Printf("DetachDevice: failed to unmount %s after retries: %s", mountPoint, umountErr)
 			}
 		}
 	}
@@ -355,6 +347,8 @@ func (t *TestEnvironment) CleanupLogFile() error {
 	}
 
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Clear the journal to prevent JournalContains from leaking state across tests.
+		// --vacuum-size=0 removes all archived files; --rotate archives the active file first.
 		_, err = t.RunCommand("sudo journalctl --flush --rotate --vacuum-time=1s")
 	}
 
@@ -527,18 +521,6 @@ func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInM
 }
 
 func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePath string) error {
-	_ = t.StopAgent()
-
-	// Unmount /var/log first if it is mounted (e.g. bind mounted to /var/vcap/data/root_log)
-	if t.IsMounted("/var/log") {
-		_ = t.DetachDevice("/var/log")
-	}
-
-	// Unmount /var/vcap/data if mounted on the partitioned device
-	if t.IsMounted("/var/vcap/data") {
-		_ = t.DetachDevice("/var/vcap/data")
-	}
-
 	_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", rootLink))
 	if err != nil {
 		return err
@@ -553,19 +535,13 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" { //nolint:errcheck
 				for _, path := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
-					var umountErr error
-					for attempt := 0; attempt < 20; attempt++ {
-						_, umountErr = t.RunCommand(fmt.Sprintf("sudo umount %s", path))
-						if umountErr == nil {
-							break
-						}
-						time.Sleep(100 * time.Millisecond)
+					_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
+					if ignoredErr != nil {
+						t.writerPrinter.Printf("DetachPartitionedRootDevice: %s", ignoredErr)
 					}
-					if umountErr != nil {
-						_, _ = t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
-						t.writerPrinter.Printf("DetachPartitionedRootDevice: %s", umountErr)
-					}
+
 				}
+
 			}
 
 			if i > 0 {
@@ -582,6 +558,7 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 				return err
 			}
 		}
+
 	}
 
 	_, err = t.RunCommand(fmt.Sprintf("sudo mv %s-temp %s", rootLink, rootLink))

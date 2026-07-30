@@ -56,13 +56,7 @@ func TestIntegration(t *testing.T) {
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupDataDir()
@@ -73,6 +67,12 @@ func TestIntegration(t *testing.T) {
 
 		err = testEnvironment.ResetDeviceMap()
 		Expect(err).ToNot(HaveOccurred())
+
+		err = testEnvironment.StopAgentTunnel()
+		Expect(err).NotTo(HaveOccurred())
+
+		err = testEnvironment.StopAgent()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	RunSpecs(t, "Integration Suite")
