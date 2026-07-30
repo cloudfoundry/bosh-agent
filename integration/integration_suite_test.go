@@ -53,6 +53,12 @@ func TestIntegration(t *testing.T) {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	JustAfterEach(func() {
+		if CurrentSpecReport().Failed() {
+			testEnvironment.DumpDiagnostics()
+		}
+	})
+
 	AfterEach(func() {
 		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
