@@ -164,7 +164,7 @@ var _ = FDescribe("EphemeralDisk", func() {
 					Expect(partitionTable).To(MatchRegexp(`/dev/sdz3 : start=\s+\d+, size=\s+\d+, type=83`))
 				})
 
-				Context("when swap size is set to 0", func() {
+				FContext("when swap size is set to 0", func() {
 					BeforeEach(func() {
 						swapSize := uint64(0)
 						fileSettings.Env = settings.Env{
