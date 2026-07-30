@@ -351,7 +351,7 @@ func (t *TestEnvironment) CleanupLogFile() error {
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
 		// Clear the journal to prevent JournalContains from leaking state across tests.
 		// --vacuum-size=0 removes all archived files; --rotate archives the active file first.
-		_, err = t.RunCommand("sudo journalctl --rotate && sudo journalctl --vacuum-size=0")
+		_, err = t.RunCommand("sudo journalctl --flush --rotate --vacuum-time=1s")
 	}
 
 	return err
