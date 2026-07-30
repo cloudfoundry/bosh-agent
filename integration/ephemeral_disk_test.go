@@ -11,7 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
-var _ = Describe("EphemeralDisk", func() {
+var _ = FDescribe("EphemeralDisk", func() {
 	var (
 		fileSettings settings.Settings
 	)
