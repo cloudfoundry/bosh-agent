@@ -650,8 +650,13 @@ func (t *TestEnvironment) forceDetachLoopDevice(devicePath string) error {
 		return nil
 	}
 
+	// A handful of retries is enough to ride out a transient busy device / deferred lazy unmount.
+	// We deliberately do NOT spin hard here: a device that stays attached after this is genuinely
+	// held open (e.g. a stale leftover from an earlier spec), and more retries just waste teardown
+	// time. The guarded rm in ResetDeviceMap already ensures we never orphan its backing file into
+	// a "(deleted)" zombie, which was the actual cross-spec leak.
 	var lastErr error
-	for attempt := 0; attempt < 15; attempt++ {
+	for attempt := 0; attempt < 5; attempt++ {
 		// udevadm settle blocks until queued udev events (incl. loop partition auto-scan) drain.
 		_, _ = t.RunCommand("sudo udevadm settle") //nolint:errcheck
 
@@ -763,14 +768,27 @@ func (t *TestEnvironment) StartAgent() error {
 			return err
 		}
 
-		// Wait for rsyslog to create the log file to avoid failures from when the symlink target has not been created yet.
-		_, err = t.RunCommand("for i in {1..200}; do if sudo stat /var/log/bosh-agent.log >/dev/null 2>&1; then break; fi; sleep 0.1; done")
+		// Wait for the agent to bootstrap far enough to mount /var/log, which unblocks rsyslog's
+		// ExecStartPre (wait_for_var_log_to_be_mounted) so rsyslog starts and creates
+		// /var/log/bosh-agent.log on the first bosh-agent-tagged message.
+		//
+		// This is a POSIX sh while-loop, NOT `for i in {1..200}`. sshd here does not execute commands
+		// under bash, so `{1..200}` never brace-expanded - the old loop ran a SINGLE iteration and
+		// effectively never waited. The test then raced the agent's ~1s bootstrap and lost whenever
+		// rsyslog had not written the file yet (see integration diagnostics: file appears ~1s after
+		// the agent goes active, but the poll had already given up). The trailing echo reports how
+		// long we actually waited so CI shows the margin.
+		waitCmd := `i=0; while [ "$i" -lt 300 ]; do sudo test -e /var/log/bosh-agent.log && break; ` +
+			`i=$((i+1)); sleep 0.2; done; ` +
+			`if sudo test -e /var/log/bosh-agent.log; then echo "bosh-agent.log present after ${i} polls (~$((i/5))s)"; ` +
+			`else echo "bosh-agent.log ABSENT after ${i} polls"; fi`
+		out, err := t.RunCommand(waitCmd)
+		t.writerPrinter.Printf("StartAgent: %s\n", strings.TrimSpace(out))
 		if err != nil {
 			return err
 		}
-		_, err = t.RunCommand("sudo stat /var/log/bosh-agent.log >/dev/null 2>&1")
-		if err != nil {
-			return err
+		if !strings.Contains(out, "present") {
+			return fmt.Errorf("StartAgent: %s", strings.TrimSpace(out))
 		}
 	} else {
 		_, err = t.RunCommand("nohup sudo sv start agent &")
