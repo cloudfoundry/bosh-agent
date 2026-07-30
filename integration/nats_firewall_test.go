@@ -12,6 +12,22 @@ import (
 )
 
 var _ = Describe("nats firewall", func() {
+	AfterEach(func() {
+		// Restore default HTTP settings and agent config to prevent polluting settings for subsequent tests.
+		fileSettings := settings.Settings{
+			Blobstore: settings.Blobstore{
+				Type: "local",
+				Options: map[string]interface{}{
+					"blobstore_path": "/var/vcap/data",
+				},
+			},
+		}
+		err := testEnvironment.CreateSettingsFile(fileSettings)
+		Expect(err).ToNot(HaveOccurred())
+		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		Expect(err).ToNot(HaveOccurred())
+	})
+
 	Context("ipv4", func() {
 		var directorIP = "192.0.2.100" // RFC 5737 TEST-NET-1
 
