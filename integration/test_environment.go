@@ -723,6 +723,39 @@ func (t *TestEnvironment) StartAgent() error {
 	return err
 }
 
+// DumpDiagnostics prints the state most relevant to the "/var/log/bosh-agent.log never
+// appears" failure mode so it is visible in CI output when a spec fails. It is intentionally
+// best-effort: every command is suffixed with "|| true" so a missing file or stopped service
+// never causes the dump itself to error, and errors from RunCommand are only logged.
+//
+// The interesting questions this answers:
+//   - Did the agent's bootstrap fail before SetupLogDir? -> journalctl for bosh-agent.service
+//   - Is rsyslog stuck in ExecStartPre waiting for /var/log? -> systemctl status rsyslog
+//   - Is /var/log a mountpoint at all, and backed by what? -> mountpoint + mount output
+//   - Was /var/log left mounted on a now-detached loop device by a prior spec's teardown?
+//     -> mount + losetup + device node listing
+func (t *TestEnvironment) DumpDiagnostics() {
+	diagnosticCommands := []string{
+		"sudo systemctl status bosh-agent.service --no-pager --full || true",
+		"sudo systemctl status rsyslog.service --no-pager --full || true",
+		"sudo journalctl -u bosh-agent.service --no-pager | tail -n 200 || true",
+		"mountpoint /var/log || true",
+		`mount | grep -E "/var/log|/var/vcap/data" || true`,
+		"sudo losetup -a || true",
+		"ls -al /dev/sd* /dev/loop* 2>/dev/null || true",
+		"df / | grep /dev/ || true",
+		"sudo ls -al /var/log/bosh-agent.log || true",
+		"sudo ls -al /var/vcap/data/root_log 2>/dev/null || true",
+	}
+
+	t.writerPrinter.Println("=========== BEGIN DIAGNOSTICS DUMP (spec failed) ===========")
+	for _, command := range diagnosticCommands {
+		out, err := t.RunCommand(command)
+		t.writerPrinter.Printf("\n$ %s\n%s\n(exit err: %v)\n", command, out, err)
+	}
+	t.writerPrinter.Println("=========== END DIAGNOSTICS DUMP ===========")
+}
+
 func (t *TestEnvironment) DetectServiceManager() error {
 	out, err := t.RunCommand(fmt.Sprintf("if [ -d /etc/service/agent/ ] >/dev/null 2>&1; then echo sv; else echo %s; fi", SERVICE_MANAGER_SYSTEMD))
 	if err != nil {

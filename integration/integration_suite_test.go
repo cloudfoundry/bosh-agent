@@ -55,6 +55,17 @@ func TestIntegration(t *testing.T) {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
+	// Runs after the It/JustBeforeEach but BEFORE any AfterEach cleanup tears down the
+	// disks and loop devices, so it captures the pristine failure state. Only fires on
+	// failure so passing runs stay quiet. Output goes to GinkgoWriter, which CI prints
+	// for failed specs - this is how we see the agent journal and mount state without
+	// keeping the VM alive.
+	JustAfterEach(func() {
+		if CurrentSpecReport().Failed() {
+			testEnvironment.DumpDiagnostics()
+		}
+	})
+
 	AfterEach(func() {
 		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
