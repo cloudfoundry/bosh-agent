@@ -32,6 +32,8 @@ var _ = Describe("nats firewall", func() {
 		var directorIP = "192.0.2.100" // RFC 5737 TEST-NET-1
 
 		BeforeEach(func() {
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr del %s/32 dev lo || true", directorIP))
+
 			fileSettings := settings.Settings{
 				AgentID: "fake-agent-id",
 				Blobstore: settings.Blobstore{
@@ -66,6 +68,8 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
+			_, _ = testEnvironment.RunCommand("sudo pkill -f 'nc -l -p 4222'")
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr del %s/32 dev lo || true", directorIP))
 			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
@@ -184,6 +188,7 @@ var _ = Describe("nats firewall", func() {
 			// Clear any stale nftables rules left by the previous test (e.g. multi-url agent
 			// re-populating the chain after its AfterEach flush but before StopAgent).
 			_, _ = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access") //nolint:errcheck
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr del %s/128 dev lo || true", directorIP))
 
 			fileSettings := settings.Settings{
 				AgentID: "fake-agent-id",
@@ -208,6 +213,8 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
+			_, _ = testEnvironment.RunCommand("sudo pkill -f 'nc -6 -l -p 4222'")
+			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr del %s/128 dev lo || true", directorIP))
 			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
