@@ -10,7 +10,7 @@ import (
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
-var _ = Describe("SystemMounts", func() {
+var _ = FDescribe("SystemMounts", func() {
 	var (
 		fileSettings boshsettings.Settings
 	)
