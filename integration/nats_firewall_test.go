@@ -50,11 +50,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			err := testEnvironment.RemoveDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh1")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh2")
+			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
@@ -76,7 +72,7 @@ var _ = Describe("nats firewall", func() {
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
 			// The drop rule silently drops packets, causing a timeout. We add the dummy IP to the loopback interface
-			// before testing so that the routing table has a valid route. Without a valid route, nc would fail instantly 
+			// before testing so that the routing table has a valid route. Without a valid route, nc would fail instantly
 			// with "Network is unreachable" rather than sending the packet through the firewall to be dropped.
 			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr add %s/32 dev lo || true", directorIP))
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", directorIP))
@@ -137,11 +133,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			err := testEnvironment.RemoveDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh1")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh2")
+			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
@@ -200,11 +192,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			err := testEnvironment.RemoveDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh1")
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.RemoveDevice("/dev/sdh2")
+			err := testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
@@ -229,7 +217,7 @@ var _ = Describe("nats firewall", func() {
 			Expect(output).To(MatchRegexp(`ip6 daddr %s tcp dport 4222 drop`, directorIP))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
-			// We add the dummy IP to the loopback interface before testing so that the routing table has a valid route. 
+			// We add the dummy IP to the loopback interface before testing so that the routing table has a valid route.
 			// Without a valid route, nc would fail instantly with "Network is unreachable" rather than sending the packet to the firewall.
 			_, _ = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr add %s/128 dev lo || true", directorIP))
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc -6 %v 4222 -w2 -v", directorIP))

@@ -119,6 +119,17 @@ func (a byLen) Less(i, j int) bool { return len(a[i]) > len(a[j]) }
 func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 func (t *TestEnvironment) DetachDevice(dir string) error {
+	if strings.HasPrefix(dir, "/dev/") {
+		for i := 0; i <= 3; i++ {
+			p := dir
+			if i > 0 {
+				p = fmt.Sprintf("%s%d", dir, i)
+			}
+			_ = t.RemoveDevice(p)
+		}
+		return nil
+	}
+
 	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
 	if err != nil {
 		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
