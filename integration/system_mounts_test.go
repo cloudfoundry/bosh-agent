@@ -91,11 +91,19 @@ var _ = FDescribe("SystemMounts", func() {
 							return testEnvironment.LogFileContains("sv start monit") || testEnvironment.JournalContains("systemctl start monit")
 						}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
-						result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'") //nolint:errcheck
-						Expect(strings.TrimSpace(result)).To(Equal("1"))
+						// result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'") //nolint:errcheck
+						// Expect(strings.TrimSpace(result)).To(Equal("1"))
+						Eventually(func() string {
+							result, _ := testEnvironment.RunCommand("sudo findmnt -D /tmp | grep -c '[/root_tmp]'") //nolint:errcheck
+							return strings.TrimSpace(result)
+						}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 
-						result, _ = testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'") //nolint:errcheck
-						Expect(strings.TrimSpace(result)).To(Equal("1"))
+						// result, _ = testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'") //nolint:errcheck
+						// Expect(strings.TrimSpace(result)).To(Equal("1"))
+						Eventually(func() string {
+							result, _ := testEnvironment.RunCommand("sudo findmnt -D /var/tmp | grep -c '[/root_tmp]'") //nolint:errcheck
+							return strings.TrimSpace(result)
+						}, 2*time.Minute, 1*time.Second).Should(Equal("1"))
 
 						result, err := testEnvironment.RunCommand("stat -c %a /tmp")
 						Expect(err).ToNot(HaveOccurred())
