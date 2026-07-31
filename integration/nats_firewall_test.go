@@ -67,7 +67,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			_, err := testEnvironment.RunCommand("sudo pkill -f 'nc -l -p 4222'")
+			_, err := testEnvironment.RunCommand("sudo pkill -f 'nc -l -p 4222' || true")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr del %s/32 dev lo || true", directorIP))
 			Expect(err).ToNot(HaveOccurred())
@@ -110,7 +110,7 @@ var _ = Describe("nats firewall", func() {
 			Expect(err).To(BeNil())
 
 			// cleanup
-			_, err = testEnvironment.RunCommand("sudo pkill -f 'nc -l -p 4222'")
+			_, err = testEnvironment.RunCommand("sudo pkill -f 'nc -l -p 4222' || true")
 			Expect(err).To(BeNil())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr del %s/32 dev lo || true", directorIP))
 			Expect(err).To(BeNil())
@@ -218,7 +218,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			_, err := testEnvironment.RunCommand("sudo pkill -f 'nc -6 -l -p 4222'")
+			_, err := testEnvironment.RunCommand("sudo pkill -f 'nc -6 -l -p 4222' || true")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr del %s/128 dev lo || true", directorIP))
 			Expect(err).ToNot(HaveOccurred())
@@ -260,7 +260,7 @@ var _ = Describe("nats firewall", func() {
 			Expect(err).To(BeNil())
 
 			// cleanup
-			_, err = testEnvironment.RunCommand("sudo pkill -f 'nc -6 -l -p 4222'")
+			_, err = testEnvironment.RunCommand("sudo pkill -f 'nc -6 -l -p 4222' || true")
 			Expect(err).To(BeNil())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr del %s/128 dev lo || true", directorIP))
 			Expect(err).To(BeNil())
