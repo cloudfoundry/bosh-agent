@@ -101,6 +101,13 @@ IdentityFile ${jumpbox_key_path}
 
   export AGENT_IP="${agent_ip}"
   go run github.com/onsi/ginkgo/v2/ginkgo --trace integration
+  echo -e "\nAND AGAIN"
+  go run github.com/onsi/ginkgo/v2/ginkgo --trace integration
+  echo -e "\nAND AGAIN"
+  go run github.com/onsi/ginkgo/v2/ginkgo --trace integration
+  echo -e "\nAND AGAIN"
+  go run github.com/onsi/ginkgo/v2/ginkgo --trace integration
+  echo -e "\n THATS FOUR TIMES"
 popd
 
 
