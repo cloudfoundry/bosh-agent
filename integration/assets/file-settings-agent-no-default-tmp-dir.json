@@ -13,7 +13,6 @@
         {
           "Type": "File",
           "SettingsPath": "/var/vcap/settings.json"
-
         }
       ]
     }
