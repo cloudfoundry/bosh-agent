@@ -687,7 +687,7 @@ func (t *TestEnvironment) RunCommandChain(commands ...string) error {
 }
 
 func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
-	_, err := t.RunCommand("sudo rmmod dummy")
+	_, err := t.RunCommand("sudo rmmod dummy || true")
 	return err
 }
 
@@ -844,10 +844,8 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 		return fmt.Errorf("already running")
 	}
 
-	err := exec.Command("pkill", "-f", "--", fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort)).Run()
-	if err != nil {
-		return err
-	}
+	// Ignore error from pkill because exit code 1 means no processes were matched
+	_ = exec.Command("pkill", "-f", "--", fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort)).Run() //nolint:errcheck
 
 	sshCmd := boshsys.Command{
 		Name: "ssh",
