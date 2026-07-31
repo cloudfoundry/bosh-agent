@@ -16,7 +16,7 @@ var _ = Describe("bundle_logs", func() {
 	)
 
 	BeforeEach(func() {
-		_, err := testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
+		_, err := testEnvironment.RunCommand("sudo userdel -rf username || true") //nolint:errcheck
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
@@ -55,7 +55,7 @@ var _ = Describe("bundle_logs", func() {
 	})
 
 	AfterEach(func() {
-		_, err := testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
+		_, err := testEnvironment.RunCommand("sudo userdel -rf username || true") //nolint:errcheck
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.DetachDevice("/dev/sdh")
