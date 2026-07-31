@@ -16,6 +16,13 @@ var _ = Describe("bundle_logs", func() {
 	)
 
 	BeforeEach(func() {
+		// The It below creates the "username" user via an ssh setup action but the agent's useradd
+		// is not idempotent - it fails with "already exists" (exit 9) if the user is still present.
+		// This spec used to leak that user (no cleanup), and since CI reuses the VM across suite runs
+		// a leftover "username" from an earlier run made this spec flake. Remove it up front (and in
+		// AfterEach), mirroring user_permissions_test, so the run is independent of prior state.
+		testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
+
 		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
 		Expect(err).ToNot(HaveOccurred())
 
@@ -52,6 +59,10 @@ var _ = Describe("bundle_logs", func() {
 	})
 
 	AfterEach(func() {
+		// Do not leak the "username" user created by the ssh setup action into later specs or, since
+		// CI reuses the VM, into later suite runs (see BeforeEach).
+		testEnvironment.RunCommand("sudo userdel -rf username") //nolint:errcheck
+
 		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
