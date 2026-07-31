@@ -24,6 +24,7 @@ test/micro_bosh
 *metadata.json
 *.log
 bin/bosh-agent
+integration/fake-blobstore/fake-blobstore
 
 .starscope.db
 cscope.out
