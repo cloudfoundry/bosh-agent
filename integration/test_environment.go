@@ -324,12 +324,10 @@ func (t *TestEnvironment) ensureMonitStopped() error {
 }
 
 func (t *TestEnvironment) ResetDeviceMap() error {
-	// This runs last in the suite AfterEach, after CleanupDataDir has stopped monit and unmounted
-	// /var/vcap/data and the /var/log bind mount, so the loop devices are genuinely free by now -
-	// this is the authoritative loop-device cleanup and the last line of defense against leaks.
-
-	// Settle first so Noble's loop partition auto-scan (loopNpM children) has finished before we detach.
-	_, _ = t.RunCommand("sudo udevadm settle") //nolint:errcheck
+	_, err := t.RunCommand("sudo udevadm settle")
+	if err != nil {
+		return err
+	}
 
 	out, err := t.RunCommand("sudo losetup -a | cut -f1 -d:")
 	if err != nil {
@@ -337,14 +335,10 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 	}
 	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
 		if ignoredErr := t.forceDetachLoopDevice(loopDev); ignoredErr != nil {
-			// Leave this device's backing file in place below - removing it while the loop is still
-			// attached is what created the "(deleted)" zombie loops that leaked into later specs.
 			t.writerPrinter.Printf("ResetDeviceMap: %s", ignoredErr)
 		}
 	}
 
-	// Only remove backing files that are no longer referenced by any loop device. Guarding every rm
-	// on the loop actually being gone prevents orphaning a still-attached loop into a zombie.
 	_, err = t.RunCommand(`for f in /virtualfs-*; do [ -e "$f" ] || continue; sudo losetup -a | grep -qF "$f" || sudo rm -f "$f"; done`)
 	if err != nil {
 		return err
@@ -362,8 +356,7 @@ func (t *TestEnvironment) CleanupLogFile() error {
 	}
 
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// Clear the journal to prevent JournalContains from leaking state across tests.
-		// --vacuum-time=1s removes archived files older than 1s; --rotate archives the active file first.
+		// NOTE: --vacuum-time=0s doesn't actually work
 		_, err = t.RunCommand("sudo journalctl --flush --rotate --vacuum-time=1s")
 	}
 
@@ -382,10 +375,6 @@ func (t *TestEnvironment) LogFileContains(content string) bool {
 
 func (t *TestEnvironment) JournalContains(content string) bool {
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// Bootstrap failures that occur before SetupLoggingAndAuditing runs (see agent/bootstrap.go)
-		// happen before rsyslog is restarted, so they never reach /var/vcap/bosh/log/current -
-		// they only ever land in the journal. Fall back to journalctl for that case, without
-		// weakening the primary file-based check that exercises the real logging pipeline.
 		_, err := t.RunCommand(fmt.Sprintf(`sudo journalctl -u bosh-agent.service | grep "%s"`, content))
 		return err == nil
 	}
@@ -566,10 +555,6 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 			// Settle the udev events from the parted change above before touching the loop device.
 			_, _ = t.RunCommand("sudo udevadm settle") //nolint:errcheck
 
-			// Best-effort here: /var/vcap/data still lives on this loop device and monit has not been
-			// stopped yet (CleanupDataDir runs after this in the suite AfterEach), so the device is
-			// expected to be busy. ResetDeviceMap does the authoritative, verified detach once the
-			// filesystems are unmounted. We must not fail the teardown on an expected-busy device.
 			if ignoredErr := t.DetachLoopDevice(partitionPath); ignoredErr != nil {
 				t.writerPrinter.Printf("DetachPartitionedRootDevice: deferring detach of %s to ResetDeviceMap: %s", partitionPath, ignoredErr)
 			}
@@ -652,17 +637,16 @@ func (t *TestEnvironment) forceDetachLoopDevice(devicePath string) error {
 		return nil
 	}
 
-	// A handful of retries is enough to ride out a transient busy device / deferred lazy unmount.
-	// We deliberately do NOT spin hard here: a device that stays attached after this is genuinely
-	// held open (e.g. a stale leftover from an earlier spec), and more retries just waste teardown
-	// time. The guarded rm in ResetDeviceMap already ensures we never orphan its backing file into
-	// a "(deleted)" zombie, which was the actual cross-spec leak.
 	var lastErr error
 	for attempt := 0; attempt < 5; attempt++ {
-		// udevadm settle blocks until queued udev events (incl. loop partition auto-scan) drain.
-		_, _ = t.RunCommand("sudo udevadm settle") //nolint:errcheck
+		if _, err := t.RunCommand("sudo udevadm settle"); err != nil {
+			lastErr = err
+		}
 
-		out, _ := t.RunCommand(fmt.Sprintf("sudo losetup %s 2>/dev/null || true", devicePath)) //nolint:errcheck
+		out, err := t.RunCommand(fmt.Sprintf("sudo losetup %s 2>/dev/null || true", devicePath)) //nolint:errcheck
+		if err != nil {
+			lastErr = err
+		}
 		if strings.TrimSpace(out) == "" {
 			return nil // no longer attached
 		}
@@ -671,7 +655,7 @@ func (t *TestEnvironment) forceDetachLoopDevice(devicePath string) error {
 			lastErr = err
 		}
 
-		_, _ = t.RunCommand("sleep 0.2") //nolint:errcheck // allow a deferred lazy unmount to release the backing device
+		_, _ = t.RunCommand("sleep 0.2") //nolint:errcheck
 	}
 
 	return fmt.Errorf("loop device %s still attached after retries (last detach error: %v)", devicePath, lastErr)
@@ -773,13 +757,6 @@ func (t *TestEnvironment) StartAgent() error {
 		// Wait for the agent to bootstrap far enough to mount /var/log, which unblocks rsyslog's
 		// ExecStartPre (wait_for_var_log_to_be_mounted) so rsyslog starts and creates
 		// /var/log/bosh-agent.log on the first bosh-agent-tagged message.
-		//
-		// This is a POSIX sh while-loop, NOT `for i in {1..200}`. sshd here does not execute commands
-		// under bash, so `{1..200}` never brace-expanded - the old loop ran a SINGLE iteration and
-		// effectively never waited. The test then raced the agent's ~1s bootstrap and lost whenever
-		// rsyslog had not written the file yet (see integration diagnostics: file appears ~1s after
-		// the agent goes active, but the poll had already given up). The trailing echo reports how
-		// long we actually waited so CI shows the margin.
 		waitCmd := `i=0; while [ "$i" -lt 300 ]; do sudo test -e /var/log/bosh-agent.log && break; ` +
 			`i=$((i+1)); sleep 0.2; done; ` +
 			`if sudo test -e /var/log/bosh-agent.log; then echo "bosh-agent.log present after ${i} polls (~$((i/5))s)"; ` +
@@ -799,29 +776,11 @@ func (t *TestEnvironment) StartAgent() error {
 	return err
 }
 
-// DumpDiagnostics prints the state most relevant to the "/var/log/bosh-agent.log never
-// appears" failure mode so it is visible in CI output when a spec fails. It is intentionally
-// best-effort: every command is suffixed with "|| true" so a missing file or stopped service
-// never causes the dump itself to error, and errors from RunCommand are only logged.
-//
-// The interesting questions this answers:
-//   - Did the agent's bootstrap fail before SetupLogDir? -> journalctl for bosh-agent.service
-//   - Is rsyslog stuck in ExecStartPre waiting for /var/log? -> systemctl status rsyslog
-//   - Is /var/log a mountpoint at all, and backed by what? -> mountpoint + mount output
-//   - Was /var/log left mounted on a now-detached loop device by a prior spec's teardown?
-//     -> mount + losetup + device node listing
 func (t *TestEnvironment) DumpDiagnostics() {
 	diagnosticCommands := []string{
 		"sudo systemctl status bosh-agent.service --no-pager --full || true",
-		// NRestarts > 0 means the agent crash-looped during StartAgent's wait window (each failed
-		// bootstrap never reaches SetupLogDir, so /var/log never mounts). ExecMainStartTimestamp is
-		// when the *current* (successful) instance started - compare against the spec's wait window
-		// to see how much of the 20s poll was burned before the agent finally came up.
 		"sudo systemctl show bosh-agent.service -p NRestarts -p ExecMainStartTimestamp -p ActiveEnterTimestamp || true",
 		"sudo systemctl status rsyslog.service --no-pager --full || true",
-		// Lifecycle + error lines across ALL agent restarts this spec, not just the last successful
-		// boot (which drowns them out with DEBUG). journald was vacuumed in the prior spec's AfterEach,
-		// so everything here belongs to this spec. This is what reveals WHY early bootstraps fail.
 		`sudo journalctl -u bosh-agent.service -o short-precise --no-pager | grep -iE "error|fail|bootstrap|ephemeral|partition|panic|Starting|Stopped|Deactivated|Main process|scheduled restart" | head -n 120 || true`,
 		"mountpoint /var/log || true",
 		`mount | grep -E "/var/log|/var/vcap/data" || true`,
@@ -885,7 +844,6 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 		return fmt.Errorf("already running")
 	}
 
-	// Clean up any zombie ssh tunnels on the local machine from aborted test runs
 	err := exec.Command("pkill", "-f", "--", fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort)).Run()
 	if err != nil {
 		return err
