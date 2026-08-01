@@ -48,7 +48,7 @@ var _ = Describe("CertManager", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgentTunnel()
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
 

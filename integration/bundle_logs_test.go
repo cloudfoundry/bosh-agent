@@ -50,7 +50,7 @@ var _ = Describe("bundle_logs", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgentTunnel()
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
 

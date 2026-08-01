@@ -91,6 +91,7 @@ User agent_test_user
 Hostname ${agent_ip}
 Port 22
 IdentityFile ${agent_vm_key_path}
+ProxyJump jumpbox
 
 Host jumpbox
 User ${JUMPBOX_USERNAME}

@@ -49,7 +49,7 @@ var _ = Describe("run_script", func() {
 	)
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgentTunnel()
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
 

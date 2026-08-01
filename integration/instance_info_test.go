@@ -52,7 +52,7 @@ var _ = Describe("Instance Info", func() {
 	Context("on ubuntu", func() {
 
 		JustBeforeEach(func() {
-			err := testEnvironment.StartAgentTunnel()
+			err := testEnvironment.WaitForAgent()
 			Expect(err).NotTo(HaveOccurred())
 		})
 

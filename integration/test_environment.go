@@ -1,11 +1,14 @@
 package integration
 
 import (
+	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -75,7 +78,6 @@ const SERVICE_MANAGER_SYSTEMD = "systemd"
 type TestEnvironment struct {
 	cmdRunner        boshsys.CmdRunner
 	currentDeviceNum int
-	sshTunnelProc    boshsys.Process
 	writerPrinter    writerPrinter
 	deviceMap        map[int]string
 	sshClient        *ssh.Client
@@ -101,15 +103,39 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, wp writerPrinter) (*TestEnv
 		return nil, err
 	}
 
+	const (
+		mbusUser = "mbus-user"
+		mbusPass = "mbus-pass"
+		mbusPort = 6868
+	)
+
+	lgr := logger.NewWriterLogger(logger.LevelDebug, wp)
+	mbusAddr := fmt.Sprintf("127.0.0.1:%d", mbusPort)
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return client.Dial("tcp", mbusAddr)
+		},
+	}
+	agentClient := integrationagentclient.NewIntegrationAgentClient(
+		fmt.Sprintf("https://%s:%s@localhost:%d", mbusUser, mbusPass, mbusPort),
+		"fake-director-uuid",
+		1*time.Second,
+		10,
+		httpclient.NewHTTPClient(&http.Client{Transport: transport}, lgr),
+		lgr,
+	)
+
 	return &TestEnvironment{
 		cmdRunner:        cmdRunner,
 		currentDeviceNum: 2,
 		writerPrinter:    wp,
 		deviceMap:        make(map[int]string),
 		sshClient:        client,
-		mbusUser:         "mbus-user",
-		mbusPass:         "mbus-pass",
-		mbusPort:         6868,
+		AgentClient:      agentClient,
+		mbusUser:         mbusUser,
+		mbusPass:         mbusPass,
+		mbusPort:         mbusPort,
 	}, nil
 }
 
@@ -701,7 +727,7 @@ func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
 
 func (t *TestEnvironment) CopyFileToPath(localPath string, remotePath string) error {
 	_, _, _, err :=
-		t.cmdRunner.RunCommand("scp", localPath, fmt.Sprintf("%s:/tmp/remote-file", t.agentIP()))
+		t.cmdRunner.RunCommand("scp", "-F", "ssh-config", localPath, "agent_vm:/tmp/remote-file")
 	if err != nil {
 		return err
 	}
@@ -842,41 +868,8 @@ func (er emptyReader) Read(_ []byte) (int, error) {
 	return 0, nil
 }
 
-func (t *TestEnvironment) StartAgentTunnel() error {
-	if t.sshTunnelProc != nil {
-		return fmt.Errorf("already running")
-	}
-
-	// Ignore error from pkill because exit code 1 means no processes were matched
-	_ = exec.Command("pkill", "-f", "--", fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort)).Run() //nolint:errcheck
-
-	sshCmd := boshsys.Command{
-		Name: "ssh",
-		Args: []string{
-			"-N",
-			fmt.Sprintf("-L16868:127.0.0.1:%d", t.mbusPort),
-			t.agentIP(),
-		},
-		Stdin: emptyReader{},
-	}
-	newTunnelProc, err := t.cmdRunner.RunComplexCommandAsync(sshCmd)
-	if err != nil {
-		return err
-	}
-	t.sshTunnelProc = newTunnelProc
-
-	lgr := logger.NewWriterLogger(logger.LevelDebug, t.writerPrinter)
-
-	httpClient := httpclient.NewHTTPClient(httpclient.DefaultClient, lgr)
-	t.AgentClient = integrationagentclient.NewIntegrationAgentClient(
-		fmt.Sprintf("https://%s:%s@localhost:16868", t.mbusUser, t.mbusPass),
-		"fake-director-uuid",
-		1*time.Second,
-		10,
-		httpClient,
-		lgr,
-	)
-
+func (t *TestEnvironment) WaitForAgent() error {
+	var err error
 	for i := 1; i < 90; i++ {
 		t.writerPrinter.Printf("Trying to contact agent via ssh tunnel...")
 		time.Sleep(1 * time.Second)
@@ -885,22 +878,8 @@ func (t *TestEnvironment) StartAgentTunnel() error {
 			return nil
 		}
 	}
-
-	t.writerPrinter.Printf("StartAgentTunnel %s", err.Error())
+	t.writerPrinter.Printf("WaitForAgent %s", err.Error())
 	return err
-}
-
-func (t *TestEnvironment) StopAgentTunnel() error {
-	if t.sshTunnelProc == nil {
-		return nil
-	}
-	t.sshTunnelProc.Wait()
-	ignoredErr := t.sshTunnelProc.TerminateNicely(5 * time.Second)
-	if ignoredErr != nil {
-		t.writerPrinter.Printf("StopAgentTunnel: %s", ignoredErr)
-	}
-	t.sshTunnelProc = nil
-	return nil
 }
 
 func (t *TestEnvironment) StartBlobstore() error {
@@ -1011,40 +990,10 @@ func (t *TestEnvironment) CreateBlobFromAssetInActualBlobstore(assetPath, blobst
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), assetPath), fmt.Sprintf(blobstorePath, blobID))
 }
 
-func (t *TestEnvironment) CreateBlobFromStringInActualBlobstore(contents, blobstorePath, blobID string) (string, error) {
-	_, err := t.RunCommand(fmt.Sprintf("sudo mkdir -p %s", blobstorePath))
-	if err != nil {
-		return "", err
-	}
-
-	remoteBlobPath := filepath.Join(blobstorePath, blobID)
-	_, _, _, err = t.cmdRunner.RunCommandWithInput(
-		contents,
-		"ssh",
-		t.agentIP(),
-		fmt.Sprintf("cat | sudo tee %s", remoteBlobPath),
-	)
-	if err != nil {
-		return "", err
-	}
-
-	blobDigest, _, _, err := t.cmdRunner.RunCommand(
-		"ssh",
-		t.agentIP(),
-		fmt.Sprintf("sudo shasum %s | cut -f 1 -d ' '", remoteBlobPath),
-	)
-
-	return blobDigest, err
-}
-
 func (t *TestEnvironment) agentDir() string {
 	integrationPath, _ := os.Getwd() //nolint:errcheck
 	agentDir, _ := filepath.Split(integrationPath)
 	return agentDir
-}
-
-func (t *TestEnvironment) agentIP() string {
-	return os.Getenv("AGENT_IP")
 }
 
 func (t *TestEnvironment) AssetsDir() string {
