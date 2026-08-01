@@ -15,9 +15,6 @@ var _ = Describe("remove_file", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -35,7 +32,7 @@ var _ = Describe("remove_file", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
@@ -48,11 +45,6 @@ var _ = Describe("remove_file", func() {
 	JustBeforeEach(func() {
 		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("removes the specified file", func() {

@@ -30,10 +30,9 @@ func TestIntegration(t *testing.T) {
 		err = testEnvironment.DetectServiceManager()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StopAgent()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
+		// Establish the clean baseline every spec's BeforeEach relies on; the AfterEach re-establishes
+		// it after each spec via the same helper (see RestoreCleanBaseline).
+		err = testEnvironment.RestoreCleanBaseline()
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
@@ -60,20 +59,9 @@ func TestIntegration(t *testing.T) {
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		// Single teardown path back to the clean baseline (see RestoreCleanBaseline).
+		err := testEnvironment.RestoreCleanBaseline()
 		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.ResetDeviceMap()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.StopAgent()
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	RunSpecs(t, "Integration Suite")

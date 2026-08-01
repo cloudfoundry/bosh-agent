@@ -53,12 +53,6 @@ var _ = Describe("DeleteARPEntries", func() {
 	}
 
 	BeforeEach(func() {
-		err := testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -72,7 +66,7 @@ var _ = Describe("DeleteARPEntries", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
@@ -88,9 +82,6 @@ var _ = Describe("DeleteARPEntries", func() {
 
 	AfterEach(func() {
 		err := testEnvironment.TearDownDummyNetworkInterface()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

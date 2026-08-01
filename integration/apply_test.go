@@ -18,9 +18,6 @@ var _ = Describe("apply", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -36,7 +33,7 @@ var _ = Describe("apply", func() {
 				Ephemeral: "/dev/sdh",
 			},
 		}
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		applySpec = applyspec.ApplySpec{
@@ -76,11 +73,6 @@ var _ = Describe("apply", func() {
 		err = testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
 
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {

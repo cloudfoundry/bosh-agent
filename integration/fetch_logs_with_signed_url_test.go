@@ -16,9 +16,6 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -39,7 +36,7 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
@@ -100,11 +97,6 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(output).To(ContainSubstring("foobarbaz-system-log-fetch"))
 		Expect(output).To(ContainSubstring("fetch-logs-system"))
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 })

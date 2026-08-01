@@ -54,9 +54,6 @@ var _ = Describe("run_script", func() {
 	})
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -70,7 +67,7 @@ var _ = Describe("run_script", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
@@ -81,11 +78,6 @@ var _ = Describe("run_script", func() {
 
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data/foobar")
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("runs a custom script", func() {

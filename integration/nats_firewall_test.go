@@ -23,8 +23,6 @@ var _ = Describe("nats firewall", func() {
 		}
 		err := testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("ipv4", func() {
@@ -50,8 +48,6 @@ var _ = Describe("nats firewall", func() {
 
 			err = testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-			Expect(err).ToNot(HaveOccurred())
 
 			_, _ = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access") //nolint:errcheck
 
@@ -70,8 +66,6 @@ var _ = Describe("nats firewall", func() {
 			_, err := testEnvironment.RunCommand("sudo pkill -f '[n]c -l -p 4222' || true")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr del %s/32 dev lo || true", directorIP))
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
@@ -147,8 +141,6 @@ var _ = Describe("nats firewall", func() {
 
 			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -158,9 +150,7 @@ var _ = Describe("nats firewall", func() {
 		})
 
 		AfterEach(func() {
-			err := testEnvironment.DetachDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
+			_, err := testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
 		})
 
@@ -211,8 +201,6 @@ var _ = Describe("nats firewall", func() {
 
 			err = testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
 		})
@@ -221,8 +209,6 @@ var _ = Describe("nats firewall", func() {
 			_, err := testEnvironment.RunCommand("sudo pkill -f '[n]c -6 -l -p 4222' || true")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr del %s/128 dev lo || true", directorIP))
-			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.DetachDevice("/dev/sdh")
 			Expect(err).ToNot(HaveOccurred())
 			_, err = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access")
 			Expect(err).To(BeNil())
