@@ -26,8 +26,6 @@ var _ = Describe("FileSettings", func() {
 			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -43,9 +41,5 @@ var _ = Describe("FileSettings", func() {
 			Expect(settingsJSON).To(ContainSubstring("fake-agent-id"))
 		})
 
-		AfterEach(func() {
-			err := testEnvironment.DetachDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-		})
 	})
 })

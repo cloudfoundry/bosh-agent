@@ -19,9 +19,6 @@ var _ = Describe("bundle_logs", func() {
 		_, err := testEnvironment.RunCommand("sudo userdel -rf username || true") //nolint:errcheck
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -56,9 +53,6 @@ var _ = Describe("bundle_logs", func() {
 
 	AfterEach(func() {
 		_, err := testEnvironment.RunCommand("sudo userdel -rf username || true") //nolint:errcheck
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

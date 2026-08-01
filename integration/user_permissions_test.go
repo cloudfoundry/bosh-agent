@@ -18,16 +18,7 @@ var _ = Describe("Instance Info", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupSSH()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err := testEnvironment.CleanupSSH()
 		Expect(err).ToNot(HaveOccurred())
 
 		networks, err := testEnvironment.GetVMNetworks()
@@ -51,11 +42,6 @@ var _ = Describe("Instance Info", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

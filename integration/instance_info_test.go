@@ -16,15 +16,6 @@ var _ = Describe("Instance Info", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -37,15 +28,10 @@ var _ = Describe("Instance Info", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
-		Expect(err).ToNot(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
 		Expect(err).ToNot(HaveOccurred())
 	})
 

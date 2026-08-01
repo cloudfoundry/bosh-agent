@@ -214,6 +214,31 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 	return err
 }
 
+// RestoreCleanBaseline returns the VM to the baseline every spec expects: agent stopped, default
+// agent.json, empty data dir, truncated logs, and no ephemeral loop devices. It is the single
+// definition of "clean" shared by SynchronizedBeforeSuite (the first spec) and the suite AfterEach
+// (every subsequent spec), so the two paths can't drift apart.
+//
+// StopAgent runs first on purpose: otherwise CleanupDataDir's `fuser -km /var/vcap/data` kills the
+// running agent, systemd restarts it, and the restart races the umount/rm of /var/vcap/data (and
+// crash-loops on the /var/log CleanupDataDir has already removed). DetectServiceManager must have run
+// before this, since CleanupLogFile and GetSettingsFile branch on the service manager.
+func (t *TestEnvironment) RestoreCleanBaseline() error {
+	if err := t.StopAgent(); err != nil {
+		return err
+	}
+	if err := t.UpdateAgentConfig(t.GetSettingsFile("")); err != nil {
+		return err
+	}
+	if err := t.CleanupDataDir(); err != nil {
+		return err
+	}
+	if err := t.CleanupLogFile(); err != nil {
+		return err
+	}
+	return t.ResetDeviceMap()
+}
+
 func (t *TestEnvironment) CleanupDataDir() error {
 	_, ignoredErr := t.RunCommand("sudo /var/vcap/bosh/bin/monit stop all")
 	if ignoredErr != nil {

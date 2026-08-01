@@ -50,10 +50,7 @@ var _ = Describe("SystemMounts", func() {
 			})
 
 			AfterEach(func() {
-				err := testEnvironment.DetachDevice("/dev/sdh")
-				Expect(err).ToNot(HaveOccurred())
-
-				_, err = testEnvironment.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
+				_, err := testEnvironment.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
 				Expect(err).ToNot(HaveOccurred())
 
 				_, err = testEnvironment.RunCommand("! mount | grep -q ' on /var/tmp ' || sudo umount /var/tmp")

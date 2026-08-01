@@ -18,15 +18,6 @@ var _ = Describe("EphemeralDisk", func() {
 
 	Context("mounted on /var/vcap/data", func() {
 		BeforeEach(func() {
-			err := testEnvironment.CleanupDataDir()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.CleanupLogFile()
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-			Expect(err).ToNot(HaveOccurred())
-
 			networks, err := testEnvironment.GetVMNetworks()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -60,11 +51,6 @@ var _ = Describe("EphemeralDisk", func() {
 					err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 					Expect(err).ToNot(HaveOccurred())
 
-				})
-
-				AfterEach(func() {
-					err := testEnvironment.DetachDevice("/dev/sdh")
-					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("agent is running", func() {

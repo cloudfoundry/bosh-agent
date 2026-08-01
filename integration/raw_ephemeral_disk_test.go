@@ -15,15 +15,6 @@ var _ = Describe("RawEphemeralDisk", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.CleanupDataDir()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.CleanupLogFile()
-		Expect(err).ToNot(HaveOccurred())
-
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		networks, err := testEnvironment.GetVMNetworks()
 		Expect(err).ToNot(HaveOccurred())
 
@@ -55,17 +46,6 @@ var _ = Describe("RawEphemeralDisk", func() {
 			}
 
 			err = testEnvironment.CreateSettingsFile(fileSettings)
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		AfterEach(func() {
-			err := testEnvironment.DetachDevice("/dev/sdh")
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.DetachDevice("/dev/xvdb")
-			Expect(err).ToNot(HaveOccurred())
-
-			err = testEnvironment.DetachDevice("/dev/xvdc")
 			Expect(err).ToNot(HaveOccurred())
 		})
 

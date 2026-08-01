@@ -15,9 +15,6 @@ var _ = Describe("fetch_logs", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
-		Expect(err).ToNot(HaveOccurred())
-
 		fileSettings = settings.Settings{
 			Blobstore: settings.Blobstore{
 				Type: "local",
@@ -31,7 +28,7 @@ var _ = Describe("fetch_logs", func() {
 			},
 		}
 
-		err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
+		err := testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CreateSettingsFile(fileSettings)
@@ -44,11 +41,6 @@ var _ = Describe("fetch_logs", func() {
 	JustBeforeEach(func() {
 		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
-	})
-
-	AfterEach(func() {
-		err := testEnvironment.DetachDevice("/dev/sdh")
-		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("job log fetch works", func() {
