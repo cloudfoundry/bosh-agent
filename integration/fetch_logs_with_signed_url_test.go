@@ -53,7 +53,7 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgentTunnel()
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
 

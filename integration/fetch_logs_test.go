@@ -42,7 +42,7 @@ var _ = Describe("fetch_logs", func() {
 	})
 
 	JustBeforeEach(func() {
-		err := testEnvironment.StartAgentTunnel()
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
 

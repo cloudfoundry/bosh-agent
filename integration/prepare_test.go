@@ -46,9 +46,8 @@ var _ = Describe("prepare", func() {
 
 	JustBeforeEach(func() {
 
-		// StartAgentTunnel also acts as a wait condition for the agent to have fully started. Copying over the blobs before it fully starts, will result in issues because the agent cleans up dirs on start.
-
-		err := testEnvironment.StartAgentTunnel()
+		// WaitForAgent blocks until the agent is reachable. Copying over the blobs before it fully starts will result in issues because the agent cleans up dirs on start.
+		err := testEnvironment.WaitForAgent()
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")

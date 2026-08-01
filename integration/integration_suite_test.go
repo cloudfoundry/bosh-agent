@@ -72,9 +72,6 @@ func TestIntegration(t *testing.T) {
 		err = testEnvironment.ResetDeviceMap()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.StopAgentTunnel()
-		Expect(err).NotTo(HaveOccurred())
-
 		err = testEnvironment.StopAgent()
 		Expect(err).NotTo(HaveOccurred())
 	})
