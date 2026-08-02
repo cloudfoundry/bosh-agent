@@ -184,22 +184,21 @@ var _ = Describe("v1_apply", func() {
 			err = testEnvironment.StartAgent()
 			Expect(err).ToNot(HaveOccurred())
 
-			Eventually(func() error {
-				_, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")
-				return err
-			}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/log/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+			// Assert the permissions inside Eventually (not just existence, then a separate stat) so the
+			// check retries on the actual asserted state. After a restart the agent re-creates these dirs;
+			// gating on one path existing and then re-reading to assert perms is a TOCTOU where the gate
+			// can pass in the window before the agent has set ownership/mode on all of them.
+			for _, dir := range []string{
+				"/var/vcap/data/sys/run/foobar",
+				"/var/vcap/data/sys/log/foobar",
+				"/var/vcap/data/foobar",
+			} {
+				dir := dir
+				Eventually(func() string {
+					out, _ := testEnvironment.RunCommand("sudo stat " + dir) //nolint:errcheck
+					return out
+				}, 2*time.Minute, 1*time.Second).Should(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+			}
 		})
 	})
 
@@ -307,22 +306,21 @@ var _ = Describe("v1_apply", func() {
 			err = testEnvironment.StartAgent()
 			Expect(err).ToNot(HaveOccurred())
 
-			Eventually(func() error {
-				_, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")
-				return err
-			}, 2*time.Minute, 1*time.Second).ShouldNot(HaveOccurred())
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/run/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/sys/log/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
-
-			output, err = testEnvironment.RunCommand("sudo stat /var/vcap/data/foobar")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+			// Assert the permissions inside Eventually (not just existence, then a separate stat) so the
+			// check retries on the actual asserted state. After a restart the agent re-creates these dirs;
+			// gating on one path existing and then re-reading to assert perms is a TOCTOU where the gate
+			// can pass in the window before the agent has set ownership/mode on all of them.
+			for _, dir := range []string{
+				"/var/vcap/data/sys/run/foobar",
+				"/var/vcap/data/sys/log/foobar",
+				"/var/vcap/data/foobar",
+			} {
+				dir := dir
+				Eventually(func() string {
+					out, _ := testEnvironment.RunCommand("sudo stat " + dir) //nolint:errcheck
+					return out
+				}, 2*time.Minute, 1*time.Second).Should(MatchRegexp("Access: \\(0770/drwxrwx---\\)  Uid: \\(    0/    root\\)   Gid: \\( 100[0-9]/    vcap\\)"))
+			}
 		})
 	})
 })
