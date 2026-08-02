@@ -440,10 +440,9 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 const attachDeviceBody = `n="$START"
 for i in $(seq 0 "$NPARTS"); do
   if [ "$i" -eq 0 ]; then p="$DEV"; else p="${DEV}${i}"; fi
-  loop=$(sudo losetup -f)
   sudo rm -rf "/virtualfs-$n"
   sudo truncate -s "${SIZE}M" "/virtualfs-$n"
-  sudo losetup "$loop" "/virtualfs-$n"
+  loop=$(sudo losetup --find --show "/virtualfs-$n")
   devnum=$(cat "/sys/block/$(basename "$loop")/dev")
   major=${devnum%%:*}
   minor=${devnum##*:}
@@ -516,12 +515,32 @@ func (t *TestEnvironment) AttachPartitionedRootDevice(devicePath string, sizeInM
 		return strings.TrimSpace(oldRootDevice), err
 	}
 
+	// Let udev finish processing the sfdisk partition-table change and the /dev symlink swap above
+	// before the agent boots and resolves the root device. Without settling, the agent can read the
+	// root partition before its state is stable and bootstrap fails with "Cannot get filesystem type
+	// for root file system".
+	_, err = t.RunCommand("sudo udevadm settle")
+	if err != nil {
+		return strings.TrimSpace(oldRootDevice), err
+	}
+
 	return strings.TrimSpace(oldRootDevice), nil
 }
 
-func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePath string) error {
-	_, err := t.RunCommand(fmt.Sprintf("sudo rm -f %s", rootLink))
-	if err != nil {
+func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePath string) (err error) {
+	// Restore the real root device node no matter what happens below. During the test rootLink (e.g.
+	// /dev/sdb2) is a symlink to the fake loop partition; if any loop-device teardown step below failed
+	// and we returned early without the mv, /dev/sdb2 would be left removed/dangling and EVERY
+	// subsequent spec's agent would fail bootstrap with "Cannot get filesystem type for root file
+	// system" -- turning one flaky spec into a whole-suite cascade (suite timeout). Deferring the
+	// restore keeps a single spec's failure contained to that spec.
+	defer func() {
+		if _, restoreErr := t.RunCommand(fmt.Sprintf("sudo mv %s-temp %s", rootLink, rootLink)); restoreErr != nil && err == nil {
+			err = restoreErr
+		}
+	}()
+
+	if _, err = t.RunCommand(fmt.Sprintf("sudo rm -f %s", rootLink)); err != nil {
 		return err
 	}
 
@@ -531,7 +550,7 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 			partitionPath = fmt.Sprintf("%s%d", devicePath, i)
 		}
 
-		if _, err := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); err == nil {
+		if _, losetupErr := t.RunCommand(fmt.Sprintf("losetup %s", partitionPath)); losetupErr == nil {
 			if output, _ := t.RunCommand(fmt.Sprintf("sudo mount | grep '%s ' | awk '{print $3}'", partitionPath)); output != "" { //nolint:errcheck
 				for _, path := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
 					_, ignoredErr := t.RunCommand(fmt.Sprintf("sudo umount -l %s", path))
@@ -554,17 +573,11 @@ func (t *TestEnvironment) DetachPartitionedRootDevice(rootLink string, devicePat
 				t.writerPrinter.Printf("DetachPartitionedRootDevice: deferring detach of %s to ResetDeviceMap: %s", partitionPath, ignoredErr)
 			}
 
-			err = t.RemoveDevice(partitionPath)
-			if err != nil {
+			if err = t.RemoveDevice(partitionPath); err != nil {
 				return err
 			}
 		}
 
-	}
-
-	_, err = t.RunCommand(fmt.Sprintf("sudo mv %s-temp %s", rootLink, rootLink))
-	if err != nil {
-		return err
 	}
 
 	return nil

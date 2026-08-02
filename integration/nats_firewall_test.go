@@ -2,7 +2,6 @@ package integration_test
 
 import (
 	"fmt"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -74,22 +73,23 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats firewall", func() {
 			format.MaxLength = 0
 
-			Eventually(func() bool {
-				output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-				return err == nil && strings.Contains(output, directorIP)
-			}, 300).Should(BeTrue())
-
-			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-			Expect(err).To(BeNil())
-			Expect(output).To(ContainSubstring("ct state established,related accept"))
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, directorIP))
-			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, directorIP))
+			// Assert every rule against a single snapshot, polled until all conditions hold at once, to
+			// avoid the TOCTOU race where the agent's dynamic flush+re-add of this chain drops a rule
+			// between a gating read and a separate asserting read (see the multi-url spec).
+			Eventually(func() string {
+				output, _ := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access") //nolint:errcheck
+				return output
+			}, 300).Should(SatisfyAll(
+				ContainSubstring("ct state established,related accept"),
+				MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, directorIP),
+				MatchRegexp(`ip daddr %s tcp dport 4222 drop`, directorIP),
+			))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
 			// The drop rule silently drops packets, causing a timeout. We add the dummy IP to the loopback interface
 			// before testing so that the routing table has a valid route. Without a valid route, nc would fail instantly
 			// with "Network is unreachable" rather than sending the packet through the firewall to be dropped.
-			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr add %s/32 dev lo || true", directorIP))
+			_, err := testEnvironment.RunCommand(fmt.Sprintf("sudo ip addr add %s/32 dev lo || true", directorIP))
 			Expect(err).To(BeNil())
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc %v 4222 -w2 -v", directorIP))
 			Expect(err).NotTo(BeNil())
@@ -157,22 +157,23 @@ var _ = Describe("nats firewall", func() {
 		It("adds allow/block rules for both NATS server IPs", func() {
 			format.MaxLength = 0
 
-			Eventually(func() bool {
-				output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-				return err == nil && strings.Contains(output, unreachableIP) && strings.Contains(output, directorIP)
-			}, 300).Should(BeTrue())
-
-			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-			Expect(err).To(BeNil())
-			Expect(output).To(ContainSubstring("ct state established,related accept"))
-
-			// Rules for the real NATS server IP
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, directorIP))
-			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, directorIP))
-
-			// Rules for the dummy/unreachable IP
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, unreachableIP))
-			Expect(output).To(MatchRegexp(`ip daddr %s tcp dport 4222 drop`, unreachableIP))
+			// Assert every rule against a SINGLE snapshot, polled until all conditions hold at once. The
+			// agent manages this chain dynamically (flush + re-add on refresh cycles), so reading it once
+			// to gate and then re-reading it to assert is a TOCTOU race: a rule can transiently vanish
+			// mid-rewrite between the two reads, failing the assertion on an otherwise healthy chain.
+			// SatisfyAll inside Eventually retries the whole snapshot until it's consistent.
+			Eventually(func() string {
+				output, _ := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access") //nolint:errcheck
+				return output
+			}, 300).Should(SatisfyAll(
+				ContainSubstring("ct state established,related accept"),
+				// Rules for the real NATS server IP
+				MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, directorIP),
+				MatchRegexp(`ip daddr %s tcp dport 4222 drop`, directorIP),
+				// Rules for the dummy/unreachable IP
+				MatchRegexp(`meta skuid 0 ip daddr %s tcp dport 4222 accept`, unreachableIP),
+				MatchRegexp(`ip daddr %s tcp dport 4222 drop`, unreachableIP),
+			))
 		})
 	})
 
@@ -217,21 +218,22 @@ var _ = Describe("nats firewall", func() {
 		It("sets up the outgoing nats for firewall ipv6", func() {
 			format.MaxLength = 0
 
-			Eventually(func() bool {
-				output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-				return err == nil && strings.Contains(output, directorIP)
-			}, 300).Should(BeTrue())
-
-			output, err := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access")
-			Expect(err).To(BeNil())
-			Expect(output).To(ContainSubstring("ct state established,related accept"))
-			Expect(output).To(MatchRegexp(`meta skuid 0 ip6 daddr %s tcp dport 4222 accept`, directorIP))
-			Expect(output).To(MatchRegexp(`ip6 daddr %s tcp dport 4222 drop`, directorIP))
+			// Assert every rule against a single snapshot, polled until all conditions hold at once, to
+			// avoid the TOCTOU race where the agent's dynamic flush+re-add of this chain drops a rule
+			// between a gating read and a separate asserting read (see the multi-url spec).
+			Eventually(func() string {
+				output, _ := testEnvironment.RunCommand("sudo nft list chain inet bosh_agent nats_access") //nolint:errcheck
+				return output
+			}, 300).Should(SatisfyAll(
+				ContainSubstring("ct state established,related accept"),
+				MatchRegexp(`meta skuid 0 ip6 daddr %s tcp dport 4222 accept`, directorIP),
+				MatchRegexp(`ip6 daddr %s tcp dport 4222 drop`, directorIP),
+			))
 
 			// check that non-root cannot access the director nats, -w2 == timeout 2 seconds
 			// We add the dummy IP to the loopback interface before testing so that the routing table has a valid route.
 			// Without a valid route, nc would fail instantly with "Network is unreachable" rather than sending the packet to the firewall.
-			_, err = testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr add %s/128 dev lo || true", directorIP))
+			_, err := testEnvironment.RunCommand(fmt.Sprintf("sudo ip -6 addr add %s/128 dev lo || true", directorIP))
 			Expect(err).To(BeNil())
 			out, err := testEnvironment.RunCommand(fmt.Sprintf("nc -6 %v 4222 -w2 -v", directorIP))
 			Expect(err).NotTo(BeNil())
