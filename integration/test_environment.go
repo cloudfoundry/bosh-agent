@@ -798,13 +798,6 @@ func (t *TestEnvironment) GetSettingsFile(specification string) string {
 	return fmt.Sprintf("file-settings-agent%s.json", suffix)
 }
 
-type emptyReader struct{}
-
-func (er emptyReader) Read(_ []byte) (int, error) {
-	time.Sleep(1 * time.Second)
-	return 0, nil
-}
-
 func (t *TestEnvironment) WaitForAgent() error {
 	var err error
 	for i := 1; i < 90; i++ {
