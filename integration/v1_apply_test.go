@@ -72,9 +72,6 @@ var _ = Describe("v1_apply", func() {
 		)
 
 		BeforeEach(func() {
-			err := testEnvironment.StartBlobstore()
-			Expect(err).NotTo(HaveOccurred())
-
 			fooPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/foo.tgz?encrypted"
 			barPackageSignedURL = "http://127.0.0.1:9091/get_package/release/packages/bar.tgz?encrypted"
 

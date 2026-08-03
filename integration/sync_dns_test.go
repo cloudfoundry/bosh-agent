@@ -66,9 +66,6 @@ var _ = Describe("sync_dns", func() {
 		BeforeEach(func() {
 			var err error
 
-			err = testEnvironment.StartBlobstore()
-			Expect(err).NotTo(HaveOccurred())
-
 			newRecordsJSONContent = fmt.Sprintf(`{
 				"version": %d,
 				"records":[["216.58.194.206","google.com"],["54.164.223.71","pivotal.io"]],

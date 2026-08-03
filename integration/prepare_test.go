@@ -123,9 +123,6 @@ var _ = Describe("prepare", func() {
 					},
 				},
 			}
-
-			err := testEnvironment.StartBlobstore()
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should send agent apply and create appropriate /var/vcap/data directories for a job", func() {

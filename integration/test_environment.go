@@ -86,6 +86,7 @@ type TestEnvironment struct {
 	mbusPass         string
 	mbusPort         int
 	serviceManager   string
+	configDirty      bool
 }
 
 type writerPrinter interface {
@@ -135,6 +136,9 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, wp writerPrinter) (*TestEnv
 		mbusUser:         mbusUser,
 		mbusPass:         mbusPass,
 		mbusPort:         mbusPort,
+		// Start dirty so the first RestoreCleanBaseline (from SynchronizedBeforeSuite) writes the
+		// default agent.json once. Thereafter only specs that call UpdateAgentConfig re-dirty it.
+		configDirty: true,
 	}, nil
 }
 
@@ -207,24 +211,35 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 // definition of "clean" shared by SynchronizedBeforeSuite (the first spec) and the suite AfterEach
 // (every subsequent spec), so the two paths can't drift apart.
 //
+// The default agent.json is only rewritten when a spec changed it (tracked by configDirty). Only 3 of
+// 49 specs override it, so the other 46 skip the rm+scp+mv restore; the env starts dirty so the first
+// call (from SynchronizedBeforeSuite) writes the default once.
+//
 // StopAgent runs first on purpose: otherwise CleanupDataDir's `fuser -km /var/vcap/data` kills the
 // running agent, systemd restarts it, and the restart races the umount/rm of /var/vcap/data (and
 // crash-loops on the /var/log CleanupDataDir has already removed). DetectServiceManager must have run
 // before this, since CleanupLogFile and GetSettingsFile branch on the service manager.
 func (t *TestEnvironment) RestoreCleanBaseline() error {
-	if err := t.StopAgent(); err != nil {
-		return err
+	var firstErr error
+	record := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
 	}
-	if err := t.UpdateAgentConfig(t.GetSettingsFile("")); err != nil {
-		return err
+
+	record(t.StopAgent())
+	if t.configDirty {
+		if err := t.UpdateAgentConfig(t.GetSettingsFile("")); err != nil {
+			record(err)
+		} else {
+			t.configDirty = false
+		}
 	}
-	if err := t.CleanupDataDir(); err != nil {
-		return err
-	}
-	if err := t.CleanupLogFile(); err != nil {
-		return err
-	}
-	return t.ResetDeviceMap()
+	record(t.CleanupDataDir())
+	record(t.CleanupLogFile())
+	record(t.ResetDeviceMap())
+
+	return firstErr
 }
 
 // CleanupDataDir returns the VM's ephemeral state to baseline in a single SSH round-trip: stop monit
@@ -237,6 +252,12 @@ func (t *TestEnvironment) RestoreCleanBaseline() error {
 // so it runs to completion even if a fuser-kill inside detach_mount takes down the SSH session (see
 // detachMountFunc). The monit-summary wait polls up to 3 times a second apart; "stopped" means every
 // "Process" line reads "not monitored" (an empty summary trivially satisfies that).
+//
+// It also sweeps transient top-level uploads (logs.tgz, records.json, dummy_package.tgz,
+// compiled-*.tgz) out of the blobstore assets dir so specs are isolated. `-maxdepth 1 -type f` leaves
+// the read-only release/ fixtures (a subdirectory) intact, and the fake-blobstore binary and .ssh/
+// live outside the assets dir so the sweep can't touch them. Fixtures staged by a spec's BeforeEach
+// are re-copied each run, so sweeping them is safe.
 func (t *TestEnvironment) CleanupDataDir() error {
 	script := fmt.Sprintf(`trap '' HUP
 SM=%s
@@ -270,7 +291,10 @@ sudo chown root:root /var/opt
 sudo mkdir -p /opt
 sudo chmod 775 /opt
 sudo chown root:root /opt
-`, t.serviceManager, detachMountFunc)
+if [ -d %[3]s ]; then
+  find %[3]s -maxdepth 1 -type f -delete
+fi
+`, t.serviceManager, detachMountFunc, blobstoreDir)
 
 	_, err := t.runBatch(script)
 	return err
@@ -418,7 +442,7 @@ for i in $(seq 0 "$NPARTS"); do
   if [ "$i" -eq 0 ]; then p="$DEV"; else p="${DEV}${i}"; fi
   loop=$(sudo losetup -f)
   sudo rm -rf "/virtualfs-$n"
-  sudo dd if=/dev/zero of="/virtualfs-$n" bs=1M count="$SIZE" >/dev/null 2>&1
+  sudo truncate -s "${SIZE}M" "/virtualfs-$n"
   sudo losetup "$loop" "/virtualfs-$n"
   devnum=$(cat "/sys/block/$(basename "$loop")/dev")
   major=${devnum%%:*}
@@ -587,6 +611,9 @@ func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
 }
 
 func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
+	// Any write to agent.json marks it dirty so RestoreCleanBaseline knows to restore the default; the
+	// 46 specs that never touch it skip that restore.
+	t.configDirty = true
 	_, err := t.RunCommand("sudo rm -f /var/vcap/bosh/agent.json")
 	if err != nil {
 		return err
@@ -594,16 +621,34 @@ func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
 	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), configFile), "/var/vcap/bosh/agent.json")
 }
 
+// CopyFileToPath streams the local file to its destination over the persistent SSH tunnel by piping
+// the bytes into `sudo tee` via the session's stdin, reusing the connection instead of a fresh scp.
+// Streaming via stdin (not argv) keeps it binary-safe and free of ARG_MAX and shell-quoting limits,
+// so it works for arbitrarily large blobs too.
 func (t *TestEnvironment) CopyFileToPath(localPath string, remotePath string) error {
-	_, _, _, err :=
-		t.cmdRunner.RunCommand("scp", "-F", "ssh-config", localPath, "agent_vm:/tmp/remote-file")
+	f, err := os.Open(localPath)
 	if err != nil {
 		return err
 	}
+	defer f.Close() //nolint:errcheck
 
-	_, err = t.RunCommand(fmt.Sprintf("sudo mv /tmp/remote-file %s", remotePath))
+	s, err := t.sshClient.NewSession()
+	if err != nil {
+		return errors.WrapError(err, "Unable to establish SSH session: ")
+	}
+	defer s.Close() //nolint:errcheck
 
-	return err
+	s.Stdin = f
+	t.writerPrinter.Printf("Remote Cmd Runner Streaming %s to remote %s\n", localPath, remotePath)
+	// SSH runs this through the remote shell, so remotePath must be shell-quoted rather than
+	// Go-quoted (%q leaves $ and backticks live inside double quotes, allowing command substitution).
+	// Single quotes suppress all shell interpretation; embedded single quotes are escaped as '\''.
+	// `tee --` marks the end of options so a path can never be read as a flag.
+	quotedPath := "'" + strings.ReplaceAll(remotePath, "'", `'\''`) + "'"
+	if out, err := s.CombinedOutput(fmt.Sprintf("sudo tee -- %s > /dev/null", quotedPath)); err != nil {
+		return errors.WrapErrorf(err, "Error streaming to %s: %s", remotePath, string(out))
+	}
+	return nil
 }
 
 func (t *TestEnvironment) RestartAgent() error {
@@ -768,7 +813,7 @@ func (t *TestEnvironment) StartBlobstore() error {
 	}
 
 	_, err :=
-		t.RunCommand("nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets /home/agent_test_user &> /dev/null &")
+		t.RunCommand(fmt.Sprintf("nohup /home/agent_test_user/fake-blobstore -host 127.0.0.1 -port 9091 -assets %s &> /dev/null &", blobstoreDir))
 
 	return err
 }
@@ -793,15 +838,8 @@ func (t *TestEnvironment) CreateSettingsFile(settings boshsettings.Settings) err
 	if err != nil {
 		return err
 	}
-	_, err = t.RunCommand("sudo rm -f /var/vcap/settings.json")
-	if err != nil {
-		return err
-	}
-	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/settings.json")
-	if err != nil {
-		return err
-	}
-	_, err = t.RunCommand("sudo rm -f /var/vcap/bosh/update_settings.json")
+	// Remove any stale settings files in one round-trip; this runs in every spec's BeforeEach.
+	_, err = t.runBatch("rm -f /var/vcap/settings.json /var/vcap/bosh/settings.json /var/vcap/bosh/update_settings.json")
 	if err != nil {
 		return err
 	}
@@ -879,8 +917,12 @@ func (t *TestEnvironment) AssetsDir() string {
 	return filepath.Join(t.agentDir(), "integration", "assets")
 }
 
+// blobstoreDir is the on-VM directory backing the fake blobstore. BlobstoreDir, StartBlobstore, and
+// CleanupDataDir all target it, so they share this constant to stay in sync.
+const blobstoreDir = "/home/agent_test_user/blobstore"
+
 func (t *TestEnvironment) BlobstoreDir() string {
-	return "/home/agent_test_user"
+	return blobstoreDir
 }
 
 func dialSSHClient(cmdRunner boshsys.CmdRunner) (*ssh.Client, error) {
