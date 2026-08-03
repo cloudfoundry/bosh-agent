@@ -41,8 +41,8 @@ resources:
   - name: config-server
     type: git
     source:
-      uri: https://github.com/cloudfoundry/config-server.git
-      branch: develop
+      uri: https://github.com/cloudfoundry/config-server-release.git
+      branch: main
       username: bosh-admin-bot
       password: ((github_public_repo_token))
 
