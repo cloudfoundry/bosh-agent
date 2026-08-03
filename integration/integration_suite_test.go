@@ -60,7 +60,7 @@ func TestIntegration(t *testing.T) {
 	})
 
 	AfterEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err := testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = testEnvironment.CleanupDataDir()

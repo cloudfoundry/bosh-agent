@@ -27,7 +27,7 @@ var _ = Describe("Instance Info", func() {
 		err = testEnvironment.CleanupSSH()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		networks, err := testEnvironment.GetVMNetworks()

@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -19,7 +20,9 @@ var _ = Describe("SystemMounts", func() {
 
 		BeforeEach(func() {
 
-			err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
+			agentConfig := integration.DefaultAgentConfig
+			agentConfig.Platform.Linux.UseDefaultTmpDir = false
+			err := testEnvironment.CreateAgentConfigFile(agentConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()

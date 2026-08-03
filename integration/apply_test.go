@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agentclient/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -18,7 +19,7 @@ var _ = Describe("apply", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err := testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
@@ -14,6 +15,7 @@ import (
 var _ = Describe("EphemeralDisk", func() {
 	var (
 		fileSettings settings.Settings
+		agentConfig  app.Config
 	)
 
 	Context("mounted on /var/vcap/data", func() {
@@ -24,7 +26,8 @@ var _ = Describe("EphemeralDisk", func() {
 			err = testEnvironment.CleanupLogFile()
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+			agentConfig = integration.DefaultAgentConfig
+			err = testEnvironment.CreateAgentConfigFile(agentConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			networks, err := testEnvironment.GetVMNetworks()
@@ -83,7 +86,8 @@ var _ = Describe("EphemeralDisk", func() {
 
 				Context("when bind mount /var/vcap/data/root_tmp on /tmp", func() {
 					BeforeEach(func() {
-						err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
+						agentConfig.Platform.Linux.UseDefaultTmpDir = false
+						err := testEnvironment.CreateAgentConfigFile(agentConfig)
 						Expect(err).ToNot(HaveOccurred())
 					})
 
@@ -136,7 +140,8 @@ var _ = Describe("EphemeralDisk", func() {
 				)
 
 				BeforeEach(func() {
-					err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("root-partition"))
+					agentConfig.Platform.Linux.CreatePartitionIfNoEphemeralDisk = true
+					err := testEnvironment.CreateAgentConfigFile(agentConfig)
 					Expect(err).ToNot(HaveOccurred())
 
 					oldRootDevice, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 1224, 128)

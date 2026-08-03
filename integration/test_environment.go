@@ -19,6 +19,7 @@ import (
 	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 
+	"github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
@@ -691,12 +692,19 @@ func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
 	return err
 }
 
-func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
-	_, err := t.RunCommand("sudo rm -f /var/vcap/bosh/agent.json")
+func (t *TestEnvironment) CreateAgentConfigFile(config app.Config) error {
+	config.Platform.Linux.ServiceManager = t.serviceManager
+
+	configJSON, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
-	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), configFile), "/var/vcap/bosh/agent.json")
+	localPath := filepath.Join(t.AssetsDir(), "agent-config.json")
+	err = os.WriteFile(localPath, configJSON, 0644)
+	if err != nil {
+		return err
+	}
+	return t.CopyFileToPath(localPath, "/var/vcap/bosh/agent.json")
 }
 
 func (t *TestEnvironment) CopyFileToPath(localPath string, remotePath string) error {
@@ -817,22 +825,6 @@ func (t *TestEnvironment) DetectServiceManager() error {
 
 func (t *TestEnvironment) GetServiceManager() string {
 	return t.serviceManager
-}
-
-func (t *TestEnvironment) GetSettingsFile(specification string) string {
-	suffix := ""
-
-	if specification != "" {
-		suffix += "-"
-		suffix += specification
-	}
-
-	if sm := t.GetServiceManager(); sm != "" {
-		suffix += "-"
-		suffix += sm
-	}
-
-	return fmt.Sprintf("file-settings-agent%s.json", suffix)
 }
 
 type emptyReader struct{}

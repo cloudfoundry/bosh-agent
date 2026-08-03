@@ -10,6 +10,7 @@ import (
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -23,7 +24,7 @@ var _ = Describe("v1_apply", func() {
 		err := testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

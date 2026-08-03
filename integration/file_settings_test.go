@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -26,7 +27,7 @@ var _ = Describe("FileSettings", func() {
 			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+			err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())

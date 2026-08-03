@@ -14,6 +14,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/action"
 	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	"github.com/cloudfoundry/bosh-agent/v2/agentclient"
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -29,7 +30,7 @@ var _ = Describe("compile_package", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

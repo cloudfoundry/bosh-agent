@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/format"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -23,7 +24,7 @@ var _ = Describe("nats firewall", func() {
 		}
 		err := testEnvironment.CreateSettingsFile(fileSettings)
 		Expect(err).ToNot(HaveOccurred())
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 	})
 
@@ -50,7 +51,7 @@ var _ = Describe("nats firewall", func() {
 
 			err = testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+			err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 			Expect(err).ToNot(HaveOccurred())
 
 			_, _ = testEnvironment.RunCommand("sudo nft flush chain inet bosh_agent nats_access") //nolint:errcheck
@@ -147,7 +148,7 @@ var _ = Describe("nats firewall", func() {
 
 			err := testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+			err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())
@@ -211,7 +212,7 @@ var _ = Describe("nats firewall", func() {
 
 			err = testEnvironment.CreateSettingsFile(fileSettings)
 			Expect(err).ToNot(HaveOccurred())
-			err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+			err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 			Expect(err).ToNot(HaveOccurred())
 			err = testEnvironment.AttachDevice("/dev/sdh", 128, 2)
 			Expect(err).ToNot(HaveOccurred())

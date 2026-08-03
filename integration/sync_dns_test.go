@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
@@ -31,7 +32,7 @@ var _ = Describe("sync_dns", func() {
 		err = testEnvironment.CleanupLogFile()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err = testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{

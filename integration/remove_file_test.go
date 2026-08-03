@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/cloudfoundry/bosh-agent/v2/integration"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
@@ -15,7 +16,7 @@ var _ = Describe("remove_file", func() {
 	)
 
 	BeforeEach(func() {
-		err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile(""))
+		err := testEnvironment.CreateAgentConfigFile(integration.DefaultAgentConfig)
 		Expect(err).ToNot(HaveOccurred())
 
 		fileSettings = settings.Settings{
