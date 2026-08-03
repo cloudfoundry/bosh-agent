@@ -38,6 +38,13 @@ func TestIntegration(t *testing.T) {
 		err = testEnvironment.EnsureRootDeviceIsLargeEnough()
 		Expect(err).ToNot(HaveOccurred())
 
+		// fake-blobstore is stable, stateless infrastructure (HTTP over the filesystem), so start it
+		// once at suite level. It survives each AfterEach CleanupDataDir because it runs as
+		// agent_test_user with no fds under the swept mounts, and that batch only sweeps transient
+		// uploads out of its assets dir.
+		err = testEnvironment.StartBlobstore()
+		Expect(err).ToNot(HaveOccurred())
+
 		output, err := testEnvironment.RunCommand("sudo chmod +x /var/vcap/bosh/bin/bosh-agent && sudo /var/vcap/bosh/bin/bosh-agent -v")
 		Expect(err).ToNot(HaveOccurred())
 

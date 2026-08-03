@@ -76,11 +76,16 @@ pushd "${bosh_agent_dir}/integration/fake-blobstore"
   copy_to_remote_host ./fake-blobstore /home/agent_test_user/fake-blobstore
 popd
 
+echo -e "\n Creating blobstore assets dir"
+# fake-blobstore serves from (and os.Creates uploads directly into) this dir as agent_test_user,
+# so it must exist and be owned by that user before the server or the tests run.
+${ssh_command} "sudo mkdir -p /home/agent_test_user/blobstore && sudo chown agent_test_user:agent_test_user /home/agent_test_user/blobstore" > /dev/null 2>&1
+
 echo -e "\n Setup assets"
 pushd "${bosh_agent_dir}/integration/assets"
-  release_folder="/home/agent_test_user/release"
+  release_folder="/home/agent_test_user/blobstore/release"
   ${ssh_command} "sudo rm -rf ${release_folder}" > /dev/null 2>&1
-  copy_to_remote_host release /home/agent_test_user/release -r
+  copy_to_remote_host release "${release_folder}" -r
 popd
 
 echo -e "\n Running agent integration tests..."

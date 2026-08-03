@@ -80,7 +80,7 @@ scp -P 2222 -i ~/.ssh/id_rsa integration/fake-blobstore/fake-blobstore agent_tes
 scp -P 2222 -i ~/.ssh/id_rsa -r integration/assets/release agent_test_user@127.0.0.1:/tmp/release
 
 # 5. Move everything into place and set permissions
-ssh -p 2222 -i ~/.ssh/id_rsa agent_test_user@127.0.0.1 "sudo mv /tmp/bosh-agent /var/vcap/bosh/bin/bosh-agent && sudo chmod +x /var/vcap/bosh/bin/bosh-agent && sudo mv /tmp/fake-blobstore /home/agent_test_user/fake-blobstore && sudo chmod +x /home/agent_test_user/fake-blobstore && sudo rm -rf /home/agent_test_user/release && sudo mv /tmp/release /home/agent_test_user/release && sudo chown -R agent_test_user:agent_test_user /home/agent_test_user/release"
+ssh -p 2222 -i ~/.ssh/id_rsa agent_test_user@127.0.0.1 "sudo mv /tmp/bosh-agent /var/vcap/bosh/bin/bosh-agent && sudo chmod +x /var/vcap/bosh/bin/bosh-agent && sudo mv /tmp/fake-blobstore /home/agent_test_user/fake-blobstore && sudo chmod +x /home/agent_test_user/fake-blobstore && sudo mkdir -p /home/agent_test_user/blobstore && sudo rm -rf /home/agent_test_user/blobstore/release && sudo mv /tmp/release /home/agent_test_user/blobstore/release && sudo chown -R agent_test_user:agent_test_user /home/agent_test_user/blobstore"
 ```
 
 *(Note: If you use a different SSH key for BOSH, replace `~/.ssh/id_rsa` with the path to your key).*

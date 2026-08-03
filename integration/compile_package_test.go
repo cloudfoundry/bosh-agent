@@ -59,10 +59,7 @@ var _ = Describe("compile_package", func() {
 		multiDigest := createSHA1MultiDigest("236cbd31a483c3594061b00a84a80c1c182b3b20")
 
 		BeforeEach(func() {
-			err := testEnvironment.StartBlobstore()
-			Expect(err).NotTo(HaveOccurred())
-
-			err = testEnvironment.CopyFileToPath(filepath.Join(testEnvironment.AssetsDir(), "dummy_package.tgz"), filepath.Join(testEnvironment.BlobstoreDir(), "dummy_package.tgz"))
+			err := testEnvironment.CopyFileToPath(filepath.Join(testEnvironment.AssetsDir(), "dummy_package.tgz"), filepath.Join(testEnvironment.BlobstoreDir(), "dummy_package.tgz"))
 			Expect(err).NotTo(HaveOccurred())
 			dummyPackageSignedURL = "http://127.0.0.1:9091/get_package/dummy_package.tgz"
 

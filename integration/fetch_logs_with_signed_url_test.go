@@ -44,9 +44,6 @@ var _ = Describe("fetch_logs_with_signed_url", func() {
 
 		_, err = testEnvironment.RunCommand("sudo mkdir -p /var/vcap/data")
 		Expect(err).NotTo(HaveOccurred())
-
-		err = testEnvironment.StartBlobstore()
-		Expect(err).NotTo(HaveOccurred())
 	})
 
 	JustBeforeEach(func() {
