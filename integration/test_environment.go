@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -139,78 +138,67 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, wp writerPrinter) (*TestEnv
 	}, nil
 }
 
-type byLen []string
+// runBatch ships a whole deterministic command sequence to the VM in a single SSH round-trip.
+// The script is fed to `sudo bash` on stdin via a quoted heredoc so it can contain single quotes,
+// pipes, awk, etc. without any host-side escaping, and runs under `bash -euo pipefail` so a failing
+// step surfaces instead of silently continuing mid-batch (add `|| true` for steps allowed to fail).
+func (t *TestEnvironment) runBatch(script string) (string, error) {
+	return t.RunCommand("sudo bash -euo pipefail <<'BOSH_BATCH_EOF'\n" + script + "\nBOSH_BATCH_EOF")
+}
 
-func (a byLen) Len() int           { return len(a) }
-func (a byLen) Less(i, j int) bool { return len(a[i]) > len(a[j]) }
-func (a byLen) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+// detachMountFunc is a bash function (shared by DetachDevice and CleanupDataDir) that tears down a
+// single mount directory: stop rsyslog first when detaching /var/log on systemd (see the long note
+// below), then for each mount under $d -- deepest first -- fuser-kill holders and unmount (lazily for
+// /var/log), and finally remove the directory. It expects $SM (the service manager) to be set by the
+// caller.
+//
+// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the whole
+// test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
+// /var/vcap/bosh/log/current is symlinked to. We stop it before the fuser-kill/unmount so it cleanly
+// releases its open handles on /var/log instead of racing the lazy unmount. We deliberately do NOT
+// restart it: /var/log is about to become a plain directory on the root disk again, not the
+// /var/vcap/data/root_log bind mount rsyslog expects. The agent's own Bootstrap (SetupLogDir then
+// SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that bind mount and restarts
+// logging, in that order, the next time StartAgent() runs.
+//
+// /var/log is unmounted lazily to prevent intermittent test failures: as of 2024-06-24 it is a bind
+// mount of /var/vcap/data/root_log, and for reasons we don't fully understand `fuser -k` doesn't
+// consistently terminate its holders in time for a plain umount. Because we later unmount
+// /var/vcap/data, a lingering /var/log reference will eventually fail loudly there, so this is safe.
+const detachMountFunc = `detach_mount() {
+  d="$1"
+  if [ "$d" = /var/log ] && [ "$SM" = systemd ]; then
+    sudo systemctl stop syslog.socket rsyslog.service || true
+  fi
+  mps=$(sudo mount | grep "on $d" | cut -d' ' -f3 | awk '{ print length"\t"$0 }' | sort -rn | cut -f2- || true)
+  for mp in $mps; do
+    [ -n "$mp" ] || continue
+    # fuser -km can kill sshd holders (wtmp/lastlog on /var/log); the trap '' HUP in the caller keeps
+    # this reparented shell alive to finish the umount/rm. Its non-zero exit on empty mounts is expected.
+    sudo fuser -km "$mp" || true
+    if [ "$mp" = /var/log ]; then
+      sudo umount --lazy "$mp" || true
+    else
+      sudo umount "$mp" || true
+    fi
+  done
+  sudo rm -rf "$d"
+}`
 
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	if strings.HasPrefix(dir, "/dev/") {
-		for i := 0; i <= 3; i++ {
-			p := dir
-			if i > 0 {
-				p = fmt.Sprintf("%s%d", dir, i)
-			}
-			if err := t.RemoveDevice(p); err != nil {
-				t.writerPrinter.Printf("DetachDevice: %s", err)
-			}
+		paths := []string{dir}
+		for i := 1; i <= 3; i++ {
+			paths = append(paths, fmt.Sprintf("%s%d", dir, i))
+		}
+		if _, err := t.RunCommand("sudo rm -f " + strings.Join(paths, " ")); err != nil {
+			t.writerPrinter.Printf("DetachDevice: %s", err)
 		}
 		return nil
 	}
 
-	mountPoints, err := t.RunCommand(fmt.Sprintf(`sudo mount | grep "on %s" | cut -d ' ' -f 3`, dir))
-	if err != nil {
-		t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", err, mountPoints)
-		return err
-	}
-
-	if dir == "/var/log" && t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the
-		// whole test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
-		// /var/vcap/bosh/log/current is symlinked to. Stop it here, before the fuser-kill/unmount below,
-		// so it cleanly releases its open file handles on /var/log instead of racing the lazy unmount.
-		// We deliberately do NOT restart it afterward: /var/log is about to become a plain directory on
-		// the root disk again, not the /var/vcap/data/root_log bind mount rsyslog expects. The agent's own
-		// Bootstrap (SetupLogDir then SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that
-		// bind mount and restarts logging, in that order, the next time StartAgent() runs.
-		_, ignoredErr := t.RunCommand("sudo systemctl stop syslog.socket rsyslog.service")
-		if ignoredErr != nil {
-			t.writerPrinter.Printf("DetachDevice: failed to stop rsyslog before detaching %s: %s", dir, ignoredErr)
-		}
-	}
-
-	mountPointsSlice := strings.Split(mountPoints, "\n")
-	sort.Sort(byLen(mountPointsSlice))
-	for _, mountPoint := range mountPointsSlice {
-		if mountPoint != "" {
-			out, ignoredErr := t.RunCommand(fmt.Sprintf("sudo fuser -km %s", mountPoint))
-			// running fuser -k also kills the ssh session, this will always produce an error
-			// only print the error if out is not empty.
-			if ignoredErr != nil && out != "" {
-				t.writerPrinter.Printf("DetachDevice: %s, Msg: %s", ignoredErr, out)
-			}
-
-			// Lazily unmount /var/log to prevent intermittent test failures. As of 2024-06-24, this mount point
-			// is a bind mount of /var/vcap/data/root_log. For reasons we don't currently understand the
-			// 'fuser -k' doesn't seem to consistently terminate processes in time to do the umount, but this is
-			// the only mount that has this problem.
-			//
-			// Because we later unmount /var/vcap/data, lazily unmounting /var/log will eventually alert us if
-			// anyone has handles open in that mount point... so we'll eventually fail loudly, making this not
-			// a catastrophically bad thing to do.
-			if mountPoint == "/var/log" {
-				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount --lazy %s", mountPoint))
-			} else {
-				_, ignoredErr = t.RunCommand(fmt.Sprintf("sudo umount %s", mountPoint))
-			}
-			if ignoredErr != nil {
-				t.writerPrinter.Printf("DetachDevice: %s", ignoredErr)
-			}
-		}
-	}
-
-	_, err = t.RunCommand(fmt.Sprintf("sudo rm -rf %s", dir))
+	script := fmt.Sprintf("trap '' HUP\nSM=%s\n%s\ndetach_mount %s\n", t.serviceManager, detachMountFunc, dir)
+	_, err := t.runBatch(script)
 	return err
 }
 
@@ -239,159 +227,87 @@ func (t *TestEnvironment) RestoreCleanBaseline() error {
 	return t.ResetDeviceMap()
 }
 
+// CleanupDataDir returns the VM's ephemeral state to baseline in a single SSH round-trip: stop monit
+// (waiting until every process is unmonitored), unmount /tmp, tear down each ephemeral mount with the
+// shared detach_mount helper, then recreate the emptied directories with their expected ownership and
+// modes. The batch sets an empty HUP handler:
+//
+//	trap '' HUP
+//
+// so it runs to completion even if a fuser-kill inside detach_mount takes down the SSH session (see
+// detachMountFunc). The monit-summary wait polls up to 3 times a second apart; "stopped" means every
+// "Process" line reads "not monitored" (an empty summary trivially satisfies that).
 func (t *TestEnvironment) CleanupDataDir() error {
-	_, ignoredErr := t.RunCommand("sudo /var/vcap/bosh/bin/monit stop all")
-	if ignoredErr != nil {
-		t.writerPrinter.Printf("CleanupDataDir: %s", ignoredErr)
-	}
+	script := fmt.Sprintf(`trap '' HUP
+SM=%s
+%s
+sudo /var/vcap/bosh/bin/monit stop all || true
+stopped=0
+for attempt in 1 2 3; do
+  summary=$(sudo /var/vcap/bosh/bin/monit summary | grep 'Process' || true)
+  total=$(printf '%%s\n' "$summary" | grep -c 'Process' || true)
+  notmon=$(printf '%%s\n' "$summary" | grep -c 'not monitored' || true)
+  if [ "$total" = "$notmon" ]; then stopped=1; break; fi
+  sleep 1
+done
+if [ "$stopped" != 1 ]; then echo "ensureMonitStopped: monit processes not stopped" >&2; exit 1; fi
+! mount | grep -q ' on /tmp ' || sudo umount /tmp
+detach_mount /var/tmp
+sudo rm -f /var/log/bosh-agent.log
+detach_mount /var/log
+detach_mount /opt
+detach_mount /var/opt
+detach_mount /var/vcap/data
+sudo mkdir -p /var/tmp
+sudo chmod 700 /var/tmp
+sudo chmod 1777 /tmp
+sudo mkdir -p /var/log
+sudo chmod 775 /var/log
+sudo chown root:syslog /var/log
+sudo mkdir -p /var/opt
+sudo chmod 775 /var/opt
+sudo chown root:root /var/opt
+sudo mkdir -p /opt
+sudo chmod 775 /opt
+sudo chown root:root /opt
+`, t.serviceManager, detachMountFunc)
 
-	err := t.ensureMonitStopped()
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("! mount | grep -q ' on /tmp ' || sudo umount /tmp")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo rm -f /var/log/bosh-agent.log")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/log")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/opt")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/opt")
-	if err != nil {
-		return err
-	}
-
-	err = t.DetachDevice("/var/vcap/data")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo mkdir -p /var/tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 700 /var/tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 1777 /tmp")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo mkdir -p /var/log")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 775 /var/log")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chown root:syslog /var/log")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo mkdir -p /var/opt")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 775 /var/opt")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chown root:root /var/opt")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo mkdir -p /opt")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chmod 775 /opt")
-	if err != nil {
-		return err
-	}
-
-	_, err = t.RunCommand("sudo chown root:root /opt")
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := t.runBatch(script)
+	return err
 }
 
-func (t *TestEnvironment) ensureMonitStopped() error {
-	monitStopped := false
-	begin := time.Now()
-	for i := 0; i < 3; i++ {
-		monitProcessList, err := t.RunCommand("sudo /var/vcap/bosh/bin/monit summary | grep 'Process' || true")
-		if err != nil {
-			return err
-		}
-
-		totalProcessesCount := strings.Count(monitProcessList, "Process")
-		stoppedProcessesCount := strings.Count(monitProcessList, "not monitored")
-		if stoppedProcessesCount == totalProcessesCount {
-			monitStopped = true
-			break
-		}
-
-		time.Sleep(1 * time.Second)
-	}
-
-	if !monitStopped {
-		return fmt.Errorf("ensureMonitStopped: monit processes not stopped after %.0f seconds", time.Since(begin).Seconds())
-	}
-
-	return nil
-}
-
+// ResetDeviceMap detaches every leftover loop device and removes its backing file in a single SSH
+// round-trip. Noble's loop-device semantics require care:
+//
+//   - A plain `losetup -d` is unreliable: the /var/log bind mount and /var/vcap/data both sit on
+//     these loop devices and are torn down with lazy unmounts, so a device can be transiently busy
+//     and `losetup -d` returns "success" as an autoclear-pending detach that hasn't happened yet.
+//   - Noble auto-scans partitions on loop devices, spawning child partition devices (loopNpM) whose
+//     udev events must settle before the parent will detach.
+//
+// So we `udevadm settle` and retry (up to 5 attempts, sleeping 0.2s) until `losetup <dev>` shows the
+// device gone, and only then delete backing files -- and only those no longer attached, since
+// deleting the backing file of a still-attached loop is exactly what produced the "(deleted)" zombie
+// loop devices we saw leaking across specs and destabilizing the next agent bootstrap.
 func (t *TestEnvironment) ResetDeviceMap() error {
-	_, err := t.RunCommand("sudo udevadm settle")
-	if err != nil {
-		return err
-	}
-
-	out, err := t.RunCommand("sudo losetup -a | cut -f1 -d:")
-	if err != nil {
-		return err
-	}
-	for _, loopDev := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
-		if ignoredErr := t.forceDetachLoopDevice(loopDev); ignoredErr != nil {
-			t.writerPrinter.Printf("ResetDeviceMap: %s", ignoredErr)
-		}
-	}
-
-	_, err = t.RunCommand(`for f in /virtualfs-*; do [ -e "$f" ] || continue; sudo losetup -a | grep -qF "$f" || sudo rm -f "$f"; done`)
-	if err != nil {
+	script := `sudo udevadm settle
+for dev in $(sudo losetup -a | cut -f1 -d:); do
+  for attempt in 1 2 3 4 5; do
+    sudo udevadm settle
+    out=$(sudo losetup "$dev" 2>/dev/null || true)
+    if [ -z "$out" ]; then break; fi
+    sudo losetup -d "$dev" || true
+    sleep 0.2
+  done
+  out=$(sudo losetup "$dev" 2>/dev/null || true)
+  if [ -n "$out" ]; then echo "ResetDeviceMap: loop device $dev still attached after retries" >&2; fi
+done
+for f in /virtualfs-*; do
+  [ -e "$f" ] || continue
+  sudo losetup -ln -O BACK-FILE 2>/dev/null | awk -v f="$f" '$1==f{found=1} END{exit !found}' || sudo rm -f "$f"
+done
+`
+	if _, err := t.runBatch(script); err != nil {
 		return err
 	}
 	t.deviceMap = make(map[int]string)
@@ -399,18 +315,16 @@ func (t *TestEnvironment) ResetDeviceMap() error {
 	return nil
 }
 
+// CleanupLogFile truncates the agent log and, on systemd, rotates/vacuums the journal.
 func (t *TestEnvironment) CleanupLogFile() error {
-	_, err := t.RunCommand("sudo truncate -s 0 /var/vcap/bosh/log/current")
-
-	if err != nil {
-		return err
-	}
+	script := "truncate -s 0 /var/vcap/bosh/log/current\n"
 
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
 		// NOTE: --vacuum-time=0s doesn't actually work
-		_, err = t.RunCommand("sudo journalctl --flush --rotate --vacuum-time=1s")
+		script += "journalctl --flush --rotate --vacuum-time=1s\n"
 	}
 
+	_, err := t.runBatch(script)
 	return err
 }
 
@@ -492,48 +406,54 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 	return nil
 }
 
+// attachDeviceBody loops over the partitions server-side so the whole AttachDevice sequence is one
+// SSH round-trip. For each partition it grabs a free loop device, creates and attaches a backing
+// file, reads the loop's major:minor straight from sysfs (/sys/block/<loop>/dev, decimal), and
+// re-creates the block node at the expected path. It echoes one
+// "MAP <deviceNum> <loop> <node> <major:minor>" line per partition for the Go wrapper to record.
+// Parameters (DEV/NPARTS/SIZE/START) are prepended as bash assignments rather than fmt-interpolated
+// so the body's ${devnum%%:*} parameter expansions don't collide with Go format verbs.
+const attachDeviceBody = `n="$START"
+for i in $(seq 0 "$NPARTS"); do
+  if [ "$i" -eq 0 ]; then p="$DEV"; else p="${DEV}${i}"; fi
+  loop=$(sudo losetup -f)
+  sudo rm -rf "/virtualfs-$n"
+  sudo dd if=/dev/zero of="/virtualfs-$n" bs=1M count="$SIZE" >/dev/null 2>&1
+  sudo losetup "$loop" "/virtualfs-$n"
+  devnum=$(cat "/sys/block/$(basename "$loop")/dev")
+  major=${devnum%%:*}
+  minor=${devnum##*:}
+  sudo rm -f "$p"
+  sudo mknod "$p" b "$major" "$minor"
+  echo "MAP $n $loop $p $major:$minor"
+  n=$((n+1))
+done
+`
+
 func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPartitions int) error {
-	partitionPath := devicePath
-	for i := 0; i <= numPartitions; i++ {
-		if i > 0 {
-			partitionPath = fmt.Sprintf("%s%d", devicePath, i)
-		}
+	start := t.currentDeviceNum
+	params := fmt.Sprintf("DEV=%s\nNPARTS=%d\nSIZE=%d\nSTART=%d\n", devicePath, numPartitions, partitionSize, start)
 
-		deviceNum, err := t.AttachLoopDevice(partitionSize)
-		if err != nil {
-			return err
-		}
-
-		loopDev := t.deviceMap[deviceNum]
-		t.writerPrinter.Printf("AttachDevice[%s]: loop device is %s\n", partitionPath, loopDev)
-
-		lsOut, lsErr := t.RunCommand(fmt.Sprintf("ls -al %s", loopDev))
-		t.writerPrinter.Printf("AttachDevice[%s]: ls -al output: %q (err: %v)\n", partitionPath, strings.TrimSpace(lsOut), lsErr)
-
-		c := fmt.Sprintf("ls -al %s | cut -d' ' -f 6", loopDev)
-		output, err := t.RunCommand(c)
-		minorNum := strings.TrimSpace(output)
-		t.writerPrinter.Printf("AttachDevice[%s]: extracted minor number: %q (err: %v)\n", partitionPath, minorNum, err)
-		if err != nil {
-			return err
-		}
-
-		err = t.RemoveDevice(partitionPath)
-		if err != nil {
-			return err
-		}
-
-		mknodCmd := fmt.Sprintf("sudo mknod %s b 7 %s", partitionPath, minorNum)
-		t.writerPrinter.Printf("AttachDevice[%s]: running: %s\n", partitionPath, mknodCmd)
-		mknodOut, err := t.RunCommand(mknodCmd)
-		t.writerPrinter.Printf("AttachDevice[%s]: mknod output: %q (err: %v)\n", partitionPath, strings.TrimSpace(mknodOut), err)
-		if err != nil {
-			return err
-		}
-
-		statOut, _ := t.RunCommand(fmt.Sprintf("ls -al %s", partitionPath)) //nolint:errcheck
-		t.writerPrinter.Printf("AttachDevice[%s]: node created: %s\n", partitionPath, strings.TrimSpace(statOut))
+	out, err := t.runBatch(params + attachDeviceBody)
+	if err != nil {
+		t.writerPrinter.Printf("AttachDevice[%s]: %s\nOutput: %s", devicePath, err, out)
+		return err
 	}
+
+	for _, line := range strings.Split(out, "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 5 || fields[0] != "MAP" {
+			continue
+		}
+		deviceNum, convErr := strconv.Atoi(fields[1])
+		if convErr != nil {
+			continue
+		}
+		t.deviceMap[deviceNum] = fields[2]
+		t.writerPrinter.Printf("AttachDevice[%s]: loop=%s node=%s (b %s)\n", fields[3], fields[2], fields[3], fields[4])
+	}
+	t.currentDeviceNum = start + numPartitions + 1
+
 	return nil
 }
 
@@ -631,85 +551,9 @@ func (t *TestEnvironment) RemoveDevice(devicePath string) error {
 	return err
 }
 
-func (t *TestEnvironment) AttachLoopDevice(size int) (int, error) {
-	deviceNum := t.currentDeviceNum
-
-	output, err := t.RunCommand("sudo losetup -f")
-	devicePath := strings.TrimSpace(output)
-	if err != nil {
-		return 0, err
-	}
-
-	if oldDevicePath, ok := t.deviceMap[deviceNum]; ok {
-		err := t.DetachLoopDevice(oldDevicePath)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	attachDeviceTemplate := `
-sudo rm -rf /virtualfs-%d
-sudo dd if=/dev/zero of=/virtualfs-%d bs=1M count=%d
-sudo losetup %s /virtualfs-%d
-`
-	attachDeviceScript := fmt.Sprintf(attachDeviceTemplate, deviceNum, deviceNum, size, devicePath, deviceNum)
-	_, err = t.RunCommand(attachDeviceScript)
-	if err != nil {
-		return 0, err
-	}
-
-	t.deviceMap[deviceNum] = devicePath
-	t.currentDeviceNum++
-
-	return deviceNum, nil
-}
-
 func (t *TestEnvironment) DetachLoopDevice(devicePath string) error {
 	_, err := t.RunCommand(fmt.Sprintf("sudo losetup -d %s", devicePath))
 	return err
-}
-
-// forceDetachLoopDevice releases a loop device robustly and confirms it is actually gone.
-//
-// A plain `losetup -d` is unreliable here for two Noble-specific reasons:
-//   - The /var/log bind mount and the /var/vcap/data mount both sit on these loop devices and
-//     are torn down with lazy unmounts, so the device can be transiently busy; `losetup -d`
-//     then returns "success" as an autoclear-pending detach that has not actually happened yet.
-//   - Noble auto-scans partitions on loop devices, spawning child partition devices (loopNpM)
-//     whose udev events must be processed before the parent will detach.
-//
-// We settle udev and retry until `losetup <dev>` shows the device detached. Callers must only
-// delete the backing file after this returns nil - deleting the backing file of a still-attached
-// loop is exactly what produced the "(deleted)" zombie loop devices we observed leaking across
-// specs and destabilizing the next agent bootstrap.
-func (t *TestEnvironment) forceDetachLoopDevice(devicePath string) error {
-	devicePath = strings.TrimSpace(devicePath)
-	if devicePath == "" {
-		return nil
-	}
-
-	var lastErr error
-	for attempt := 0; attempt < 5; attempt++ {
-		if _, err := t.RunCommand("sudo udevadm settle"); err != nil {
-			lastErr = err
-		}
-
-		out, err := t.RunCommand(fmt.Sprintf("sudo losetup %s 2>/dev/null || true", devicePath)) //nolint:errcheck
-		if err != nil {
-			lastErr = err
-		}
-		if strings.TrimSpace(out) == "" {
-			return nil // no longer attached
-		}
-
-		if _, err := t.RunCommand(fmt.Sprintf("sudo losetup -d %s", devicePath)); err != nil {
-			lastErr = err
-		}
-
-		_, _ = t.RunCommand("sleep 0.2") //nolint:errcheck
-	}
-
-	return fmt.Errorf("loop device %s still attached after retries (last detach error: %v)", devicePath, lastErr)
 }
 
 func (t *TestEnvironment) DetachLoopDevices() error {
@@ -793,6 +637,16 @@ func (t *TestEnvironment) StopAgent() error {
 func (t *TestEnvironment) StartAgent() error {
 	var err error
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
+		// Clear any accumulated systemd start-limit / failed state before (re)starting. CleanupDataDir's
+		// `fuser -km /var/log` SIGKILLs auditd (its log lives under /var/log/audit); systemd then restarts
+		// it in a tight loop until it trips its StartLimitBurst (5 starts / 10s) and refuses to start it at
+		// all. A StopAgent -> CleanupDataDir -> StartAgent sequence can land inside that window, so the
+		// agent's bootstrap fails to start auditd and crash-loops. reset-failed clears the counters so
+		// auditd (and the agent) can start cleanly; it is a harmless no-op when nothing has failed.
+		_, err = t.RunCommand("sudo systemctl reset-failed auditd.service rsyslog.service bosh-agent.service 2>/dev/null || true")
+		if err != nil {
+			return err
+		}
 		// systemctl start agent will return immediately, but agent takes a moment to bootstrap and mount /var/log.
 		// If we start rsyslog.service now, it will block in ExecStartPre waiting for the agent to mount /var/log.
 		// Since we run both asynchronously via systemd, this correctly simulates the system boot dependency.
