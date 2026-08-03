@@ -20,3 +20,11 @@ for os in "${linted_os_list[@]}"; do
   echo -e "\n lint-ing with GOOS=${os}..."
   GOOS="${os}" golangci-lint run "${ROOT_DIR}"/...
 done
+
+if ! command -v shellcheck &> /dev/null; then
+  echo -e "\n shellcheck not found; install it (https://github.com/koalaman/shellcheck#installing)" >&2
+  exit 1
+fi
+
+echo -e "\n shellcheck-ing shell scripts..."
+shellcheck "${ROOT_DIR}"/ci/tasks/*.sh "${ROOT_DIR}"/integration/scripts/*.sh
