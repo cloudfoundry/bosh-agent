@@ -15,6 +15,7 @@ RUN \
     rsync \
     tar \
     wget \
+    shellcheck \
   && apt-get clean
 
 
