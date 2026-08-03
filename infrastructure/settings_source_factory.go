@@ -166,6 +166,52 @@ func (f SettingsSourceFactory) buildWithoutRegistry() (boshsettings.Source, erro
 	return NewMultiSettingsSource(f.logger, settingsSources...)
 }
 
+// MarshalJSON is the inverse of UnmarshalJSON: it re-injects the "Type" discriminator that the
+// concrete SourceOptions structs (FileSourceOptions, HTTPSourceOptions, ...) don't carry as a field,
+// so a marshaled slice round-trips back through UnmarshalJSON. Without it, json.Marshal emits source
+// objects with no "Type" and reloading fails with "Missing source type".
+func (s SourceOptionsSlice) MarshalJSON() ([]byte, error) {
+	maps := make([]map[string]interface{}, 0, len(s))
+
+	for _, opts := range s {
+		var sourceType string
+
+		switch opts.(type) {
+		case HTTPSourceOptions:
+			sourceType = "HTTP"
+		case InstanceMetadataSourceOptions:
+			sourceType = "InstanceMetadata"
+		case ConfigDriveSourceOptions:
+			sourceType = "ConfigDrive"
+		case FileSourceOptions:
+			sourceType = "File"
+		case CDROMSourceOptions:
+			sourceType = "CDROM"
+		case VsphereGuestInfoSourceOptions:
+			sourceType = "VsphereGuestInfo"
+		default:
+			return nil, bosherr.Errorf("Unknown source options type '%T'", opts)
+		}
+
+		// Round-trip the concrete struct through JSON to get a map of its exported fields, then inject
+		// the Type discriminator UnmarshalJSON dispatches on.
+		data, err := json.Marshal(opts)
+		if err != nil {
+			return nil, bosherr.WrapErrorf(err, "Marshalling source type '%s'", sourceType)
+		}
+
+		var m map[string]interface{}
+		if err := json.Unmarshal(data, &m); err != nil {
+			return nil, bosherr.WrapErrorf(err, "Unmarshalling source type '%s'", sourceType)
+		}
+		m["Type"] = sourceType
+
+		maps = append(maps, m)
+	}
+
+	return json.Marshal(maps)
+}
+
 func (s *SourceOptionsSlice) UnmarshalJSON(data []byte) error {
 	var maps []map[string]interface{}
 

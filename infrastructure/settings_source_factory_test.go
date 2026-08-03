@@ -235,4 +235,51 @@ var _ = Describe("SettingsSourceFactory", func() {
 			Expect(err).To(HaveOccurred())
 		})
 	})
+
+	Describe("MarshalJSON", func() {
+		It("re-injects the Type discriminator so the slice round-trips through UnmarshalJSON", func() {
+			original := SourceOptionsSlice{
+				FileSourceOptions{SettingsPath: "/var/vcap/settings.json"},
+				HTTPSourceOptions{URI: "http://example.com"},
+			}
+
+			data, err := json.Marshal(original)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(data)).To(ContainSubstring(`"Type":"File"`))
+			Expect(string(data)).To(ContainSubstring(`"Type":"HTTP"`))
+
+			var roundTripped SourceOptionsSlice
+			err = json.Unmarshal(data, &roundTripped)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(roundTripped).To(Equal(original))
+		})
+
+		It("marshals each concrete source type with its discriminator", func() {
+			cases := map[string]SourceOptions{
+				"HTTP":             HTTPSourceOptions{URI: "http://example.com"},
+				"InstanceMetadata": InstanceMetadataSourceOptions{URI: "http://metadata"},
+				"ConfigDrive":      ConfigDriveSourceOptions{DiskPaths: []string{"/dev/vdb"}},
+				"File":             FileSourceOptions{SettingsPath: "/tmp/settings.json"},
+				"CDROM":            CDROMSourceOptions{FileName: "env"},
+				"VsphereGuestInfo": VsphereGuestInfoSourceOptions{},
+			}
+
+			for wantType, opts := range cases {
+				data, err := json.Marshal(SourceOptionsSlice{opts})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(string(data)).To(ContainSubstring(`"Type":"` + wantType + `"`))
+
+				var roundTripped SourceOptionsSlice
+				err = json.Unmarshal(data, &roundTripped)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(roundTripped).To(Equal(SourceOptionsSlice{opts}))
+			}
+		})
+
+		It("marshals an empty slice as an empty JSON array", func() {
+			data, err := json.Marshal(SourceOptionsSlice{})
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(data)).To(Equal(`[]`))
+		})
+	})
 })
