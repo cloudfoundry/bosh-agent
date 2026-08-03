@@ -22,6 +22,7 @@ import (
 	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 
+	"github.com/cloudfoundry/bosh-agent/v2/app"
 	"github.com/cloudfoundry/bosh-agent/v2/integration/integrationagentclient"
 	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
@@ -138,7 +139,7 @@ func NewTestEnvironment(cmdRunner boshsys.CmdRunner, wp writerPrinter) (*TestEnv
 		mbusPass:         mbusPass,
 		mbusPort:         mbusPort,
 		// Start dirty so the first RestoreCleanBaseline (from SynchronizedBeforeSuite) writes the
-		// default agent.json once. Thereafter only specs that call UpdateAgentConfig re-dirty it.
+		// default agent.json once. Thereafter only specs that call CreateAgentConfigFile re-dirty it.
 		configDirty: true,
 	}, nil
 }
@@ -205,7 +206,8 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 // StopAgent runs first on purpose: otherwise CleanupDataDir's `fuser -km /var/vcap/data` kills the
 // running agent, systemd restarts it, and the restart races the umount/rm of /var/vcap/data (and
 // crash-loops on the /var/log CleanupDataDir has already removed). DetectServiceManager must have run
-// before this, since CleanupLogFile and GetSettingsFile branch on the service manager.
+// before this, since CleanupLogFile branches on the service manager and CreateAgentConfigFile stamps
+// ServiceManager into the default agent.json from t.serviceManager.
 func (t *TestEnvironment) RestoreCleanBaseline() error {
 	var firstErr error
 	record := func(err error) {
@@ -216,7 +218,7 @@ func (t *TestEnvironment) RestoreCleanBaseline() error {
 
 	record(t.StopAgent())
 	if t.configDirty {
-		if err := t.UpdateAgentConfig(t.GetSettingsFile("")); err != nil {
+		if err := t.CreateAgentConfigFile(DefaultAgentConfig); err != nil {
 			record(err)
 		} else {
 			t.configDirty = false
@@ -508,15 +510,29 @@ func (t *TestEnvironment) TearDownDummyNetworkInterface() error {
 	return err
 }
 
-func (t *TestEnvironment) UpdateAgentConfig(configFile string) error {
+// CreateAgentConfigFile marshals an in-code app.Config to /var/vcap/bosh/agent.json on the VM. It
+// stamps ServiceManager from the target detected by DetectServiceManager (which must have run first),
+// so the same DefaultAgentConfig value works on sv, resolute, and noble without per-target fixtures.
+// CopyFileToPath streams via `sudo tee`, which truncates the destination, so no prior `rm -f` is
+// needed.
+func (t *TestEnvironment) CreateAgentConfigFile(config app.Config) error {
 	// Any write to agent.json marks it dirty so RestoreCleanBaseline knows to restore the default; the
 	// 46 specs that never touch it skip that restore.
 	t.configDirty = true
-	_, err := t.RunCommand("sudo rm -f /var/vcap/bosh/agent.json")
+
+	config.Platform.Linux.ServiceManager = t.serviceManager
+
+	configJSON, err := json.Marshal(config)
 	if err != nil {
 		return err
 	}
-	return t.CopyFileToPath(filepath.Join(t.AssetsDir(), configFile), "/var/vcap/bosh/agent.json")
+
+	configPath := filepath.Join(t.AssetsDir(), "agent-config.json")
+	if err := os.WriteFile(configPath, configJSON, 0644); err != nil { //nolint:gosec
+		return err
+	}
+
+	return t.CopyFileToPath(configPath, "/var/vcap/bosh/agent.json")
 }
 
 // CopyFileToPath streams the local file to its destination over the persistent SSH tunnel by piping
@@ -663,22 +679,6 @@ func (t *TestEnvironment) DetectServiceManager() error {
 
 func (t *TestEnvironment) GetServiceManager() string {
 	return t.serviceManager
-}
-
-func (t *TestEnvironment) GetSettingsFile(specification string) string {
-	suffix := ""
-
-	if specification != "" {
-		suffix += "-"
-		suffix += specification
-	}
-
-	if sm := t.GetServiceManager(); sm != "" {
-		suffix += "-"
-		suffix += sm
-	}
-
-	return fmt.Sprintf("file-settings-agent%s.json", suffix)
 }
 
 func (t *TestEnvironment) WaitForAgent() error {

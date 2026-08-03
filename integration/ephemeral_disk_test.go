@@ -69,7 +69,9 @@ var _ = Describe("EphemeralDisk", func() {
 
 				Context("when bind mount /var/vcap/data/root_tmp on /tmp", func() {
 					BeforeEach(func() {
-						err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("no-default-tmp-dir"))
+						cfg := integration.DefaultAgentConfig
+						cfg.Platform.Linux.UseDefaultTmpDir = false
+						err := testEnvironment.CreateAgentConfigFile(cfg)
 						Expect(err).ToNot(HaveOccurred())
 					})
 
@@ -122,7 +124,9 @@ var _ = Describe("EphemeralDisk", func() {
 				)
 
 				BeforeEach(func() {
-					err := testEnvironment.UpdateAgentConfig(testEnvironment.GetSettingsFile("root-partition"))
+					cfg := integration.DefaultAgentConfig
+					cfg.Platform.Linux.CreatePartitionIfNoEphemeralDisk = true
+					err := testEnvironment.CreateAgentConfigFile(cfg)
 					Expect(err).ToNot(HaveOccurred())
 
 					oldRootDevice, err = testEnvironment.AttachPartitionedRootDevice("/dev/sdz", 1224, 128)
