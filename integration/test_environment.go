@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"crypto/tls"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -150,44 +151,30 @@ func (t *TestEnvironment) runBatch(script string) (string, error) {
 	return t.RunCommand("sudo bash -euo pipefail <<'BOSH_BATCH_EOF'\n" + script + "\nBOSH_BATCH_EOF")
 }
 
-// detachMountFunc is a bash function (shared by DetachDevice and CleanupDataDir) that tears down a
-// single mount directory: stop rsyslog first when detaching /var/log on systemd (see the long note
-// below), then for each mount under $d -- deepest first -- fuser-kill holders and unmount (lazily for
-// /var/log), and finally remove the directory. It expects $SM (the service manager) to be set by the
-// caller.
-//
-// On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the whole
-// test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
-// /var/vcap/bosh/log/current is symlinked to. We stop it before the fuser-kill/unmount so it cleanly
-// releases its open handles on /var/log instead of racing the lazy unmount. We deliberately do NOT
-// restart it: /var/log is about to become a plain directory on the root disk again, not the
-// /var/vcap/data/root_log bind mount rsyslog expects. The agent's own Bootstrap (SetupLogDir then
-// SetupLoggingAndAuditing, see agent/bootstrap.go) re-establishes that bind mount and restarts
-// logging, in that order, the next time StartAgent() runs.
-//
-// /var/log is unmounted lazily to prevent intermittent test failures: as of 2024-06-24 it is a bind
-// mount of /var/vcap/data/root_log, and for reasons we don't fully understand `fuser -k` doesn't
-// consistently terminate its holders in time for a plain umount. Because we later unmount
-// /var/vcap/data, a lingering /var/log reference will eventually fail loudly there, so this is safe.
-const detachMountFunc = `detach_mount() {
-  d="$1"
-  if [ "$d" = /var/log ] && [ "$SM" = systemd ]; then
-    sudo systemctl stop syslog.socket rsyslog.service || true
-  fi
-  mps=$(sudo mount | grep "on $d" | cut -d' ' -f3 | awk '{ print length"\t"$0 }' | sort -rn | cut -f2- || true)
-  for mp in $mps; do
-    [ -n "$mp" ] || continue
-    # fuser -km can kill sshd holders (wtmp/lastlog on /var/log); the trap '' HUP in the caller keeps
-    # this reparented shell alive to finish the umount/rm. Its non-zero exit on empty mounts is expected.
-    sudo fuser -km "$mp" || true
-    if [ "$mp" = /var/log ]; then
-      sudo umount --lazy "$mp" || true
-    else
-      sudo umount "$mp" || true
-    fi
-  done
-  sudo rm -rf "$d"
-}`
+// The batched shell logic below lives in standalone, shellcheck-able files under scripts/ and is
+// embedded here. detach_mount.sh defines a detach_mount() bash function shared by DetachDevice and
+// CleanupDataDir; the Go callers prepend the script's parameters (SM, DIR, BLOBSTORE_DIR, ...) as
+// `KEY=value` lines and concatenate detach_mount.sh in front of the caller's body, then feed the
+// whole thing to `sudo bash` over stdin via runBatch. See each script file for its own docs.
+var (
+	//go:embed scripts/detach_mount.sh
+	detachMountFunc string
+
+	//go:embed scripts/detach_device.sh
+	detachDeviceBody string
+
+	//go:embed scripts/cleanup_data_dir.sh
+	cleanupDataDirBody string
+
+	//go:embed scripts/reset_device_map.sh
+	resetDeviceMapBody string
+
+	//go:embed scripts/cleanup_log_file.sh
+	cleanupLogFileBody string
+
+	//go:embed scripts/attach_device.sh
+	attachDeviceBody string
+)
 
 func (t *TestEnvironment) DetachDevice(dir string) error {
 	if strings.HasPrefix(dir, "/dev/") {
@@ -201,8 +188,8 @@ func (t *TestEnvironment) DetachDevice(dir string) error {
 		return nil
 	}
 
-	script := fmt.Sprintf("trap '' HUP\nSM=%s\n%s\ndetach_mount %s\n", t.serviceManager, detachMountFunc, dir)
-	_, err := t.runBatch(script)
+	params := fmt.Sprintf("SM=%s\nDIR=%s\n", t.serviceManager, dir)
+	_, err := t.runBatch(params + detachMountFunc + detachDeviceBody)
 	return err
 }
 
@@ -245,93 +232,19 @@ func (t *TestEnvironment) RestoreCleanBaseline() error {
 // CleanupDataDir returns the VM's ephemeral state to baseline in a single SSH round-trip: stop monit
 // (waiting until every process is unmonitored), unmount /tmp, tear down each ephemeral mount with the
 // shared detach_mount helper, then recreate the emptied directories with their expected ownership and
-// modes. The batch sets an empty HUP handler:
-//
-//	trap '' HUP
-//
-// so it runs to completion even if a fuser-kill inside detach_mount takes down the SSH session (see
-// detachMountFunc). The monit-summary wait polls up to 3 times a second apart; "stopped" means every
-// "Process" line reads "not monitored" (an empty summary trivially satisfies that).
-//
-// It also sweeps transient top-level uploads (logs.tgz, records.json, dummy_package.tgz,
-// compiled-*.tgz) out of the blobstore assets dir so specs are isolated. `-maxdepth 1 -type f` leaves
-// the read-only release/ fixtures (a subdirectory) intact, and the fake-blobstore binary and .ssh/
-// live outside the assets dir so the sweep can't touch them. Fixtures staged by a spec's BeforeEach
-// are re-copied each run, so sweeping them is safe.
+// modes, and sweep transient top-level uploads out of the blobstore assets dir. See
+// scripts/cleanup_data_dir.sh (and scripts/detach_mount.sh) for the full logic and rationale.
 func (t *TestEnvironment) CleanupDataDir() error {
-	script := fmt.Sprintf(`trap '' HUP
-SM=%s
-%s
-sudo /var/vcap/bosh/bin/monit stop all || true
-stopped=0
-for attempt in 1 2 3; do
-  summary=$(sudo /var/vcap/bosh/bin/monit summary | grep 'Process' || true)
-  total=$(printf '%%s\n' "$summary" | grep -c 'Process' || true)
-  notmon=$(printf '%%s\n' "$summary" | grep -c 'not monitored' || true)
-  if [ "$total" = "$notmon" ]; then stopped=1; break; fi
-  sleep 1
-done
-if [ "$stopped" != 1 ]; then echo "ensureMonitStopped: monit processes not stopped" >&2; exit 1; fi
-! mount | grep -q ' on /tmp ' || sudo umount /tmp
-detach_mount /var/tmp
-sudo rm -f /var/log/bosh-agent.log
-detach_mount /var/log
-detach_mount /opt
-detach_mount /var/opt
-detach_mount /var/vcap/data
-sudo mkdir -p /var/tmp
-sudo chmod 700 /var/tmp
-sudo chmod 1777 /tmp
-sudo mkdir -p /var/log
-sudo chmod 775 /var/log
-sudo chown root:syslog /var/log
-sudo mkdir -p /var/opt
-sudo chmod 775 /var/opt
-sudo chown root:root /var/opt
-sudo mkdir -p /opt
-sudo chmod 775 /opt
-sudo chown root:root /opt
-if [ -d %[3]s ]; then
-  find %[3]s -maxdepth 1 -type f -delete
-fi
-`, t.serviceManager, detachMountFunc, blobstoreDir)
-
-	_, err := t.runBatch(script)
+	params := fmt.Sprintf("SM=%s\nBLOBSTORE_DIR=%s\n", t.serviceManager, blobstoreDir)
+	_, err := t.runBatch(params + detachMountFunc + cleanupDataDirBody)
 	return err
 }
 
 // ResetDeviceMap detaches every leftover loop device and removes its backing file in a single SSH
-// round-trip. Noble's loop-device semantics require care:
-//
-//   - A plain `losetup -d` is unreliable: the /var/log bind mount and /var/vcap/data both sit on
-//     these loop devices and are torn down with lazy unmounts, so a device can be transiently busy
-//     and `losetup -d` returns "success" as an autoclear-pending detach that hasn't happened yet.
-//   - Noble auto-scans partitions on loop devices, spawning child partition devices (loopNpM) whose
-//     udev events must settle before the parent will detach.
-//
-// So we `udevadm settle` and retry (up to 5 attempts, sleeping 0.2s) until `losetup <dev>` shows the
-// device gone, and only then delete backing files -- and only those no longer attached, since
-// deleting the backing file of a still-attached loop is exactly what produced the "(deleted)" zombie
-// loop devices we saw leaking across specs and destabilizing the next agent bootstrap.
+// round-trip, preserving noble's loop-device semantics (settle + retry before detach; delete a
+// backing file only once its loop is gone). See scripts/reset_device_map.sh for the full rationale.
 func (t *TestEnvironment) ResetDeviceMap() error {
-	script := `sudo udevadm settle
-for dev in $(sudo losetup -a | cut -f1 -d:); do
-  for attempt in 1 2 3 4 5; do
-    sudo udevadm settle
-    out=$(sudo losetup "$dev" 2>/dev/null || true)
-    if [ -z "$out" ]; then break; fi
-    sudo losetup -d "$dev" || true
-    sleep 0.2
-  done
-  out=$(sudo losetup "$dev" 2>/dev/null || true)
-  if [ -n "$out" ]; then echo "ResetDeviceMap: loop device $dev still attached after retries" >&2; fi
-done
-for f in /virtualfs-*; do
-  [ -e "$f" ] || continue
-  sudo losetup -ln -O BACK-FILE 2>/dev/null | awk -v f="$f" '$1==f{found=1} END{exit !found}' || sudo rm -f "$f"
-done
-`
-	if _, err := t.runBatch(script); err != nil {
+	if _, err := t.runBatch(resetDeviceMapBody); err != nil {
 		return err
 	}
 	t.deviceMap = make(map[int]string)
@@ -340,15 +253,10 @@ done
 }
 
 // CleanupLogFile truncates the agent log and, on systemd, rotates/vacuums the journal.
+// See scripts/cleanup_log_file.sh.
 func (t *TestEnvironment) CleanupLogFile() error {
-	script := "truncate -s 0 /var/vcap/bosh/log/current\n"
-
-	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
-		// NOTE: --vacuum-time=0s doesn't actually work
-		script += "journalctl --flush --rotate --vacuum-time=1s\n"
-	}
-
-	_, err := t.runBatch(script)
+	params := fmt.Sprintf("SM=%s\n", t.serviceManager)
+	_, err := t.runBatch(params + cleanupLogFileBody)
 	return err
 }
 
@@ -429,29 +337,6 @@ func (t *TestEnvironment) EnsureRootDeviceIsLargeEnough() error {
 
 	return nil
 }
-
-// attachDeviceBody loops over the partitions server-side so the whole AttachDevice sequence is one
-// SSH round-trip. For each partition it grabs a free loop device, creates and attaches a backing
-// file, reads the loop's major:minor straight from sysfs (/sys/block/<loop>/dev, decimal), and
-// re-creates the block node at the expected path. It echoes one
-// "MAP <deviceNum> <loop> <node> <major:minor>" line per partition for the Go wrapper to record.
-// Parameters (DEV/NPARTS/SIZE/START) are prepended as bash assignments rather than fmt-interpolated
-// so the body's ${devnum%%:*} parameter expansions don't collide with Go format verbs.
-const attachDeviceBody = `n="$START"
-for i in $(seq 0 "$NPARTS"); do
-  if [ "$i" -eq 0 ]; then p="$DEV"; else p="${DEV}${i}"; fi
-  sudo rm -rf "/virtualfs-$n"
-  sudo truncate -s "${SIZE}M" "/virtualfs-$n"
-  loop=$(sudo losetup --find --show "/virtualfs-$n")
-  devnum=$(cat "/sys/block/$(basename "$loop")/dev")
-  major=${devnum%%:*}
-  minor=${devnum##*:}
-  sudo rm -f "$p"
-  sudo mknod "$p" b "$major" "$minor"
-  echo "MAP $n $loop $p $major:$minor"
-  n=$((n+1))
-done
-`
 
 func (t *TestEnvironment) AttachDevice(devicePath string, partitionSize, numPartitions int) error {
 	start := t.currentDeviceNum
@@ -771,9 +656,7 @@ func (t *TestEnvironment) DetectServiceManager() error {
 		return err
 	}
 
-	if result := strings.TrimSpace(out); result == SERVICE_MANAGER_SYSTEMD {
-		t.serviceManager = result
-	}
+	t.serviceManager = strings.TrimSpace(out)
 
 	return nil
 }

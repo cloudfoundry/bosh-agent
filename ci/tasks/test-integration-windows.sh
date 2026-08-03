@@ -33,6 +33,7 @@ Host ${agent_ip}
 " > ~/.ssh/config
 
 ssh-keyscan -H "${JUMPBOX_IP}" >> ~/.ssh/known_hosts 2>/dev/null
+# shellcheck disable=SC2029 # agent_ip is intentionally expanded client-side to keyscan the agent VM via the jumpbox
 ssh "${JUMPBOX_USERNAME}@${JUMPBOX_IP}" "ssh-keyscan -H ${agent_ip}" >> ~/.ssh/known_hosts 2>/dev/null
 
 echo -e "\n Enabling WinRM and setting vcap password..."
