@@ -22,7 +22,11 @@ type linuxFormatter struct {
 	timeService clock.Clock
 }
 
-func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem, timeService clock.Clock) Formatter {
+func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) Formatter {
+	return NewLinuxFormatterWithClock(runner, fs, clock.NewClock())
+}
+
+func NewLinuxFormatterWithClock(runner boshsys.CmdRunner, fs boshsys.FileSystem, timeService clock.Clock) Formatter {
 	return linuxFormatter{
 		runner:      runner,
 		fs:          fs,
