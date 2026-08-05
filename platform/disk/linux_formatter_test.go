@@ -9,6 +9,7 @@ import (
 
 	fakesys "github.com/cloudfoundry/bosh-utils/system/fakes"
 
+	fakeboshaction "github.com/cloudfoundry/bosh-agent/v2/agent/action/fakes"
 	. "github.com/cloudfoundry/bosh-agent/v2/platform/disk"
 )
 
@@ -20,7 +21,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{ExitStatus: 2, Error: errors.New("Exit code 2")})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemSwap)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -33,7 +34,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda1", FileSystemSwap)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -46,7 +47,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="swap" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda1", FileSystemSwap)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -63,7 +64,7 @@ var _ = Describe("Linux Formatter", func() {
 				Expect(err).NotTo(HaveOccurred())
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err = formatter.Format("/dev/xvda2", FileSystemExt4)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -94,7 +95,7 @@ var _ = Describe("Linux Formatter", func() {
 					fakeRunner.AddCmdResult(mkeCmd, fakesys.FakeCmdResult{
 						ExitStatus: 0,
 					})
-					formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+					formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 					err := formatter.Format("/dev/xvda2", FileSystemExt4)
 					Expect(err).NotTo(HaveOccurred())
 
@@ -107,7 +108,7 @@ var _ = Describe("Linux Formatter", func() {
 					fakeRunner.AddCmdResult(mkeCmd, fakesys.FakeCmdResult{
 						Error: errors.New(`some other error`),
 					})
-					formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+					formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 					err := formatter.Format("/dev/xvda2", FileSystemExt4)
 					Expect(err).To(HaveOccurred())
 
@@ -121,7 +122,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext2" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemExt4)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -134,7 +135,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda1", FileSystemExt4)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -147,7 +148,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="xfs" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemExt4)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -160,7 +161,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="somethingelse" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemExt4)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -175,7 +176,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{ExitStatus: 2, Error: errors.New("Exit code 2")})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemXFS)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -188,7 +189,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda1", FileSystemXFS)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -201,7 +202,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeFs := fakesys.NewFakeFileSystem()
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="xfs" yyyy zzzz`})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda1", FileSystemXFS)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -215,7 +216,7 @@ var _ = Describe("Linux Formatter", func() {
 				fakeRunner.AddCmdResult("mkfs.xfs /dev/xvda2", fakesys.FakeCmdResult{Error: errors.New("Sadness")})
 				fakeRunner.AddCmdResult("blkid -p /dev/xvda2", fakesys.FakeCmdResult{Stderr: "", ExitStatus: 2})
 
-				formatter := NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter := NewLinuxFormatter(fakeRunner, fakeFs, &fakeboshaction.FakeClock{})
 				err := formatter.Format("/dev/xvda2", FileSystemXFS)
 
 				Expect(err).To(HaveOccurred())
@@ -228,18 +229,20 @@ var _ = Describe("Linux Formatter", func() {
 		var (
 			fakeRunner *fakesys.FakeCmdRunner
 			fakeFs     *fakesys.FakeFileSystem
+			fakeClock  *fakeboshaction.FakeClock
 			formatter  Formatter
 		)
 
 		BeforeEach(func() {
 			fakeRunner = fakesys.NewFakeCmdRunner()
 			fakeFs = fakesys.NewFakeFileSystem()
+			fakeClock = &fakeboshaction.FakeClock{}
 		})
 
 		Context("when determining partition filesystem fails", func() {
 			BeforeEach(func() {
 				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("No GPT found")})
-				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs, fakeClock)
 			})
 
 			It("returns an error", func() {
@@ -253,7 +256,7 @@ var _ = Describe("Linux Formatter", func() {
 		Context("when using Ext4", func() {
 			BeforeEach(func() {
 				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
-				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs, fakeClock)
 			})
 
 			It("grows the Ext4 filesystem", func() {
@@ -263,17 +266,52 @@ var _ = Describe("Linux Formatter", func() {
 				Expect(fakeRunner.RunCommands[1]).To(Equal([]string{"resize2fs", "-f", "/dev/nvme2n1p1"}))
 			})
 
-			Context("when resize2fs fails", func() {
+			Context("when resize2fs fails with a non-retryable error", func() {
 				BeforeEach(func() {
 					fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("resize2fs failure")})
 				})
 
-				It("returns an error", func() {
+				It("returns the error immediately without retrying", func() {
 					err := formatter.GrowFilesystem("/dev/nvme2n1p1")
 
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(ContainSubstring("Failed to grow Ext4 filesystem"))
 					Expect(err.Error()).To(ContainSubstring("resize2fs failure"))
+					Expect(fakeClock.SleepCallCount()).To(Equal(0))
+				})
+			})
+
+			Context("when resize2fs fails with 'Permission denied to resize filesystem'", func() {
+				BeforeEach(func() {
+					permDeniedErr := errors.New("Permission denied to resize filesystem")
+					fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: permDeniedErr})
+					fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: permDeniedErr})
+					fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 0})
+				})
+
+				It("retries until success and sleeps between attempts", func() {
+					err := formatter.GrowFilesystem("/dev/nvme2n1p1")
+
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fakeClock.SleepCallCount()).To(Equal(2))
+				})
+			})
+
+			Context("when resize2fs keeps failing with 'Permission denied' for all attempts", func() {
+				BeforeEach(func() {
+					permDeniedErr := errors.New("Permission denied to resize filesystem")
+					for i := 0; i < 10; i++ {
+						fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: permDeniedErr})
+					}
+				})
+
+				It("returns an error after exhausting all attempts", func() {
+					err := formatter.GrowFilesystem("/dev/nvme2n1p1")
+
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Failed to grow Ext4 filesystem"))
+					Expect(err.Error()).To(ContainSubstring("Permission denied to resize filesystem"))
+					Expect(fakeClock.SleepCallCount()).To(Equal(10))
 				})
 			})
 		})
@@ -281,7 +319,7 @@ var _ = Describe("Linux Formatter", func() {
 		Context("when using XFS", func() {
 			BeforeEach(func() {
 				fakeRunner.AddCmdResult("blkid -p /dev/nvme2n1p1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="xfs" yyyy zzzz`})
-				formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+				formatter = NewLinuxFormatter(fakeRunner, fakeFs, fakeClock)
 			})
 
 			It("grows the XFS filesystem", func() {
