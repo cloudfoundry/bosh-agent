@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	growFilesystemRetryDelay  = 5 * time.Second
-	growFilesystemMaxRetries  = 10
+	growFilesystemRetryDelay    = 5 * time.Second
+	growFilesystemMaxRetries    = 10
 	growFilesystemPermDeniedMsg = "Permission denied to resize filesystem"
 )
 
