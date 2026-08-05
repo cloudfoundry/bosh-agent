@@ -300,7 +300,7 @@ var _ = Describe("Linux Formatter", func() {
 			Context("when resize2fs keeps failing with 'Permission denied' for all attempts", func() {
 				BeforeEach(func() {
 					permDeniedErr := errors.New("Permission denied to resize filesystem")
-					for i := 0; i < 10; i++ {
+					for i := 0; i < 11; i++ {
 						fakeRunner.AddCmdResult("resize2fs -f /dev/nvme2n1p1", fakesys.FakeCmdResult{ExitStatus: 1, Error: permDeniedErr})
 					}
 				})

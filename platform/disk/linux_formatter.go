@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	growFilesystemRetryDelay    = 5 * time.Second
-	growFilesystemMaxAttempts   = 10
+	growFilesystemRetryDelay  = 5 * time.Second
+	growFilesystemMaxRetries  = 10
 	growFilesystemPermDeniedMsg = "Permission denied to resize filesystem"
 )
 
@@ -109,7 +109,10 @@ func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
 // resolves once the underlying storage layer settles.
 func (f linuxFormatter) growExt4WithRetry(partitionPath string) error {
 	var err error
-	for range growFilesystemMaxAttempts {
+	for retry := range growFilesystemMaxRetries + 1 {
+		if retry > 0 {
+			f.timeService.Sleep(growFilesystemRetryDelay)
+		}
 		_, _, _, err = f.runner.RunCommand("resize2fs", "-f", partitionPath)
 		if err == nil {
 			return nil
@@ -117,7 +120,6 @@ func (f linuxFormatter) growExt4WithRetry(partitionPath string) error {
 		if !strings.Contains(err.Error(), growFilesystemPermDeniedMsg) {
 			return err
 		}
-		f.timeService.Sleep(growFilesystemRetryDelay)
 	}
 	return err
 }
