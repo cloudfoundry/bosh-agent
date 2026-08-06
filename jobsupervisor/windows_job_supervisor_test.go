@@ -64,8 +64,7 @@ var (
 )
 
 var _ = AfterSuite(func() {
-	err := os.RemoveAll(TempDir)
-	Expect(err).NotTo(HaveOccurred())
+	Eventually(func() error { return os.RemoveAll(TempDir) }, 2*time.Minute, time.Second).Should(Succeed())
 	gexec.CleanupBuildArtifacts()
 
 	match := func(s string) bool {
@@ -486,8 +485,11 @@ var _ = Describe("WindowsJobSupervisor", func() {
 		AfterEach(func() {
 			Expect(jobSupervisor.Stop()).To(Succeed())
 			Expect(jobSupervisor.RemoveAllJobs()).To(Succeed())
-			Eventually(func() error { return fs.RemoveAll(jobDir) }, 60*time.Second).Should(Succeed())
-			Expect(fs.RemoveAll(logDir)).To(Succeed())
+			// Windows releases file handles on the service wrapper exe and log
+			// files asynchronously after the SCM reports services as deleted.
+			// Use a long timeout with a slow poll to avoid spinning on busy CI.
+			Eventually(func() error { return fs.RemoveAll(jobDir) }, 2*time.Minute, time.Second).Should(Succeed())
+			Eventually(func() error { return fs.RemoveAll(logDir) }, 2*time.Minute, time.Second).Should(Succeed())
 		})
 
 		Describe("AddJob", func() {

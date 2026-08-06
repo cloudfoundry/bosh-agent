@@ -378,18 +378,15 @@ var _ = Describe("monitJobSupervisor", func() {
 					errchan <- monit.StopAndWait()
 				}()
 
-				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the pending sleep
+				advanceTime(timeService, 3*time.Minute, 2) // wait for pending sleep, then advance
 
 				client.StatusStatus = fakemonit.FakeMonitStatus{
 					Services: []boshmonit.Service{
 						{Monitored: true, Name: "foo", Status: "unknown", Pending: false},
 					},
 				}
-				timeService.Increment(3 * time.Minute)
 
-				Eventually(timeService.WatcherCount).Should(Equal(2)) // we hit the stop sleep
-
-				timeService.Increment(3 * time.Minute)
+				advanceTime(timeService, 3*time.Minute, 2) // wait for stop sleep, then advance
 
 				Eventually(errchan).Should(Receive(Equal(errors.New("Timed out waiting for services 'foo' to stop after 5 minutes"))))
 			})
