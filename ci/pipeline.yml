@@ -251,6 +251,7 @@ jobs:
         - get: bosh-agent
         - get: bosh-agent-ci
         - get: golang-release
+        - get: bosh-agent-registry-image
       - task: bump-deps
         file: golang-release/ci/tasks/shared/bump-deps.yml
         image: golang-release-image
@@ -265,6 +266,7 @@ jobs:
       - in_parallel:
         - task: test-unit
           file: bosh-agent-ci/ci/tasks/test-unit.yml
+          image: bosh-agent-registry-image
           input_mapping:
             bosh-agent: bumped-bosh-agent
         - task: test-unit-windows
