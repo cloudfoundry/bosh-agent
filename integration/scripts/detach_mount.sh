@@ -3,9 +3,9 @@
 # detach_device.sh: the Go caller prepends "SM=<service manager>" (and concatenates the caller's
 # body) before this file, so detach_mount is defined once and reused.
 #
-# For the given directory it stops rsyslog first when detaching /var/log on systemd (see the long
-# note below), then for each mount under $d -- deepest first -- fuser-kills holders and unmounts
-# (lazily for /var/log), and finally removes the directory.
+# For the given directory it stops rsyslog and auditd first when detaching /var/log on systemd (see
+# the long note below), then for each mount under $d -- deepest first -- fuser-kills holders and
+# unmounts (lazily for /var/log), and finally removes the directory.
 #
 # On systemd-based stemcells (e.g. resolute), rsyslog is intentionally left running for the whole
 # test run so it can keep forwarding journald output into /var/log/bosh-agent.log, which
@@ -20,11 +20,22 @@
 # mount of /var/vcap/data/root_log, and for reasons we don't fully understand `fuser -k` doesn't
 # consistently terminate its holders in time for a plain umount. Because we later unmount
 # /var/vcap/data, a lingering /var/log reference will eventually fail loudly there, so this is safe.
+#
+# auditd is stopped cleanly for the same reason, and it MUST be a clean stop rather than relying on
+# the fuser -km below: auditd's log dir /var/log/audit lives under /var/log, so fuser -km /var/log
+# SIGKILLs it. A SIGKILLed auditd triggers systemd's Restart=always, which -- since the rm -rf below
+# just removed /var/log/audit -- crash-loops ("Could not open dir /var/log/audit") until it trips
+# StartLimitBurst (5/10s). That storm races the agent's bootstrap: when bosh-start-logging-and-auditing
+# later starts auditd, systemd may refuse ("Start request repeated too quickly"), the agent exits 1
+# and crash-loops, and the spec fails intermittently. An explicit `systemctl stop` does not trigger
+# Restart=, so no storm occurs. We do NOT restart auditd; the agent's bootstrap recreates
+# /var/log/audit and starts it.
 : "${SM:?}"
 detach_mount() {
   d="$1"
   if [ "$d" = /var/log ] && [ "$SM" = systemd ]; then
-    sudo systemctl stop syslog.socket rsyslog.service || true
+    sudo systemctl stop syslog.socket rsyslog.service auditd.service \
+      || echo "detach_mount: warning: failed to stop rsyslog/auditd before tearing down /var/log" >&2
   fi
   mps=$(sudo mount | grep "on $d" | cut -d' ' -f3 | awk '{ print length"\t"$0 }' | sort -rn | cut -f2- || true)
   for mp in $mps; do
