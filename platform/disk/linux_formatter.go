@@ -2,6 +2,7 @@ package disk
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -95,6 +96,83 @@ func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
 		return nil
 	}
 	return nil
+}
+
+// FilesystemNeedsGrow reports whether the ext4 filesystem on partitionPath is
+// significantly smaller than the partition that contains it, indicating a
+// previous grow did not complete. "Significantly" uses the same 100MB delta as
+// SinglePartitionNeedsResize to avoid false positives from alignment rounding
+// between filesystem block groups and partition sector boundaries.
+//
+// Only ext4 is supported: querying the size of an XFS filesystem requires
+// xfs_info, which only works on a mounted filesystem. dumpe2fs reads directly
+// from the block device and works regardless of mount state. Unknown or
+// unsupported filesystem types return false.
+func (f linuxFormatter) FilesystemNeedsGrow(partitionPath string) (bool, error) {
+	fsType, err := f.GetPartitionFormatType(partitionPath)
+	if err != nil {
+		return false, bosherr.WrapError(err, "Checking filesystem format of partition")
+	}
+
+	if fsType != FileSystemExt4 {
+		return false, nil
+	}
+
+	partitionSize, err := f.blockDeviceSize(partitionPath)
+	if err != nil {
+		return false, err
+	}
+
+	fsSize, err := f.ext4FilesystemSize(partitionPath)
+	if err != nil {
+		return false, err
+	}
+
+	return significantlySmallerThan(fsSize, partitionSize, ConvertFromMbToBytes(deltaSize)), nil
+}
+
+func (f linuxFormatter) blockDeviceSize(partitionPath string) (uint64, error) {
+	stdout, _, _, err := f.runner.RunCommand("blockdev", "--getsize64", partitionPath)
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Getting block device size")
+	}
+
+	size, err := strconv.ParseUint(strings.TrimSpace(stdout), 10, 64)
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Parsing block device size")
+	}
+
+	return size, nil
+}
+
+func (f linuxFormatter) ext4FilesystemSize(partitionPath string) (uint64, error) {
+	stdout, _, _, err := f.runner.RunCommand("dumpe2fs", "-h", partitionPath)
+	if err != nil {
+		return 0, bosherr.WrapError(err, "Reading ext4 superblock")
+	}
+
+	blockCount, err := parseDumpe2fsField(stdout, "Block count:")
+	if err != nil {
+		return 0, err
+	}
+
+	blockSize, err := parseDumpe2fsField(stdout, "Block size:")
+	if err != nil {
+		return 0, err
+	}
+
+	return blockCount * blockSize, nil
+}
+
+func parseDumpe2fsField(stdout, field string) (uint64, error) {
+	for _, line := range strings.Split(stdout, "\n") {
+		if strings.HasPrefix(line, field) {
+			value := strings.TrimSpace(strings.TrimPrefix(line, field))
+			return strconv.ParseUint(value, 10, 64)
+		}
+	}
+
+	return 0, bosherr.Errorf("Field %q not found in dumpe2fs output", field)
 }
 
 func (f linuxFormatter) makeFileSystemExt4(partitionPath string) error {

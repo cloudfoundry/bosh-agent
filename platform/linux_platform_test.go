@@ -3372,6 +3372,48 @@ sam:fakeanotheruser`)
 					Expect(err.Error()).To(Equal("Formatting partition with xfs: oh noes"))
 				})
 			})
+
+			Context("when the partition already exists and does not need resizing", func() {
+				It("checks whether the filesystem needs growing", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(formatter.FilesystemNeedsGrowCalled).To(BeTrue())
+					Expect(formatter.FilesystemNeedsGrowPartitionPath).To(Equal("fake-real-device-path1"))
+				})
+
+				It("does not grow the filesystem or mount the partition", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(formatter.GrowFilesystemCalled).To(BeFalse())
+					Expect(mounter.MountCallCount()).To(Equal(0))
+				})
+
+				Context("when the filesystem is smaller than its partition", func() {
+					BeforeEach(func() {
+						formatter.FilesystemNeedsGrowResult = true
+					})
+
+					It("does not fail the deployment", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+
+						Expect(formatter.GrowFilesystemCalled).To(BeFalse())
+					})
+				})
+
+				Context("when the needs-grow check fails", func() {
+					BeforeEach(func() {
+						formatter.FilesystemNeedsGrowError = errors.New("dumpe2fs boom")
+					})
+
+					It("does not fail the deployment", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).ToNot(HaveOccurred())
+					})
+				})
+			})
 		})
 	})
 
