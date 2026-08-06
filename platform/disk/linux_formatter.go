@@ -3,20 +3,34 @@ package disk
 import (
 	"regexp"
 	"strings"
+	"time"
 
+	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 )
 
+const (
+	growFilesystemRetryDelay    = 5 * time.Second
+	growFilesystemMaxRetries    = 10
+	growFilesystemPermDeniedMsg = "Permission denied to resize filesystem"
+)
+
 type linuxFormatter struct {
-	runner boshsys.CmdRunner
-	fs     boshsys.FileSystem
+	runner      boshsys.CmdRunner
+	fs          boshsys.FileSystem
+	timeService clock.Clock
 }
 
 func NewLinuxFormatter(runner boshsys.CmdRunner, fs boshsys.FileSystem) Formatter {
+	return NewLinuxFormatterWithClock(runner, fs, clock.NewClock())
+}
+
+func NewLinuxFormatterWithClock(runner boshsys.CmdRunner, fs boshsys.FileSystem, timeService clock.Clock) Formatter {
 	return linuxFormatter{
-		runner: runner,
-		fs:     fs,
+		runner:      runner,
+		fs:          fs,
+		timeService: timeService,
 	}
 }
 
@@ -74,11 +88,7 @@ func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
 
 	switch existingFsType {
 	case FileSystemExt4:
-		_, _, _, err := f.runner.RunCommand(
-			"resize2fs",
-			"-f",
-			partitionPath,
-		)
+		err = f.growExt4WithRetry(partitionPath)
 		if err != nil {
 			return bosherr.WrapError(err, "Failed to grow Ext4 filesystem")
 		}
@@ -95,6 +105,27 @@ func (f linuxFormatter) GrowFilesystem(partitionPath string) error {
 		return nil
 	}
 	return nil
+}
+
+// growExt4WithRetry retries resize2fs when the block device reports "Permission
+// denied". This can happen transiently after an online volume extension while
+// the block device's new size is not yet consistently visible to the guest, and
+// resolves once the underlying storage layer settles.
+func (f linuxFormatter) growExt4WithRetry(partitionPath string) error {
+	var err error
+	for retry := range growFilesystemMaxRetries + 1 {
+		if retry > 0 {
+			f.timeService.Sleep(growFilesystemRetryDelay)
+		}
+		_, _, _, err = f.runner.RunCommand("resize2fs", "-f", partitionPath)
+		if err == nil {
+			return nil
+		}
+		if !strings.Contains(err.Error(), growFilesystemPermDeniedMsg) {
+			return err
+		}
+	}
+	return err
 }
 
 func (f linuxFormatter) makeFileSystemExt4(partitionPath string) error {
