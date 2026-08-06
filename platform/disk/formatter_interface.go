@@ -16,4 +16,5 @@ type Formatter interface {
 	Format(partitionPath string, fsType FileSystemType) (err error)
 	GetPartitionFormatType(string) (FileSystemType, error)
 	GrowFilesystem(partitionPath string) error
+	FilesystemNeedsGrow(partitionPath string) (bool, error)
 }

@@ -306,4 +306,102 @@ var _ = Describe("Linux Formatter", func() {
 			})
 		})
 	})
+
+	Describe("FilesystemNeedsGrow", func() {
+		var (
+			fakeRunner *fakesys.FakeCmdRunner
+			fakeFs     *fakesys.FakeFileSystem
+			formatter  Formatter
+		)
+
+		BeforeEach(func() {
+			fakeRunner = fakesys.NewFakeCmdRunner()
+			fakeFs = fakesys.NewFakeFileSystem()
+			formatter = NewLinuxFormatter(fakeRunner, fakeFs)
+		})
+
+		Context("when the filesystem is ext4", func() {
+			BeforeEach(func() {
+				fakeRunner.AddCmdResult("blkid -p /dev/sdb1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="ext4" yyyy zzzz`})
+			})
+
+			Context("when the filesystem is significantly smaller than the partition", func() {
+				BeforeEach(func() {
+					// partition 1 TiB, filesystem 100 GiB (26213888 blocks * 4096)
+					fakeRunner.AddCmdResult("blockdev --getsize64 /dev/sdb1", fakesys.FakeCmdResult{Stdout: "1099511627776\n"})
+					fakeRunner.AddCmdResult("dumpe2fs -h /dev/sdb1", fakesys.FakeCmdResult{Stdout: "Block count:              26213888\nBlock size:               4096\n"})
+				})
+
+				It("returns true", func() {
+					needsGrow, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(needsGrow).To(BeTrue())
+				})
+			})
+
+			Context("when the filesystem already fills the partition", func() {
+				BeforeEach(func() {
+					// partition 1 TiB, filesystem 1 TiB (268435456 blocks * 4096)
+					fakeRunner.AddCmdResult("blockdev --getsize64 /dev/sdb1", fakesys.FakeCmdResult{Stdout: "1099511627776\n"})
+					fakeRunner.AddCmdResult("dumpe2fs -h /dev/sdb1", fakesys.FakeCmdResult{Stdout: "Block count:              268435456\nBlock size:               4096\n"})
+				})
+
+				It("returns false", func() {
+					needsGrow, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(needsGrow).To(BeFalse())
+				})
+			})
+
+			Context("when reading the block device size fails", func() {
+				BeforeEach(func() {
+					fakeRunner.AddCmdResult("blockdev --getsize64 /dev/sdb1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("blockdev boom")})
+				})
+
+				It("returns an error", func() {
+					_, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Getting block device size"))
+				})
+			})
+
+			Context("when reading the ext4 superblock fails", func() {
+				BeforeEach(func() {
+					fakeRunner.AddCmdResult("blockdev --getsize64 /dev/sdb1", fakesys.FakeCmdResult{Stdout: "1099511627776\n"})
+					fakeRunner.AddCmdResult("dumpe2fs -h /dev/sdb1", fakesys.FakeCmdResult{ExitStatus: 1, Error: errors.New("dumpe2fs boom")})
+				})
+
+				It("returns an error", func() {
+					_, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Reading ext4 superblock"))
+				})
+			})
+
+			Context("when a required field is missing from the superblock", func() {
+				BeforeEach(func() {
+					fakeRunner.AddCmdResult("blockdev --getsize64 /dev/sdb1", fakesys.FakeCmdResult{Stdout: "1099511627776\n"})
+					fakeRunner.AddCmdResult("dumpe2fs -h /dev/sdb1", fakesys.FakeCmdResult{Stdout: "Block size:               4096\n"})
+				})
+
+				It("returns an error", func() {
+					_, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("Block count:"))
+				})
+			})
+		})
+
+		Context("when the filesystem is not ext4", func() {
+			BeforeEach(func() {
+				fakeRunner.AddCmdResult("blkid -p /dev/sdb1", fakesys.FakeCmdResult{Stdout: `xxxxx TYPE="xfs" yyyy zzzz`})
+			})
+
+			It("returns false without inspecting sizes", func() {
+				needsGrow, err := formatter.FilesystemNeedsGrow("/dev/sdb1")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(needsGrow).To(BeFalse())
+			})
+		})
+	})
 })

@@ -1451,6 +1451,17 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 		if err != nil {
 			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
 		}
+
+		// A partition that already spans the disk can still hold a filesystem smaller
+		// than the partition if a previous grow did not complete. Detect and warn so
+		// the condition is visible; growing here is avoided since the filesystem is
+		// not mounted and the underlying cause often needs manual intervention.
+		needsGrow, err := p.diskManager.GetFormatter().FilesystemNeedsGrow(firstPartitionPath)
+		if err != nil {
+			p.logger.Warn(logTag, "Failed to determine whether filesystem on %s needs growing: %s", firstPartitionPath, err)
+		} else if needsGrow {
+			p.logger.Warn(logTag, "Filesystem on %s is smaller than its partition; a previous grow did not complete", firstPartitionPath)
+		}
 	}
 	return nil
 }

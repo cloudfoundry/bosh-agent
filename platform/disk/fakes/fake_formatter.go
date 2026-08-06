@@ -14,6 +14,11 @@ type FakeFormatter struct {
 	GrowFilesystemCalled        bool
 	GrowFilesystemPartitionPath string
 	GrowFilesystemError         error
+
+	FilesystemNeedsGrowCalled        bool
+	FilesystemNeedsGrowPartitionPath string
+	FilesystemNeedsGrowResult        bool
+	FilesystemNeedsGrowError         error
 }
 
 func NewFakeFormatter() *FakeFormatter {
@@ -33,6 +38,12 @@ func (p *FakeFormatter) GrowFilesystem(partitionPath string) error {
 	p.GrowFilesystemCalled = true
 	p.GrowFilesystemPartitionPath = partitionPath
 	return p.GrowFilesystemError
+}
+
+func (p *FakeFormatter) FilesystemNeedsGrow(partitionPath string) (bool, error) {
+	p.FilesystemNeedsGrowCalled = true
+	p.FilesystemNeedsGrowPartitionPath = partitionPath
+	return p.FilesystemNeedsGrowResult, p.FilesystemNeedsGrowError
 }
 
 func (p *FakeFormatter) GetPartitionFormatType(partitionPath string) (boshdisk.FileSystemType, error) {
