@@ -597,11 +597,10 @@ func (t *TestEnvironment) StartAgent() error {
 	var err error
 	if t.serviceManager == SERVICE_MANAGER_SYSTEMD {
 		// Clear any accumulated systemd start-limit / failed state before (re)starting. CleanupDataDir's
-		// `fuser -km /var/log` SIGKILLs auditd (its log lives under /var/log/audit); systemd then restarts
-		// it in a tight loop until it trips its StartLimitBurst (5 starts / 10s) and refuses to start it at
-		// all. A StopAgent -> CleanupDataDir -> StartAgent sequence can land inside that window, so the
-		// agent's bootstrap fails to start auditd and crash-loops. reset-failed clears the counters so
-		// auditd (and the agent) can start cleanly; it is a harmless no-op when nothing has failed.
+		// detach_mount now stops auditd cleanly before its `fuser -km /var/log` so systemd's Restart=always
+		// storm (which trips StartLimitBurst and makes the agent's bootstrap fail to start auditd and
+		// crash-loop) never happens. reset-failed is a timing-independent safety net: it clears the counters
+		// so auditd, rsyslog, and the agent can start cleanly, and is a harmless no-op when nothing failed.
 		_, err = t.RunCommand("sudo systemctl reset-failed auditd.service rsyslog.service bosh-agent.service 2>/dev/null || true")
 		if err != nil {
 			return err
