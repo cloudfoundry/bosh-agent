@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/clock v1.81.0
+# code.cloudfoundry.org/clock v1.82.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
@@ -83,7 +83,7 @@ github.com/charlievieth/fs
 # github.com/cloudfoundry/bosh-cli/v7 v7.10.8
 ## explicit; go 1.25.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
-# github.com/cloudfoundry/bosh-davcli v0.0.492
+# github.com/cloudfoundry/bosh-davcli v0.0.493
 ## explicit; go 1.25.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
@@ -167,8 +167,8 @@ github.com/google/nftables/expr
 github.com/google/nftables/internal/parseexprfunc
 github.com/google/nftables/userdata
 github.com/google/nftables/xt
-# github.com/google/pprof v0.0.0-20260709232956-b9395ee17fa0
-## explicit; go 1.24.0
+# github.com/google/pprof v0.0.0-20260802141513-ef3492d7dac3
+## explicit; go 1.25.0
 github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
 ## explicit
@@ -236,7 +236,7 @@ github.com/jpillora/backoff
 # github.com/kevinburke/ssh_config v1.6.0
 ## explicit; go 1.18
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.19.1
+# github.com/klauspost/compress v1.19.2
 ## explicit; go 1.24
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/internal/le
@@ -397,7 +397,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/telemetry v0.0.0-20260717140457-bdb89881bb75
+# golang.org/x/telemetry v0.0.0-20260804195142-bdd03c3c8848
 ## explicit; go 1.25.0
 golang.org/x/telemetry/counter
 golang.org/x/telemetry/internal/counter
@@ -460,7 +460,7 @@ golang.org/x/tools/internal/stdlib
 golang.org/x/tools/internal/typeparams
 golang.org/x/tools/internal/typesinternal
 golang.org/x/tools/internal/versions
-# google.golang.org/genproto/googleapis/rpc v0.0.0-20260729162451-8efbd57d26e0
+# google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d
 ## explicit; go 1.25.0
 google.golang.org/genproto/googleapis/rpc/status
 # google.golang.org/grpc v1.83.0
