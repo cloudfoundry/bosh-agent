@@ -3372,6 +3372,29 @@ sam:fakeanotheruser`)
 					Expect(err.Error()).To(Equal("Formatting partition with xfs: oh noes"))
 				})
 			})
+
+			Context("when the partition already exists and does not need resizing", func() {
+				It("attempts to grow the filesystem", func() {
+					err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(formatter.GrowFilesystemCalled).To(BeTrue())
+					Expect(formatter.GrowFilesystemPartitionPath).To(Equal("fake-real-device-path1"))
+				})
+
+				Context("when growing the filesystem fails", func() {
+					BeforeEach(func() {
+						formatter.GrowFilesystemError = errors.New("resize2fs refused")
+					})
+
+					It("returns an error", func() {
+						err := platform.AdjustPersistentDiskPartitioning(diskSettings, mntPoint)
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(ContainSubstring("Failed to grow filesystem"))
+						Expect(err.Error()).To(ContainSubstring("resize2fs refused"))
+					})
+				})
+			})
 		})
 	})
 

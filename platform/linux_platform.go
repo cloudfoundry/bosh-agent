@@ -1451,6 +1451,11 @@ func (p linux) AdjustPersistentDiskPartitioning(diskSetting boshsettings.DiskSet
 		if err != nil {
 			return bosherr.WrapError(err, fmt.Sprintf("Formatting partition with %s", diskSetting.FileSystemType))
 		}
+
+		// Grow is idempotent — re-attempt on every run to catch incomplete prior grows.
+		if err = p.diskManager.GetFormatter().GrowFilesystem(firstPartitionPath); err != nil {
+			return bosherr.WrapError(err, "Failed to grow filesystem")
+		}
 	}
 	return nil
 }
