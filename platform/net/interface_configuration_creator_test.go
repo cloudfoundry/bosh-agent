@@ -551,6 +551,39 @@ var _ = Describe("InterfaceConfigurationCreator", func() {
 				})
 			})
 
+			Context("when IPv4 and IPv6 DHCP networks share an alias", func() {
+				BeforeEach(func() {
+					ipv4Network := staticNetworkWithoutMAC
+					ipv4Network.Alias = "eth0"
+					ipv4Network.UseDHCP = true
+					networks["ipv4"] = ipv4Network
+					networks["ipv6"] = boshsettings.Network{
+						Type:    "manual",
+						IP:      "2001:db8::1",
+						Netmask: "ffff:ffff:ffff:ffff:0000:0000:0000:0000",
+						UseDHCP: true,
+						Alias:   "eth0",
+					}
+				})
+
+				It("creates DHCP configurations for both addresses", func() {
+					staticInterfaceConfigurations, dhcpInterfaceConfigurations, err := interfaceConfigurationCreator.CreateInterfaceConfigurations(networks, interfacesByMAC)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(staticInterfaceConfigurations).To(BeEmpty())
+					Expect(dhcpInterfaceConfigurations).To(ConsistOf(
+						DHCPInterfaceConfiguration{
+							Name:    "eth0",
+							Address: "1.2.3.4",
+						},
+						DHCPInterfaceConfiguration{
+							Name:    "eth0",
+							Address: "2001:db8::1",
+						},
+					))
+				})
+			})
+
 			Context("when multiple networks with ipv6 for one interface exist", func() {
 				BeforeEach(func() {
 					networks["foo"] = staticNetworkipv6
