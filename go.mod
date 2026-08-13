@@ -3,13 +3,13 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.25.0
 
 require (
-	code.cloudfoundry.org/clock v1.82.0
+	code.cloudfoundry.org/clock v1.83.0
 	code.cloudfoundry.org/tlsconfig v0.53.0
 	github.com/Microsoft/hcsshim v0.14.1
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.8
-	github.com/cloudfoundry/bosh-davcli v0.0.494
-	github.com/cloudfoundry/bosh-utils v0.0.631
+	github.com/cloudfoundry/bosh-davcli v0.0.498
+	github.com/cloudfoundry/bosh-utils v0.0.635
 	github.com/cloudfoundry/gosigar v1.3.126
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -19,16 +19,16 @@ require (
 	github.com/masterzen/winrm v0.0.0-20260407182533-5570be7f80cf
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.12.2
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.52.0
-	github.com/onsi/ginkgo/v2 v2.32.0
+	github.com/nats-io/nats.go v1.53.1
+	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/crypto v0.54.0
-	golang.org/x/net v0.57.0
+	golang.org/x/crypto v0.55.0
+	golang.org/x/net v0.58.0
 	golang.org/x/sys v0.47.0
-	golang.org/x/tools v0.48.0
+	golang.org/x/tools v0.49.0
 	gopkg.in/yaml.v3 v3.0.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
@@ -71,18 +71,18 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/sirupsen/logrus v1.10.0 // indirect
 	github.com/tidwall/transform v0.0.0-20201103190739-32f242e2dbde // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/exp/typeparams v0.0.0-20260727155853-b88d891fe743 // indirect
-	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20260813180055-c1d0aacb2297 // indirect
+	golang.org/x/mod v0.40.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260804195142-bdd03c3c8848 // indirect
-	golang.org/x/text v0.40.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260807164820-c8921c73eeea // indirect
+	golang.org/x/telemetry v0.0.0-20260811182544-a038080d80e5 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260810153831-ec0a7760b754 // indirect
 	google.golang.org/grpc v1.83.0 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
+	google.golang.org/protobuf v1.36.12 // indirect
 	honnef.co/go/tools v0.7.0 // indirect
 )
