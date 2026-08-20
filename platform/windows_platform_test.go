@@ -458,7 +458,7 @@ var _ = Describe("WindowsPlatform", func() {
 			setupHostKeys(os.Getenv("SYSTEMDRIVE"))
 
 			previous := SetSSHEnabled(func() error { return errors.New("test") })
-			defer SetSSHEnabled(previous)
+			defer SetSSHEnabled(previous) //nolint:staticcheck
 
 			_, err := platform.GetHostPublicKey()
 			Expect(err).To(HaveOccurred())
