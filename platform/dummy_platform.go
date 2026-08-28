@@ -347,6 +347,10 @@ func (p dummyPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetting
 	return p.fs.WriteFile(p.mountsPath(), mountsJSON)
 }
 
+func (p dummyPlatform) RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings) error {
+	return nil
+}
+
 func (p dummyPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
 	mounts, err := p.existingMounts()
 	if err != nil {

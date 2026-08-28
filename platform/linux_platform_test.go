@@ -3864,6 +3864,77 @@ sam:fakeanotheruser`)
 		})
 	})
 
+	Describe("RemovePersistentDiskDevice", func() {
+		const deviceID = "6000c292-f726-52fa-eb33-8715920f9a92"
+		const byIDPath = "/dev/disk/by-id/scsi-36000c292f72652faeb338715920f9a92"
+		const deletePath = "/sys/block/sdc/device/delete"
+
+		diskSettings := boshsettings.DiskSettings{ID: "disk-cid", DeviceID: deviceID}
+
+		Context("when the device is present", func() {
+			BeforeEach(func() {
+				fs.SetGlob("/dev/disk/by-id/*6000c292f72652faeb338715920f9a92", []string{byIDPath})
+				err := fs.WriteFileString("/dev/sdc", "")
+				Expect(err).NotTo(HaveOccurred())
+				err = fs.Symlink("/dev/sdc", byIDPath)
+				Expect(err).NotTo(HaveOccurred())
+				err = fs.WriteFileString(deletePath, "")
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("asks the kernel to release the device", func() {
+				err := platform.RemovePersistentDiskDevice(diskSettings)
+				Expect(err).NotTo(HaveOccurred())
+
+				contents, err := fs.ReadFileString(deletePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(Equal("1"))
+			})
+		})
+
+		Context("when the disk settings carry no device ID", func() {
+			It("does nothing", func() {
+				err := platform.RemovePersistentDiskDevice(boshsettings.DiskSettings{ID: "disk-cid"})
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when no device matches the disk", func() {
+			// Reached when a detach is retried or rolled back after the device is gone.
+			It("does not return an error", func() {
+				err := platform.RemovePersistentDiskDevice(diskSettings)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the device has no delete node", func() {
+			BeforeEach(func() {
+				fs.SetGlob("/dev/disk/by-id/*6000c292f72652faeb338715920f9a92", []string{byIDPath})
+				err := fs.WriteFileString("/dev/sdc", "")
+				Expect(err).NotTo(HaveOccurred())
+				err = fs.Symlink("/dev/sdc", byIDPath)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("does not return an error", func() {
+				err := platform.RemovePersistentDiskDevice(diskSettings)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when listing devices fails", func() {
+			BeforeEach(func() {
+				fs.GlobErr = errors.New("fake-glob-err")
+			})
+
+			It("returns an error", func() {
+				err := platform.RemovePersistentDiskDevice(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Listing disks by id"))
+			})
+		})
+	})
+
 	Describe("GetEphemeralDiskPath", func() {
 		Context("when real device path was resolved without an error", func() {
 			It("returns real device path and true", func() {

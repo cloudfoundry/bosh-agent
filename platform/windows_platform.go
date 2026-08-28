@@ -654,6 +654,12 @@ func (p WindowsPlatform) MountPersistentDisk(diskSettings boshsettings.DiskSetti
 	return
 }
 
+// RemovePersistentDiskDevice is a no-op on Windows; disks are released through
+// the storage stack rather than by writing to a sysfs delete node.
+func (p WindowsPlatform) RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings) error {
+	return nil
+}
+
 func (p WindowsPlatform) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error) {
 	return
 }

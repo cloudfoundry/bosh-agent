@@ -1524,6 +1524,65 @@ func (p linux) UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (bo
 	return p.diskManager.GetMounter().Unmount(realPath)
 }
 
+// RemovePersistentDiskDevice tells the kernel to release the disk's SCSI device
+// before the IaaS detaches the underlying virtual disk.
+//
+// Without this the kernel keeps a device object at the disk's controller slot
+// after the IaaS-side detach: I/O to it fails with DID_NO_CONNECT, but it still
+// occupies the address. When the IaaS later reuses that slot for another disk,
+// the kernel does not re-probe an address it believes is populated, so the new
+// disk is never enumerated and no /dev/disk/by-id entry appears for it. Mounting
+// then fails with "Timed out getting real device path". Note that a SCSI rescan
+// does not help — it only adds devices at unoccupied addresses.
+//
+// Deliberately resolves the device with a single non-blocking lookup rather than
+// through devicePathResolver: the resolver waits up to its disk timeout (50s for
+// SCSI) before reporting a missing device, and this is called on paths where the
+// device is legitimately already gone.
+//
+// Missing or unidentifiable devices are not an error — this is best effort and
+// must stay idempotent, since it is also reached when a detach is rolled back.
+func (p linux) RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings) error {
+	p.logger.Debug(logTag, "Removing persistent disk device %+v", diskSettings)
+
+	if diskSettings.DeviceID == "" {
+		p.logger.Debug(logTag, "No device ID in disk settings, nothing to remove")
+		return nil
+	}
+
+	// /dev/disk/by-id entries carry the disk UUID without dashes, matching how
+	// SCSIIDDevicePathResolver locates the device.
+	uuid := strings.ReplaceAll(diskSettings.DeviceID, "-", "")
+	matches, err := p.fs.Glob(path.Join("/", "dev", "disk", "by-id", "*"+uuid))
+	if err != nil {
+		return bosherr.WrapError(err, "Listing disks by id")
+	}
+
+	for _, match := range matches {
+		realPath, err := p.fs.ReadAndFollowLink(match)
+		if err != nil {
+			continue
+		}
+
+		// Partition links resolve to e.g. /dev/sdc1; the delete node lives under
+		// the parent block device.
+		deletePath := path.Join("/", "sys", "block", filepath.Base(realPath), "device", "delete")
+		if !p.fs.FileExists(deletePath) {
+			continue
+		}
+
+		p.logger.Debug(logTag, "Releasing device %s via %s", realPath, deletePath)
+		if err := p.fs.WriteFileString(deletePath, "1"); err != nil {
+			return bosherr.WrapErrorf(err, "Removing device %s", realPath)
+		}
+
+		return nil
+	}
+
+	p.logger.Debug(logTag, "No device found for disk ID %s, nothing to remove", diskSettings.DeviceID)
+	return nil
+}
+
 func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
