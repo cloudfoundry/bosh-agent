@@ -84,6 +84,7 @@ type Platform interface {
 	AdjustPersistentDiskPartitioning(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	MountPersistentDisk(diskSettings boshsettings.DiskSettings, mountPoint string) error
 	UnmountPersistentDisk(diskSettings boshsettings.DiskSettings) (didUnmount bool, err error)
+	RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings) error
 	MigratePersistentDisk(fromMountPoint, toMountPoint string) (err error)
 	GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error)
 	IsMountPoint(path string) (partitionPath string, result bool, err error)

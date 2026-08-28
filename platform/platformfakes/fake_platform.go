@@ -430,6 +430,17 @@ type FakePlatform struct {
 	removeDevToolsReturnsOnCall map[int]struct {
 		result1 error
 	}
+	RemovePersistentDiskDeviceStub        func(settings.DiskSettings) error
+	removePersistentDiskDeviceMutex       sync.RWMutex
+	removePersistentDiskDeviceArgsForCall []struct {
+		arg1 settings.DiskSettings
+	}
+	removePersistentDiskDeviceReturns struct {
+		result1 error
+	}
+	removePersistentDiskDeviceReturnsOnCall map[int]struct {
+		result1 error
+	}
 	RemoveStaticLibrariesStub        func(string) error
 	removeStaticLibrariesMutex       sync.RWMutex
 	removeStaticLibrariesArgsForCall []struct {
@@ -2878,6 +2889,67 @@ func (fake *FakePlatform) RemoveDevToolsReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.removeDevToolsReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDevice(arg1 settings.DiskSettings) error {
+	fake.removePersistentDiskDeviceMutex.Lock()
+	ret, specificReturn := fake.removePersistentDiskDeviceReturnsOnCall[len(fake.removePersistentDiskDeviceArgsForCall)]
+	fake.removePersistentDiskDeviceArgsForCall = append(fake.removePersistentDiskDeviceArgsForCall, struct {
+		arg1 settings.DiskSettings
+	}{arg1})
+	stub := fake.RemovePersistentDiskDeviceStub
+	fakeReturns := fake.removePersistentDiskDeviceReturns
+	fake.recordInvocation("RemovePersistentDiskDevice", []interface{}{arg1})
+	fake.removePersistentDiskDeviceMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDeviceCallCount() int {
+	fake.removePersistentDiskDeviceMutex.RLock()
+	defer fake.removePersistentDiskDeviceMutex.RUnlock()
+	return len(fake.removePersistentDiskDeviceArgsForCall)
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDeviceCalls(stub func(settings.DiskSettings) error) {
+	fake.removePersistentDiskDeviceMutex.Lock()
+	defer fake.removePersistentDiskDeviceMutex.Unlock()
+	fake.RemovePersistentDiskDeviceStub = stub
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDeviceArgsForCall(i int) settings.DiskSettings {
+	fake.removePersistentDiskDeviceMutex.RLock()
+	defer fake.removePersistentDiskDeviceMutex.RUnlock()
+	argsForCall := fake.removePersistentDiskDeviceArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDeviceReturns(result1 error) {
+	fake.removePersistentDiskDeviceMutex.Lock()
+	defer fake.removePersistentDiskDeviceMutex.Unlock()
+	fake.RemovePersistentDiskDeviceStub = nil
+	fake.removePersistentDiskDeviceReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) RemovePersistentDiskDeviceReturnsOnCall(i int, result1 error) {
+	fake.removePersistentDiskDeviceMutex.Lock()
+	defer fake.removePersistentDiskDeviceMutex.Unlock()
+	fake.RemovePersistentDiskDeviceStub = nil
+	if fake.removePersistentDiskDeviceReturnsOnCall == nil {
+		fake.removePersistentDiskDeviceReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.removePersistentDiskDeviceReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }

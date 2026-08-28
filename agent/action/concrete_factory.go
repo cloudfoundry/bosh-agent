@@ -84,7 +84,7 @@ func NewFactory(
 			"mount_disk":             NewMountDisk(settingsService, platform, dirProvider, logger),
 			"unmount_disk":           NewUnmountDisk(settingsService, platform),
 			"add_persistent_disk":    NewAddPersistentDiskAction(settingsService),
-			"remove_persistent_disk": NewRemovePersistentDiskAction(settingsService),
+			"remove_persistent_disk": NewRemovePersistentDiskAction(settingsService, platform),
 			"add_dynamic_disk":       NewAddDynamicDiskAction(settingsService, platform),
 			"remove_dynamic_disk":    NewRemoveDynamicDiskAction(platform),
 
