@@ -31,7 +31,7 @@ func (m MatchPath) cleanPath(s string) string {
 	return a
 }
 
-func (m MatchPath) Match(actual interface{}) (bool, error) {
+func (m MatchPath) Match(actual any) (bool, error) {
 	path, ok := actual.(string)
 	if !ok {
 		return false, fmt.Errorf("MatchPath: expects a string got: %T", actual)
@@ -42,7 +42,7 @@ func (m MatchPath) Match(actual interface{}) (bool, error) {
 	return m.cleanPath(path) == m.cleanPath(string(m)), nil
 }
 
-func (m MatchPath) FailureMessage(actual interface{}) string {
+func (m MatchPath) FailureMessage(actual any) string {
 	if windows {
 		// show both the provided and cleaned paths
 		if s, ok := actual.(string); ok {
@@ -53,7 +53,7 @@ func (m MatchPath) FailureMessage(actual interface{}) string {
 	return fmt.Sprintf("Expected\n\t%v\nto match file\n\t%v", actual, m)
 }
 
-func (m MatchPath) NegatedFailureMessage(actual interface{}) string {
+func (m MatchPath) NegatedFailureMessage(actual any) string {
 	if windows {
 		// show both the provided and cleaned paths
 		if s, ok := actual.(string); ok {

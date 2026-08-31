@@ -2,22 +2,23 @@ package assert
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"strings"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func MatchesJSONMap(t assert.TestingT, object interface{}, expectedJSON map[string]interface{}) {
+func MatchesJSONMap(t assert.TestingT, object any, expectedJSON map[string]any) {
 	expectedBytes, err := json.Marshal(expectedJSON)
 	assert.NoError(t, err)
 
 	MatchesJSONBytes(t, object, expectedBytes)
 }
 
-func MatchesJSONString(t assert.TestingT, object interface{}, expectedJSON string) {
+func MatchesJSONString(t assert.TestingT, object any, expectedJSON string) {
 	MatchesJSONBytes(t, object, []byte(expectedJSON))
 }
 
-func MatchesJSONBytes(t assert.TestingT, object interface{}, expectedJSON []byte) {
+func MatchesJSONBytes(t assert.TestingT, object any, expectedJSON []byte) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
@@ -25,11 +26,11 @@ func MatchesJSONBytes(t assert.TestingT, object interface{}, expectedJSON []byte
 	assert.Equal(t, string(expectedJSON), string(objectBytes))
 }
 
-func LacksJSONKey(t assert.TestingT, object interface{}, key string) {
+func LacksJSONKey(t assert.TestingT, object any, key string) {
 	objectBytes, err := json.Marshal(object)
 	assert.NoError(t, err)
 
-	objectAsMap := make(map[string]interface{})
+	objectAsMap := make(map[string]any)
 
 	err = json.Unmarshal(objectBytes, &objectAsMap)
 	assert.NoError(t, err)

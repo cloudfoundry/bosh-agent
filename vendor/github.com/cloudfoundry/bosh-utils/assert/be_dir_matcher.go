@@ -8,7 +8,7 @@ import (
 type BeDir struct {
 }
 
-func (m BeDir) Match(actual interface{}) (bool, error) {
+func (m BeDir) Match(actual any) (bool, error) {
 	path, ok := actual.(string)
 	if !ok {
 		return false, fmt.Errorf("`%s' is not a valid path", actual)
@@ -29,11 +29,11 @@ func (m BeDir) Match(actual interface{}) (bool, error) {
 }
 
 // FailureMessage (actual interface{}) (message string)
-func (m BeDir) FailureMessage(actual interface{}) string {
+func (m BeDir) FailureMessage(actual any) string {
 	return fmt.Sprintf("Expected `%s' to be a directory", actual)
 }
 
 // NegatedFailureMessage (actual interface{}) (message string)
-func (m BeDir) NegatedFailureMessage(actual interface{}) string {
+func (m BeDir) NegatedFailureMessage(actual any) string {
 	return fmt.Sprintf("Expected `%s' to not be a directory", actual)
 }
