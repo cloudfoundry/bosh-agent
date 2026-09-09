@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	boshblob "github.com/cloudfoundry/bosh-utils/blobstore"
-	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/fakes"
+	fakeblob "github.com/cloudfoundry/bosh-utils/blobstore/blobstorefakes"
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
