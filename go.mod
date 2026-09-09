@@ -9,7 +9,7 @@ require (
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.10
 	github.com/cloudfoundry/bosh-davcli v0.0.505
-	github.com/cloudfoundry/bosh-utils v0.0.647
+	github.com/cloudfoundry/bosh-utils v0.0.649
 	github.com/cloudfoundry/gosigar v1.3.126
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
