@@ -28,26 +28,30 @@ type WindowsEnvironment struct {
 }
 
 func (e *WindowsEnvironment) ShrinkRootPartition() {
-	// Shrink C: by a small fixed amount from its current size rather than
-	// trying to reach the theoretical SizeMin.
+	// Dynamically shrink C: by a safe amount based on (Get-PartitionSupportedSize).SizeMin.
 	//
-	// On stemcell 2019.99 the gap between SizeMin and the partition size is
-	// only ~950 MB, so a large shrink (e.g. 10 GB) would request a target
-	// below SizeMin and silently fail (Resize-Partition returns exit code 0
-	// but leaves the partition unchanged). Using a small amount (200 MB)
-	// keeps the target safely above SizeMin while giving the agent more than
-	// enough room to create an ephemeral partition (minimum is 1 MB).
+	// On Windows, Resize-Partition cannot shrink below SizeMin (dictated by the
+	// highest unmovable NTFS cluster). Stemcell updates increase disk usage,
+	// narrowing the gap between current partition size and SizeMin.
 	//
-	// Using (Get-Partition -DriveLetter C).Size (current size) rather than
-	// (Get-PartitionSupportedSize -DriveLetter C).SizeMax ensures we are
-	// always shrinking: SizeMax includes adjacent unallocated space and can
-	// be larger than the current partition size.
-	const MB = 1024 * 1024
-	const shrinkBy = 200 * MB
-	cmd := fmt.Sprintf(
-		"$currentSize = (Get-Partition -DriveLetter C).Size; Get-Partition -DriveLetter C | Resize-Partition -Size ($currentSize - %d)",
-		shrinkBy,
-	)
+	// Rather than hardcoding a fixed size (e.g. 200 MB), we dynamically shrink by
+	// min(200 MB, floor(gap / 2)), where gap = CurrentSize - SizeMin.
+	// This guarantees:
+	//   1. Target size is strictly above SizeMin (never triggers "smaller than minimum volume size").
+	//   2. Target size is strictly below CurrentSize (unallocated space is freed).
+	//   3. The agent needs only 1 MB to create an ephemeral partition.
+	cmd := `$part = Get-Partition -DriveLetter C; ` +
+		`$supported = Get-PartitionSupportedSize -DriveLetter C; ` +
+		`$current = $part.Size; ` +
+		`$min = $supported.SizeMin; ` +
+		`$gap = $current - $min; ` +
+		`if ($gap -lt 10MB) { ` +
+		`    throw "Cannot shrink partition C: current size is $current, SizeMin is $min (gap is only $gap bytes, need at least 10MB)"; ` +
+		`}; ` +
+		`$shrinkBy = [int64]($gap / 2); ` +
+		`if ($shrinkBy -gt 200MB) { $shrinkBy = 200MB }; ` +
+		`$target = $current - $shrinkBy; ` +
+		`$part | Resize-Partition -Size $target`
 
 	retryableError := "net/http: timeout awaiting response headers"
 	const maxAttempts = 5
@@ -195,7 +199,9 @@ func (e *WindowsEnvironment) StartAgent() {
 }
 
 func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
-	stdout := e.RunPowershellCommandWithOffset(offset+1, "Get-Service -Name bosh-agent | Format-List -Property Status")
+	stdout, _, _, _ := e.RunPowershellCommandWithOffsetAndResponses(
+		"Get-Service -Name bosh-agent -ErrorAction SilentlyContinue | Format-List -Property Status",
+	)
 	running, err := regexp.MatchString("Running", strings.TrimSpace(stdout))
 	Expect(err).WithOffset(offset + 1).NotTo(HaveOccurred())
 	return running
@@ -204,9 +210,9 @@ func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 	if e.CheckAgentRunning(1) {
 		e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe stop`)
+		e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe uninstall`)
 	}
-	e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe uninstall`)
-	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`Remove-Item -Force -Path %s`, boshAgentLogfile))
+	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`If (Test-Path %s) { Remove-Item -Force -Path %s }`, boshAgentLogfile, boshAgentLogfile))
 }
 
 func (e *WindowsEnvironment) EnsureDataDirDoesntExist() {
