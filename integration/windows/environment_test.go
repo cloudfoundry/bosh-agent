@@ -199,17 +199,32 @@ func (e *WindowsEnvironment) StartAgent() {
 }
 
 func (e *WindowsEnvironment) CheckAgentRunning(offset int) bool {
-	stdout, _, _, _ := e.RunPowershellCommandWithOffsetAndResponses(
+	stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(
 		"Get-Service -Name bosh-agent -ErrorAction SilentlyContinue | Format-List -Property Status",
 	)
+	Expect(err).WithOffset(offset+1).NotTo(HaveOccurred(), fmt.Sprintf("failed to query bosh-agent service: %s", stderr))
+	Expect(exitCode).WithOffset(offset+1).To(BeZero(), fmt.Sprintf("Get-Service failed with exit code %d: %s", exitCode, stderr))
+
 	running, err := regexp.MatchString("Running", strings.TrimSpace(stdout))
 	Expect(err).WithOffset(offset + 1).NotTo(HaveOccurred())
 	return running
 }
 
+func (e *WindowsEnvironment) CheckAgentServiceExists(offset int) bool {
+	stdout, stderr, exitCode, err := e.RunPowershellCommandWithOffsetAndResponses(
+		"Get-Service -Name bosh-agent -ErrorAction SilentlyContinue | Format-List -Property Name",
+	)
+	Expect(err).WithOffset(offset+1).NotTo(HaveOccurred(), fmt.Sprintf("failed to query bosh-agent service: %s", stderr))
+	Expect(exitCode).WithOffset(offset+1).To(BeZero(), fmt.Sprintf("Get-Service failed with exit code %d: %s", exitCode, stderr))
+
+	return strings.Contains(stdout, "bosh-agent")
+}
+
 func (e *WindowsEnvironment) EnsureAgentServiceStopped() {
 	if e.CheckAgentRunning(1) {
 		e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe stop`)
+	}
+	if e.CheckAgentServiceExists(1) {
 		e.RunPowershellCommandWithOffset(1, `c:\bosh\service_wrapper.exe uninstall`)
 	}
 	e.RunPowershellCommandWithOffset(1, fmt.Sprintf(`If (Test-Path %s) { Remove-Item -Force -Path %s }`, boshAgentLogfile, boshAgentLogfile))
