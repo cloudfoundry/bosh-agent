@@ -40,13 +40,6 @@ var _ = Describe("monitJobSupervisor", func() {
 		serviceManager        *servicemanagerfakes.FakeServiceManager
 	)
 
-	var jobFailureServerPort = 5000
-
-	getJobFailureServerPort := func() int {
-		jobFailureServerPort++
-		return jobFailureServerPort
-	}
-
 	BeforeEach(func() {
 		// go-smtp logs debug messages
 		log.SetOutput(GinkgoWriter)
@@ -56,7 +49,7 @@ var _ = Describe("monitJobSupervisor", func() {
 		client = fakemonit.NewFakeMonitClient()
 		logger = boshlog.NewLogger(boshlog.LevelNone)
 		dirProvider = boshdir.NewProvider("/var/vcap")
-		jobFailuresServerPort = getJobFailureServerPort()
+		jobFailuresServerPort = testPort()
 		timeService = fakeclock.NewFakeClock(time.Now())
 		serviceManager = &servicemanagerfakes.FakeServiceManager{}
 
