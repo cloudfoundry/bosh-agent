@@ -11,3 +11,10 @@ func TestJobsupervisor(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Job Supervisor Suite")
 }
+
+var testPortBase = 5550
+
+func testPort() int {
+	testPortBase++
+	return testPortBase + GinkgoParallelProcess()
+}

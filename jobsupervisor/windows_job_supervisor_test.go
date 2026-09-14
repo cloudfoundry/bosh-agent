@@ -47,18 +47,18 @@ func init() { //nolint:gochecknoinits
 }
 
 const (
-	jobFailuresServerPort = 5000
-	DefaultMachineIP      = "127.0.0.1"
-	DefaultTimeout        = time.Second * 15
-	DefaultInterval       = time.Millisecond * 500
+	DefaultMachineIP = "127.0.0.1"
+	DefaultTimeout   = time.Second * 15
+	DefaultInterval  = time.Millisecond * 500
 )
 
 var (
-	StartStopExe string //nolint:gochecknoglobals
-	HelloExe     string //nolint:gochecknoglobals
-	WaitSvcExe   string //nolint:gochecknoglobals
-	FlapStartExe string //nolint:gochecknoglobals
-	TempDir      string //nolint:gochecknoglobals
+	jobFailuresServerPort int    //nolint:gochecknoglobals
+	StartStopExe          string //nolint:gochecknoglobals
+	HelloExe              string //nolint:gochecknoglobals
+	WaitSvcExe            string //nolint:gochecknoglobals
+	FlapStartExe          string //nolint:gochecknoglobals
+	TempDir               string //nolint:gochecknoglobals
 
 	ServiceDescription = GetServiceDescription() //nolint:gochecknoglobals
 )
@@ -1017,6 +1017,7 @@ var _ = Describe("WindowsJobSupervisor", func() {
 			}`
 
 			BeforeEach(func() {
+				jobFailuresServerPort = testPort()
 				dirProvider = boshdirs.NewProvider(basePath)
 				runner := boshsys.NewExecCmdRunner(logger)
 				cancelServer = make(chan bool)
