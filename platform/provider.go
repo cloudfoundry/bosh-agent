@@ -41,6 +41,10 @@ const (
 	SigarStatsCollectionInterval = 10 * time.Second
 )
 
+// defaultMappedDiskWaitTimeout is used by the mapped device path resolver when
+// LinuxOptions.EphemeralDiskWaitTimeout is not set.
+const defaultMappedDiskWaitTimeout = 60 * time.Second
+
 type Provider interface {
 	Get(name string) (Platform, error)
 }
@@ -52,6 +56,16 @@ type provider struct {
 type Options struct {
 	Linux   LinuxOptions
 	Windows WindowsOptions
+}
+
+// mappedDevicePathResolverTimeout returns the wait timeout for the mapped device
+// path resolver, honouring an operator-configured LinuxOptions.EphemeralDiskWaitTimeout
+// (in seconds) and falling back to defaultMappedDiskWaitTimeout when it is unset.
+func mappedDevicePathResolverTimeout(linuxOptions LinuxOptions) time.Duration {
+	if linuxOptions.EphemeralDiskWaitTimeout > 0 {
+		return time.Duration(linuxOptions.EphemeralDiskWaitTimeout) * time.Second
+	}
+	return defaultMappedDiskWaitTimeout
 }
 
 func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsCollector boshstats.Collector, fs boshsys.FileSystem, options Options, bootstrapState *BootstrapState, clock clock.Clock, auditLogger AuditLogger) Provider {
@@ -131,7 +145,7 @@ func NewProvider(logger boshlog.Logger, dirProvider boshdirs.Provider, statsColl
 	case "virtio":
 		udev := boshudev.NewConcreteUdevDevice(runner, logger)
 		idDevicePathResolver := devicepathresolver.NewIDDevicePathResolver(500*time.Millisecond, udev, fs, options.Linux.DiskIDTransformPattern, options.Linux.DiskIDTransformReplacement, logger)
-		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(30000*time.Millisecond, fs)
+		mappedDevicePathResolver := devicepathresolver.NewMappedDevicePathResolver(mappedDevicePathResolverTimeout(options.Linux), fs)
 		devicePathResolver = devicepathresolver.NewVirtioDevicePathResolver(idDevicePathResolver, mappedDevicePathResolver, logger)
 	case "scsi":
 		scsiIDPathResolver := devicepathresolver.NewSCSIIDDevicePathResolver(50000*time.Millisecond, fs, logger)

@@ -103,6 +103,10 @@ type LinuxOptions struct {
 	// Base path for LUN-based symlink resolution (e.g., "/dev/disk/azure/data/by-lun").
 	LunDeviceSymlinkPath string
 
+	// Number of seconds the mapped device path resolver waits for a /dev/sd* ephemeral/persistent
+	// device (or its compatibility symlink) to appear before giving up.
+	EphemeralDiskWaitTimeout int
+
 	// When set to true, the agent will not install nftables rules for monit
 	// access control. Set this on stemcells where monit access is managed by
 	// iptables rules (i.e. ubuntu-jammy stemcells maintaining backwards compatibility).
