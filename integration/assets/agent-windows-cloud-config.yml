@@ -1,0 +1,6 @@
+vm_extensions:
+  - name: 50GB_root_disk
+    cloud_properties:
+      root_disk:
+        size: 51200
+        type: gp3

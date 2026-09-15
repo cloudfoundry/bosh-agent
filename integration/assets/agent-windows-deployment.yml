@@ -15,6 +15,7 @@ instance_groups:
     stemcell: windows_stemcell
     vm_extensions:
       - 50GB_ephemeral_disk
+      - 50GB_root_disk
     vm_type: large
   - azs:
       - z1

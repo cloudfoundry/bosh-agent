@@ -792,6 +792,7 @@ jobs:
                 - |
                   source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
                   bosh -n update-config --name main-windows-resurrection --type resurrection --var deployment_name=bosh-agent-integration-windows-main bosh-agent/integration/assets/resurrection_config.yml
+                  bosh -n update-config --name main-windows-cloud-config --type cloud bosh-agent/integration/assets/agent-windows-cloud-config.yml
         - put: windows-integration-vm-deployment
           params:
             manifest: "bosh-agent/integration/assets/agent-windows-deployment.yml"
@@ -895,6 +896,7 @@ jobs:
                     - |
                       source bosh-ecosystem-concourse/tasks/shared/configure_bosh_proxy.sh
                       bosh -n delete-config --name main-windows-resurrection --type resurrection
+                      bosh -n delete-config --name main-windows-cloud-config --type cloud
             - put: windows-integration-vm-deployment
               params:
                 cleanup: true

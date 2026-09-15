@@ -77,6 +77,7 @@ var _ = BeforeSuite(func() {
 
 	agent.CleanUpExtraDisks()
 	agent.CleanUpUpdateSettings()
+	agent.EnsureRootPartitionAtMaxSize()
 
 	// This file will be uploaded to the test vm via NatsClient.CompilePackageWithDeps()
 	goSourcePath := filepath.Join(utils.AgentDir(), "integration", "windows", "fixtures", "templates", "go", "go1.7.1.windows-amd64.zip")
