@@ -23,7 +23,7 @@ var _ = Describe("mappedDevicePathResolverTimeout", func() {
 		Expect(timeout).To(Equal(defaultMappedDiskWaitTimeout))
 	})
 
-	It("defaults to a value more generous than the historical 30s", func() {
-		Expect(defaultMappedDiskWaitTimeout).To(BeNumerically(">", 30*time.Second))
+	It("defaults to 60 seconds", func() {
+		Expect(defaultMappedDiskWaitTimeout).To(Equal(60 * time.Second))
 	})
 })
