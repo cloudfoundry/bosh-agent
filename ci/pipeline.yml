@@ -976,6 +976,9 @@ jobs:
         - task: build-linux
           image: bosh-agent-registry-image
           file: bosh-agent-ci/ci/tasks/build-linux.yml
+        - task: build-linux-arm64
+          image: bosh-agent-registry-image
+          file: bosh-agent-ci/ci/tasks/build-linux-arm64.yml
         - task: build-windows
           image: bosh-agent-registry-image
           file: bosh-agent-ci/ci/tasks/build-windows.yml
@@ -983,5 +986,6 @@ jobs:
         params:
           files:
             - compiled-linux-amd64/*
+            - compiled-linux-arm64/*
             - compiled-windows-amd64/*
           version: version-semver/number
