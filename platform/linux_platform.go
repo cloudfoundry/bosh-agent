@@ -103,6 +103,12 @@ type LinuxOptions struct {
 	// Base path for LUN-based symlink resolution (e.g., "/dev/disk/azure/data/by-lun").
 	LunDeviceSymlinkPath string
 
+	// Number of seconds the virtio device path resolver's mapped resolver waits
+	// for a /dev/sd* ephemeral/persistent device (or its compatibility symlink)
+	// to appear before giving up. Only applies when DevicePathResolutionType is
+	// "virtio". When 0 (unset) a built-in default is used.
+	VirtioDevicePathResolverTimeout int
+
 	// When set to true, the agent will not install nftables rules for monit
 	// access control. Set this on stemcells where monit access is managed by
 	// iptables rules (i.e. ubuntu-jammy stemcells maintaining backwards compatibility).
@@ -1586,7 +1592,14 @@ func (p linux) RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings
 func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
-		p.logger.Debug(logTag, "Error getting ephermeral disk path %v", err)
+		// An empty Path means the CPI did not provide an ephemeral disk.
+		// A non-empty Path means the CPI did provide an ephemeral disk that we simply failed to resolve
+		// (e.g. the /dev/sd* symlink had not appeared before the resolver timed out).
+		if diskSettings.Path != "" {
+			return "", bosherr.WrapErrorf(err, "Resolving ephemeral disk path '%s'", diskSettings.Path)
+		}
+
+		p.logger.Debug(logTag, "Error getting ephemeral disk path %v", err)
 		return "", nil
 	}
 

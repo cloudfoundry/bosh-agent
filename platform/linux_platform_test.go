@@ -3945,10 +3945,23 @@ sam:fakeanotheruser`)
 		})
 
 		Context("when real device path was not resolved without an error", func() {
-			It("returns real device path and true", func() {
-				devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
-				realPath, _ := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"}) //nolint:errcheck
-				Expect(realPath).To(Equal(""))
+			Context("and an ephemeral disk path was specified", func() {
+				It("returns the resolution error instead of an empty path", func() {
+					devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+					realPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: "fake-device-path"})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+					Expect(realPath).To(Equal(""))
+				})
+			})
+
+			Context("and no ephemeral disk path was specified", func() {
+				It("returns an empty path and no error so a root partition can be used", func() {
+					devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+					realPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(realPath).To(Equal(""))
+				})
 			})
 		})
 	})
