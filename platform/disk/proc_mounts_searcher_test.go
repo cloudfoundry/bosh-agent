@@ -61,6 +61,15 @@ none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0
 					Mount{PartitionPath: "/dev/sda1", MountPoint: "/boot"},
 				}))
 			})
+
+			It("reads /proc/mounts quietly to avoid dumping its content to the log", func() {
+				err := fs.WriteFileString("/proc/mounts", "none /run/shm tmpfs rw 0 0")
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = searcher.SearchMounts()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+			})
 		})
 
 		Context("when reading /proc/mounts fails", func() {
