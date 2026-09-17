@@ -39,6 +39,12 @@ func init() { //nolint:gochecknoinits
 					Expect(spec).To(Equal(V1ApplySpec{Deployment: "fake-deployment-name"}))
 				})
 
+				It("reads the spec quietly to avoid dumping its content to the log", func() {
+					_, err := service.Get()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+				})
+
 				It("returns error if reading spec from filesystem errs", func() {
 					fs.ReadFileError = errors.New("fake-read-error")
 
