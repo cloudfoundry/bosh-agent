@@ -57,7 +57,9 @@ func (a SyncDNSWithSignedURL) IsPersistent() bool {
 }
 
 func (a SyncDNSWithSignedURL) IsLoggable() bool {
-	return true
+	// The request payload carries a signed blobstore URL (a bearer credential);
+	// keep it out of the action dispatcher's payload debug log.
+	return false
 }
 
 func (a SyncDNSWithSignedURL) Resume() (interface{}, error) {

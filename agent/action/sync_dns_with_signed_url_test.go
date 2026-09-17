@@ -44,7 +44,7 @@ var _ = Describe("action.SyncDNSWithSignedURL", func() {
 
 	AssertActionIsNotAsynchronous(syncDNSWithSignedURLAction)
 	AssertActionIsNotPersistent(syncDNSWithSignedURLAction)
-	AssertActionIsLoggable(syncDNSWithSignedURLAction)
+	AssertActionIsNotLoggable(syncDNSWithSignedURLAction)
 
 	AssertActionIsNotResumable(syncDNSWithSignedURLAction)
 	AssertActionIsNotCancelable(syncDNSWithSignedURLAction)

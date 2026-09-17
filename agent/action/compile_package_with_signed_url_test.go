@@ -57,7 +57,7 @@ var _ = Describe("CompilePackageWithSignedURL", func() {
 
 	AssertActionIsAsynchronous(action)
 	AssertActionIsNotPersistent(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotLoggable(action)
 
 	AssertActionIsNotCancelable(action)
 	AssertActionIsNotResumable(action)

@@ -2,6 +2,7 @@ package applyspec
 
 import (
 	"github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-utils/redact"
 
 	models "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 )
@@ -11,7 +12,7 @@ type PackageSpec struct {
 	Version          string                `json:"version"`
 	Sha1             crypto.MultipleDigest `json:"sha1"`
 	BlobstoreID      string                `json:"blobstore_id"`
-	SignedURL        string                `json:"signed_url"`
+	SignedURL        redact.Secret         `json:"signed_url"`
 	BlobstoreHeaders map[string]string     `json:"blobstore_headers"`
 }
 

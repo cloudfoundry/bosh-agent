@@ -43,7 +43,9 @@ func (a FetchLogsWithSignedURLAction) IsPersistent() bool {
 }
 
 func (a FetchLogsWithSignedURLAction) IsLoggable() bool {
-	return true
+	// The request payload carries a signed blobstore URL (a bearer credential);
+	// keep it out of the action dispatcher's payload debug log.
+	return false
 }
 
 func (a FetchLogsWithSignedURLAction) Run(request FetchLogsWithSignedURLRequest) (FetchLogsWithSignedURLResponse, error) {

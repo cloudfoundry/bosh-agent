@@ -84,7 +84,7 @@ func (s compiledPackageApplier) Apply(pkg models.Package) error {
 }
 
 func (s *compiledPackageApplier) downloadAndInstall(pkg models.Package, pkgBundle bc.Bundle) error {
-	file, err := s.blobstore.Get(pkg.Source.Sha1, pkg.Source.SignedURL, pkg.Source.BlobstoreID, pkg.Source.BlobstoreHeaders)
+	file, err := s.blobstore.Get(pkg.Source.Sha1, pkg.Source.SignedURL.Reveal(), pkg.Source.BlobstoreID, pkg.Source.BlobstoreHeaders)
 	if err != nil {
 		return bosherr.WrapError(err, "Fetching package blob")
 	}
