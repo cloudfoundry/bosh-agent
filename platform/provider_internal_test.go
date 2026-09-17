@@ -8,18 +8,18 @@ import (
 )
 
 var _ = Describe("mappedDevicePathResolverTimeout", func() {
-	It("uses the configured timeout when EphemeralDiskWaitTimeout is set", func() {
-		timeout := mappedDevicePathResolverTimeout(LinuxOptions{EphemeralDiskWaitTimeout: 90})
+	It("uses the configured timeout when VirtioDevicePathResolverTimeout is set", func() {
+		timeout := mappedDevicePathResolverTimeout(LinuxOptions{VirtioDevicePathResolverTimeout: 90})
 		Expect(timeout).To(Equal(90 * time.Second))
 	})
 
-	It("falls back to the default timeout when EphemeralDiskWaitTimeout is unset", func() {
+	It("falls back to the default timeout when VirtioDevicePathResolverTimeout is unset", func() {
 		timeout := mappedDevicePathResolverTimeout(LinuxOptions{})
 		Expect(timeout).To(Equal(defaultMappedDiskWaitTimeout))
 	})
 
-	It("falls back to the default timeout when EphemeralDiskWaitTimeout is negative", func() {
-		timeout := mappedDevicePathResolverTimeout(LinuxOptions{EphemeralDiskWaitTimeout: -1})
+	It("falls back to the default timeout when VirtioDevicePathResolverTimeout is negative", func() {
+		timeout := mappedDevicePathResolverTimeout(LinuxOptions{VirtioDevicePathResolverTimeout: -1})
 		Expect(timeout).To(Equal(defaultMappedDiskWaitTimeout))
 	})
 

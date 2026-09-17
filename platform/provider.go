@@ -42,7 +42,7 @@ const (
 )
 
 // defaultMappedDiskWaitTimeout is used by the mapped device path resolver when
-// LinuxOptions.EphemeralDiskWaitTimeout is not set.
+// LinuxOptions.VirtioDevicePathResolverTimeout is not set.
 const defaultMappedDiskWaitTimeout = 60 * time.Second
 
 type Provider interface {
@@ -59,11 +59,11 @@ type Options struct {
 }
 
 // mappedDevicePathResolverTimeout returns the wait timeout for the mapped device
-// path resolver, honouring an operator-configured LinuxOptions.EphemeralDiskWaitTimeout
+// path resolver, honouring an operator-configured LinuxOptions.VirtioDevicePathResolverTimeout
 // (in seconds) and falling back to defaultMappedDiskWaitTimeout when it is unset.
 func mappedDevicePathResolverTimeout(linuxOptions LinuxOptions) time.Duration {
-	if linuxOptions.EphemeralDiskWaitTimeout > 0 {
-		return time.Duration(linuxOptions.EphemeralDiskWaitTimeout) * time.Second
+	if linuxOptions.VirtioDevicePathResolverTimeout > 0 {
+		return time.Duration(linuxOptions.VirtioDevicePathResolverTimeout) * time.Second
 	}
 	return defaultMappedDiskWaitTimeout
 }
