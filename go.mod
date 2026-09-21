@@ -3,14 +3,14 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.26.0
 
 require (
-	code.cloudfoundry.org/clock v1.87.0
-	code.cloudfoundry.org/tlsconfig v0.66.0
+	code.cloudfoundry.org/clock v1.88.0
+	code.cloudfoundry.org/tlsconfig v0.67.0
 	github.com/Microsoft/hcsshim v0.14.1
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.10.11
-	github.com/cloudfoundry/bosh-davcli v0.0.508
-	github.com/cloudfoundry/bosh-utils v0.0.651
-	github.com/cloudfoundry/gosigar v1.3.126
+	github.com/cloudfoundry/bosh-davcli v0.0.511
+	github.com/cloudfoundry/bosh-utils v0.0.653
+	github.com/cloudfoundry/gosigar v1.3.127
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
 	github.com/google/nftables v0.3.0
@@ -19,9 +19,9 @@ require (
 	github.com/masterzen/winrm v0.0.0-20260407182533-5570be7f80cf
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.13.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/nats-io/nats.go v1.53.1
-	github.com/onsi/ginkgo/v2 v2.32.2
-	github.com/onsi/gomega v1.43.0
+	github.com/nats-io/nats.go v1.54.0
+	github.com/onsi/ginkgo/v2 v2.33.0
+	github.com/onsi/gomega v1.43.1
 	github.com/pivotal/go-smtpd v0.0.0-20140108210614-0af6982457e5
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
@@ -43,7 +43,7 @@ require (
 	github.com/bodgit/ntlmssp v0.0.0-20240506230425-31973bb52d9b // indirect
 	github.com/bodgit/windows v1.0.1 // indirect
 	github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.188 // indirect
+	github.com/cloudfoundry/socks5-proxy v0.2.189 // indirect
 	github.com/containerd/cgroups/v3 v3.1.3 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20260906184651-6331bc6350fe // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
-	github.com/hashicorp/go-uuid v1.0.3 // indirect
+	github.com/hashicorp/go-uuid v1.0.4 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
 	github.com/jcmturner/gofork v1.7.6 // indirect
@@ -77,10 +77,10 @@ require (
 	golang.org/x/exp/typeparams v0.0.0-20260908205506-85c1c2202aba // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260910141331-15ceca2b0a1f // indirect
+	golang.org/x/telemetry v0.0.0-20260921160320-bdcd072333a6 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260911204522-f61a6ca850bd // indirect
-	google.golang.org/grpc v1.83.2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260921155816-b14227669459 // indirect
+	google.golang.org/grpc v1.84.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	honnef.co/go/tools v0.8.1 // indirect
 )
