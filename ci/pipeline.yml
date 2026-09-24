@@ -109,6 +109,34 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
+  # arm64 (Graviton) CI image, published under "latest-arm64" by
+  # build-docker-image-arm64 so the amd64 "latest" image is never overwritten.
+  # RFC: cloudfoundry/community#1530.
+  - name: bosh-agent-docker-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh-agent
+      tag: latest-arm64
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: bosh-agent-registry-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh-agent
+      tag: latest-arm64
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  # Stock multi-arch base used to run build-docker-args on arm64 workers.
+  - name: ubuntu-image
+    type: registry-image
+    source:
+      repository: ubuntu
+      tag: noble
+      username: ((docker.username))
+      password: ((docker.password))
+
   - name: golang-release-image
     type: registry-image
     source:
@@ -334,6 +362,74 @@ jobs:
         params:
           image: image/image.tar
 
+  # arm64 (Graviton) CI image. RFC: cloudfoundry/community#1530.
+  # Mirrors build-docker-image on an arm64 worker; the Dockerfile selects arm64
+  # CLI binaries via TARGETARCH. Pushed under a separate "latest-arm64" tag so the
+  # amd64 "latest" image is never overwritten. build-docker-args runs in a stock
+  # multi-arch ubuntu image because the arm64 agent image does not exist before
+  # its first build. Dormant until an `arm64`-tagged worker is registered (RFC D3
+  # / Open Question 2) and the golang-release image the Dockerfile copies Go from
+  # is published for arm64.
+  - name: build-docker-image-arm64
+    plan:
+      - in_parallel:
+          - get: bosh-agent
+            tags: [ arm64 ]
+          - get: bosh-agent-ci
+            tags: [ arm64 ]
+          - get: ubuntu-image
+            tags: [ arm64 ]
+          - get: bosh-cli-github-release
+            resource: bosh-cli
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: credhub-cli-github-release
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: jq-github-release
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: golang-release-image
+            trigger: true
+            tags: [ arm64 ]
+      - task: build-docker-args
+        file: bosh-agent-ci/ci/docker/build-args.yml
+        image: ubuntu-image
+        tags: [ arm64 ]
+      - task: build-image
+        privileged: true
+        tags: [ arm64 ]
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-agent-ci
+            - name: docker-build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-agent-ci/ci/docker
+            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+          run:
+            path: build
+      - put: bosh-agent-docker-image-arm64
+        no_get: true
+        tags: [ arm64 ]
+        params:
+          image: image/image.tar
+
   - name: test-unit
     plan:
       - get: bosh-agent
@@ -345,19 +441,21 @@ jobs:
         image: bosh-agent-registry-image
         file: bosh-agent-ci/ci/tasks/test-unit.yml
 
-  #! arm64 (Graviton) unit tests. RFC: cloudfoundry/community#1530.
-  #! Mirrors the amd64 test-unit job but pins the task to an arm64 worker so the
-  #! suite runs natively on aarch64. This job is dormant until the platform team
-  #! registers a Concourse worker with the `arm64` tag (RFC D3 / Open Question 2:
-  #! ARM64 CI worker ownership). Until then Concourse reports it as pending with
-  #! "no workers"; it never blocks the amd64 jobs, which are unchanged.
+  # arm64 (Graviton) unit tests. RFC: cloudfoundry/community#1530.
+  # Mirrors the amd64 test-unit job but pins the task to an arm64 worker so the
+  # suite runs natively on aarch64. This job is dormant until the platform team
+  # registers a Concourse worker with the `arm64` tag (RFC D3 / Open Question 2:
+  # ARM64 CI worker ownership). Until then Concourse reports it as pending with
+  # "no workers"; it never blocks the amd64 jobs, which are unchanged.
   - name: test-unit-arm64
     plan:
       - get: bosh-agent
         trigger: true
       - get: bosh-agent-ci
       - get: bosh-agent-registry-image
+        resource: bosh-agent-registry-image-arm64
         trigger: true
+        tags: [ arm64 ]
       - task: test-unit
         image: bosh-agent-registry-image
         file: bosh-agent-ci/ci/tasks/test-unit.yml
