@@ -79,7 +79,11 @@ resources:
     type: github-release
     source:
       access_token: ((github_public_repo_token))
-      owner: stedolan
+      # jqlang/jq is the maintained jq repo (stedolan/jq is archived at 1.6 and
+      # ships no arm64 asset). jqlang publishes per-arch linux binaries
+      # (jq-linux-amd64 / jq-linux-arm64) that the CI image consumes.
+      # RFC: cloudfoundry/community#1530.
+      owner: jqlang
       repository: jq
 
   - name: bosh-ecosystem-concourse
@@ -340,6 +344,24 @@ jobs:
       - task: test-unit
         image: bosh-agent-registry-image
         file: bosh-agent-ci/ci/tasks/test-unit.yml
+
+  #! arm64 (Graviton) unit tests. RFC: cloudfoundry/community#1530.
+  #! Mirrors the amd64 test-unit job but pins the task to an arm64 worker so the
+  #! suite runs natively on aarch64. This job is dormant until the platform team
+  #! registers a Concourse worker with the `arm64` tag (RFC D3 / Open Question 2:
+  #! ARM64 CI worker ownership). Until then Concourse reports it as pending with
+  #! "no workers"; it never blocks the amd64 jobs, which are unchanged.
+  - name: test-unit-arm64
+    plan:
+      - get: bosh-agent
+        trigger: true
+      - get: bosh-agent-ci
+      - get: bosh-agent-registry-image
+        trigger: true
+      - task: test-unit
+        image: bosh-agent-registry-image
+        file: bosh-agent-ci/ci/tasks/test-unit.yml
+        tags: [ arm64 ]
 
   - name: test-unit-windows
     serial: true

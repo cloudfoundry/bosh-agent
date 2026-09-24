@@ -3,6 +3,11 @@ ARG BOSH_CLI_VERSION
 ARG CREDHUB_CLI_VERSION
 ARG JQ_VERSION
 
+# TARGETARCH is provided automatically by BuildKit (e.g. "amd64", "arm64").
+# It lets this image build for both x86_64 and arm64 (Graviton) hosts.
+# RFC: cloudfoundry/community#1530.
+ARG TARGETARCH
+
 RUN \
   apt-get update \
   && apt-get -y upgrade \
@@ -18,17 +23,27 @@ RUN \
     shellcheck \
   && apt-get clean
 
-
-RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-amd64 \
-    -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
-
-RUN wget -nv https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-linux64 \
-    -O /usr/local/bin/jq && chmod +x /usr/local/bin/jq
-
-RUN wget -nv https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/${CREDHUB_CLI_VERSION}/credhub-linux-amd64-${CREDHUB_CLI_VERSION}.tgz -O - | \
-    tar -zx --directory=/usr/local/bin
-
+# Go is needed both at runtime (agent build/test) and to build the credhub CLI
+# from source below, so bring it in before the source-built tooling.
 COPY --from=ghcr.io/cloudfoundry/bosh/golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
+
+RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-${TARGETARCH} \
+    -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
+
+# jqlang/jq publishes per-arch linux binaries (jq-linux-amd64 / jq-linux-arm64).
+# The former stedolan/jq repo is archived and ships no arm64 asset.
+RUN wget -nv https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/jq-linux-${TARGETARCH} \
+    -O /usr/local/bin/jq && chmod +x /usr/local/bin/jq
+
+# The credhub CLI publishes release binaries for linux-amd64 only, so build it
+# from source at the pinned version to get an arch-native binary on arm64.
+# Release tags carry no leading "v" (e.g. "2.9.61"), which is not a valid Go
+# module version, so build from a shallow clone of the tag rather than
+# `go install ...@version`.
+RUN git clone --depth 1 --branch "${CREDHUB_CLI_VERSION}" \
+      https://github.com/cloudfoundry/credhub-cli.git /tmp/credhub-cli \
+    && ( cd /tmp/credhub-cli && go build -o /usr/local/bin/credhub . ) \
+    && rm -rf /tmp/credhub-cli
 
 RUN useradd --create-home --shell /bin/bash bosh
