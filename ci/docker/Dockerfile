@@ -1,3 +1,9 @@
+# Image providing the BOSH-packaged Go toolchain. Overridable so arm64 builds can
+# use the arm64 golang-release image (tag "latest-arm64"); the default is the
+# amd64 image used today. RFC: https://github.com/cloudfoundry/community/pull/1530
+ARG GOLANG_RELEASE_IMAGE=ghcr.io/cloudfoundry/bosh/golang-release
+FROM ${GOLANG_RELEASE_IMAGE} AS golang-release
+
 FROM ubuntu
 ARG BOSH_CLI_VERSION
 ARG CREDHUB_CLI_VERSION
@@ -25,7 +31,7 @@ RUN \
 
 # Go is needed both at runtime (agent build/test) and to build the credhub CLI
 # from source below, so bring it in before the source-built tooling.
-COPY --from=ghcr.io/cloudfoundry/bosh/golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
+COPY --from=golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-${TARGETARCH} \

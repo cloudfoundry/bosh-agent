@@ -142,6 +142,15 @@ resources:
     source:
       repository: ghcr.io/cloudfoundry/bosh/golang-release
 
+  # arm64 golang-release image published by cloudfoundry/bosh-package-golang-release
+  # (build-docker-image-arm64). Triggers the arm64 agent CI image rebuild.
+  # RFC: cloudfoundry/community#1530.
+  - name: golang-release-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh/golang-release
+      tag: latest-arm64
+
   - name: integration-postgres-15-image
     type: registry-image
     source:
@@ -399,6 +408,7 @@ jobs:
                 - "no-files-needed"
             tags: [ arm64 ]
           - get: golang-release-image
+            resource: golang-release-image-arm64
             trigger: true
             tags: [ arm64 ]
       - task: build-docker-args
@@ -422,6 +432,7 @@ jobs:
           params:
             CONTEXT: bosh-agent-ci/ci/docker
             BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_GOLANG_RELEASE_IMAGE: ghcr.io/cloudfoundry/bosh/golang-release:latest-arm64
           run:
             path: build
       - put: bosh-agent-docker-image-arm64
