@@ -1,8 +1,8 @@
-# code.cloudfoundry.org/clock v1.88.0
+# code.cloudfoundry.org/clock v1.89.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/clock
 code.cloudfoundry.org/clock/fakeclock
-# code.cloudfoundry.org/tlsconfig v0.67.0
+# code.cloudfoundry.org/tlsconfig v0.68.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/tlsconfig
 # github.com/Azure/go-ntlmssp v0.1.1
@@ -80,15 +80,15 @@ github.com/bodgit/windows
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-cli/v7 v7.10.11
-## explicit; go 1.25.0
+# github.com/cloudfoundry/bosh-cli/v7 v7.11.0
+## explicit; go 1.26.0
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
 # github.com/cloudfoundry/bosh-davcli v0.0.511
 ## explicit; go 1.26.0
 github.com/cloudfoundry/bosh-davcli/client
 github.com/cloudfoundry/bosh-davcli/config
 github.com/cloudfoundry/bosh-davcli/signer
-# github.com/cloudfoundry/bosh-utils v0.0.653
+# github.com/cloudfoundry/bosh-utils v0.0.655
 ## explicit; go 1.26.0
 github.com/cloudfoundry/bosh-utils/assert
 github.com/cloudfoundry/bosh-utils/blobstore
@@ -164,7 +164,7 @@ github.com/google/nftables/expr
 github.com/google/nftables/internal/parseexprfunc
 github.com/google/nftables/userdata
 github.com/google/nftables/xt
-# github.com/google/pprof v0.0.0-20260906184651-6331bc6350fe
+# github.com/google/pprof v0.0.0-20260926063103-aaccee046517
 ## explicit; go 1.25.0
 github.com/google/pprof/profile
 # github.com/google/uuid v1.6.0
@@ -233,7 +233,7 @@ github.com/jpillora/backoff
 # github.com/kevinburke/ssh_config v1.6.0
 ## explicit; go 1.18
 github.com/kevinburke/ssh_config
-# github.com/klauspost/compress v1.20.0
+# github.com/klauspost/compress v1.20.1
 ## explicit; go 1.25
 github.com/klauspost/compress/flate
 github.com/klauspost/compress/internal/le
@@ -301,7 +301,7 @@ github.com/onsi/ginkgo/v2/internal/reporters
 github.com/onsi/ginkgo/v2/internal/testingtproxy
 github.com/onsi/ginkgo/v2/reporters
 github.com/onsi/ginkgo/v2/types
-# github.com/onsi/gomega v1.43.1
+# github.com/onsi/gomega v1.44.0
 ## explicit; go 1.25.0
 github.com/onsi/gomega
 github.com/onsi/gomega/format
@@ -394,7 +394,7 @@ golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
 golang.org/x/sys/windows/svc
 golang.org/x/sys/windows/svc/mgr
-# golang.org/x/telemetry v0.0.0-20260921160320-bdcd072333a6
+# golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157
 ## explicit; go 1.26.0
 golang.org/x/telemetry/counter
 golang.org/x/telemetry/internal/counter
