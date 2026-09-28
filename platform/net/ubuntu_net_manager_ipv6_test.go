@@ -188,6 +188,7 @@ DHCP=yes
 IPv6AcceptRA=true
 DNS=2001:4860:4860::8888
 DNS=2001:4860:4860::8844
+DNSDefaultRoute=no
 `)).To(BeTrue())
 			Expect(strings.Contains(networkConfig.StringContents(), `
 [DHCP]
@@ -253,6 +254,7 @@ DHCP=yes
 IPv6AcceptRA=true
 DNS=2001:4860:4860::8888
 DNS=2001:4860:4860::8844
+DNSDefaultRoute=no
 `))
 			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("[Address]"))
 		})
@@ -382,6 +384,7 @@ Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic2.network")
@@ -396,6 +399,7 @@ Address=1.2.3.4/24
 [Network]
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_ethstatic3.network")
@@ -411,6 +415,7 @@ Address=3fff::100/80
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 `))
 		})
@@ -461,6 +466,7 @@ Gateway=2001:db8::1
 IPv6AcceptRA=true
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 [Route]
 Destination=2001:db8:1234::/48

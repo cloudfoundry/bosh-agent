@@ -354,6 +354,25 @@ func interfaceConfigurationFile(name string) string {
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
+// setDNSDefaultRoute keeps resolution of names outside a link's own routing
+// domains on the global (10-bosh.conf) scope only.
+//
+// bosh-agent writes the same DNS server list into the global systemd-resolved
+// config AND every link's [Network] DNS=. systemd-resolved then marks a
+// default-gateway link that has configured DNS as +DefaultRoute and queries it
+// AND the global scope in parallel (no cross-scope de-duplication), duplicating
+// every external query to the same recursor. DNSDefaultRoute=no demotes the link
+// to its own routing domains so the global scope is the single external path.
+//
+// Only applied when a global DNS list exists. With no cloud-config dns, the
+// global scope is empty and a link (e.g. DHCP-provided DNS on a dynamic network)
+// may be the sole external path, so it must remain the DNS default route.
+func setDNSDefaultRoute(networkSection *ini.Section, dnsServers []string) {
+	if len(dnsServers) > 0 {
+		networkSection.AddKey("DNSDefaultRoute", "no")
+	}
+}
+
 func (net UbuntuNetManager) writeNetworkInterfaces(
 	dhcpConfigs DHCPInterfaceConfigurations,
 	staticConfigs StaticInterfaceConfigurations,
@@ -517,6 +536,7 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(configs StaticInte
 	for _, dnsServer := range dnsServers {
 		networkSection.AddKey("DNS", dnsServer)
 	}
+	setDNSDefaultRoute(networkSection, dnsServers)
 	file.AppendSection(networkSection)
 
 	// Route Sections
@@ -567,6 +587,7 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInter
 	for _, dnsServer := range dnsServers {
 		networkSection.AddKey("DNS", dnsServer)
 	}
+	setDNSDefaultRoute(networkSection, dnsServers)
 	file.AppendSection(networkSection)
 
 	// DHCP Section
