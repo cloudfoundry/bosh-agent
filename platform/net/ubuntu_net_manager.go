@@ -354,6 +354,13 @@ func interfaceConfigurationFile(name string) string {
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
+// Guard: omit when no cloud-config dns so the DHCP-provided DNS on the link stays the catch-all.
+func setDNSDefaultRoute(networkSection *ini.Section, dnsServers []string) {
+	if len(dnsServers) > 0 {
+		networkSection.AddKey("DNSDefaultRoute", "no")
+	}
+}
+
 func (net UbuntuNetManager) writeNetworkInterfaces(
 	dhcpConfigs DHCPInterfaceConfigurations,
 	staticConfigs StaticInterfaceConfigurations,
@@ -517,6 +524,7 @@ func (net UbuntuNetManager) writeStaticInterfaceConfiguration(configs StaticInte
 	for _, dnsServer := range dnsServers {
 		networkSection.AddKey("DNS", dnsServer)
 	}
+	setDNSDefaultRoute(networkSection, dnsServers)
 	file.AppendSection(networkSection)
 
 	// Route Sections
@@ -567,6 +575,7 @@ func (net UbuntuNetManager) writeDynamicInterfaceConfiguration(configs DHCPInter
 	for _, dnsServer := range dnsServers {
 		networkSection.AddKey("DNS", dnsServer)
 	}
+	setDNSDefaultRoute(networkSection, dnsServers)
 	file.AppendSection(networkSection)
 
 	// DHCP Section
