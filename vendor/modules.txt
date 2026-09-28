@@ -100,6 +100,7 @@ github.com/cloudfoundry/bosh-utils/fileutil/fakes
 github.com/cloudfoundry/bosh-utils/httpclient
 github.com/cloudfoundry/bosh-utils/logger
 github.com/cloudfoundry/bosh-utils/logger/loggerfakes
+github.com/cloudfoundry/bosh-utils/redact
 github.com/cloudfoundry/bosh-utils/retrystrategy
 github.com/cloudfoundry/bosh-utils/retrystrategy/fakes
 github.com/cloudfoundry/bosh-utils/system
