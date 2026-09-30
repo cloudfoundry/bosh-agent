@@ -43,6 +43,7 @@ func init() { //nolint:gochecknoinits
 					_, err := service.Get()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+					Expect(fs.ReadFileWithOptsInputs[0].Opts.QuietContent).To(BeTrue())
 				})
 
 				It("returns error if reading spec from filesystem errs", func() {

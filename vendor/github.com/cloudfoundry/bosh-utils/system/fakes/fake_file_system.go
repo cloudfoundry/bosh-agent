@@ -22,6 +22,11 @@ import (
 
 type FakeFileType string
 
+type ReadFileWithOptsInput struct {
+	Path string
+	Opts boshsys.ReadOpts
+}
+
 type removeAllFn func(path string) error
 type renameFn func(oldPath, newPath string) error
 
@@ -48,8 +53,9 @@ type FakeFileSystem struct {
 	OpenFileErr      error
 
 	ReadFileError             error
-	ReadFileWithOptsCallCount int
-	readFileErrorByPath       map[string]error
+	ReadFileWithOptsCallCount  int
+	ReadFileWithOptsInputs     []ReadFileWithOptsInput
+	readFileErrorByPath        map[string]error
 
 	WriteFileError            error
 	WriteFileErrors           map[string]error
@@ -610,6 +616,7 @@ func (fs *FakeFileSystem) UnregisterReadFileError(path string) {
 
 func (fs *FakeFileSystem) ReadFileWithOpts(path string, opts boshsys.ReadOpts) ([]byte, error) {
 	fs.ReadFileWithOptsCallCount++
+	fs.ReadFileWithOptsInputs = append(fs.ReadFileWithOptsInputs, ReadFileWithOptsInput{Path: path, Opts: opts})
 	return fs.ReadFile(path)
 }
 

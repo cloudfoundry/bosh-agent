@@ -69,6 +69,7 @@ none /run/shm tmpfs rw,nosuid,nodev,relatime 0 0
 				_, err = searcher.SearchMounts()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(fs.ReadFileWithOptsCallCount).To(Equal(1))
+				Expect(fs.ReadFileWithOptsInputs[0].Opts.QuietContent).To(BeTrue())
 			})
 		})
 
