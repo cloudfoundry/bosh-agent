@@ -3955,10 +3955,20 @@ sam:fakeanotheruser`)
 				})
 			})
 
-			Context("and no ephemeral disk path was specified", func() {
+			Context("and an ephemeral disk was specified by identifier without a path", func() {
+				It("returns the resolution error instead of an empty path", func() {
+					devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
+					realPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{VolumeID: "fake-volume-id"})
+					Expect(err).To(HaveOccurred())
+					Expect(err.Error()).To(ContainSubstring("fake-get-real-device-path-err"))
+					Expect(realPath).To(Equal(""))
+				})
+			})
+
+			Context("and no ephemeral disk was specified", func() {
 				It("returns an empty path and no error so a root partition can be used", func() {
 					devicePathResolver.GetRealDevicePathErr = errors.New("fake-get-real-device-path-err")
-					realPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{Path: ""})
+					realPath, err := platform.GetEphemeralDiskPath(boshsettings.DiskSettings{})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(realPath).To(Equal(""))
 				})

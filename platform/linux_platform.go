@@ -1592,11 +1592,20 @@ func (p linux) RemovePersistentDiskDevice(diskSettings boshsettings.DiskSettings
 func (p linux) GetEphemeralDiskPath(diskSettings boshsettings.DiskSettings) (string, error) {
 	realPath, _, err := p.devicePathResolver.GetRealDevicePath(diskSettings)
 	if err != nil {
-		// An empty Path means the CPI did not provide an ephemeral disk.
-		// A non-empty Path means the CPI did provide an ephemeral disk that we simply failed to resolve
-		// (e.g. the /dev/sd* symlink had not appeared before the resolver timed out).
-		if diskSettings.Path != "" {
-			return "", bosherr.WrapErrorf(err, "Resolving ephemeral disk path '%s'", diskSettings.Path)
+		// An empty disk identity means the CPI did not provide an ephemeral disk.
+		// Any provided identity (path or an identifier such as ID/VolumeID/Lun)
+		// means the CPI did provide an ephemeral disk that we simply failed to
+		// resolve (e.g. the /dev/sd* symlink had not appeared before the resolver
+		// timed out), so the error must be surfaced rather than silently falling
+		// back to the root disk.
+		if diskSettings.Path != "" ||
+			diskSettings.ID != "" ||
+			diskSettings.DeviceID != "" ||
+			diskSettings.VolumeID != "" ||
+			diskSettings.Lun != "" ||
+			diskSettings.HostDeviceID != "" ||
+			diskSettings.ISCSISettings != (boshsettings.ISCSISettings{}) {
+			return "", bosherr.WrapErrorf(err, "Resolving ephemeral disk %#v", diskSettings)
 		}
 
 		p.logger.Debug(logTag, "Error getting ephemeral disk path %v", err)
