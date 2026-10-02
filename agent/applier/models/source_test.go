@@ -50,4 +50,19 @@ var _ = Describe("Source", func() {
 			Expect(out).To(ContainSubstring("<redacted>"))
 		})
 	})
+
+	Describe("GoString", func() {
+		It("redacts signed URL and blobstore headers when formatted with %#v", func() {
+			source := Source{
+				BlobstoreID:      "fake-blob-id",
+				SignedURL:        "https://example.com/blob?X-Amz-Signature=supersecret",
+				BlobstoreHeaders: map[string]string{"Authorization": "Basic dopeToken"},
+			}
+
+			out := fmt.Sprintf("%#v", source)
+			Expect(out).ToNot(ContainSubstring("supersecret"))
+			Expect(out).ToNot(ContainSubstring("dopeToken"))
+			Expect(out).To(ContainSubstring("fake-blob-id"))
+		})
+	})
 })

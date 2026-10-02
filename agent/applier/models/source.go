@@ -33,3 +33,7 @@ func (s Source) String() string {
 		s.Sha1, s.BlobstoreID, s.PathInArchive, s.SignedURL, headers,
 	)
 }
+
+// GoString implements fmt.GoStringer so that %#v uses the same redacted
+// representation as %v, preventing BlobstoreHeaders values from leaking.
+func (s Source) GoString() string { return s.String() }
