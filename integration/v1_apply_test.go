@@ -8,6 +8,7 @@ import (
 	"time"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
+	"github.com/cloudfoundry/bosh-utils/redact"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -67,8 +68,8 @@ var _ = Describe("v1_apply", func() {
 	Context("when configured with a signed urls", func() {
 
 		var (
-			barPackageSignedURL string
-			fooPackageSignedURL string
+			barPackageSignedURL redact.Secret
+			fooPackageSignedURL redact.Secret
 		)
 
 		BeforeEach(func() {
