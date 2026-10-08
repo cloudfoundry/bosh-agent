@@ -12,26 +12,41 @@ import (
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
 
+	"github.com/cloudfoundry/bosh-agent/v2/agentpassword"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
 
 	tlsconfig "code.cloudfoundry.org/tlsconfig"
 )
 
-const httpsDispatcherLogTag = "HTTPS Dispatcher"
+const (
+	httpsDispatcherLogTag = "HTTPS Dispatcher"
+	maxHTTPPasswordLength = 1024
+)
 
 type HTTPSDispatcher struct {
-	httpServer                  *http.Server
-	mux                         *http.ServeMux
-	keyPair                     settings.CertKeyPair
-	listener                    net.Listener
-	logger                      boshlog.Logger
-	baseURL                     *url.URL
-	expectedAuthorizationHeader string
+	httpServer            *http.Server
+	mux                   *http.ServeMux
+	keyPair               settings.CertKeyPair
+	listener              net.Listener
+	logger                boshlog.Logger
+	baseURL               *url.URL
+	passwordVerifier      *agentpassword.Verifier
+	expectedAuthorization string
 }
 
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
-func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) *HTTPSDispatcher {
+func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) (*HTTPSDispatcher, error) {
+	password, _ := baseURL.User.Password()
+	var verifier *agentpassword.Verifier
+	var err error
+	if agentpassword.IsVerifier(password) {
+		verifier, err = agentpassword.ParseVerifier(password)
+		if err != nil {
+			return nil, bosherr.WrapError(err, "Configuring HTTP authentication")
+		}
+	}
+
 	tlsConfig, _ := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults()).Server() //nolint:errcheck
 
 	httpServer := &http.Server{
@@ -40,20 +55,18 @@ func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger b
 	mux := http.NewServeMux()
 	httpServer.Handler = mux
 
-	expectedUsername := baseURL.User.Username()
-	expectedPassword, _ := baseURL.User.Password()
-	auth := fmt.Sprintf("%s:%s", expectedUsername, expectedPassword)
+	auth := fmt.Sprintf("%s:%s", baseURL.User.Username(), password)
 	encodedAuth := base64.StdEncoding.EncodeToString([]byte(auth))
-	expectedAuthorizationHeader := fmt.Sprintf("Basic %s", encodedAuth)
 
 	return &HTTPSDispatcher{
-		httpServer:                  httpServer,
-		mux:                         mux,
-		keyPair:                     keyPair,
-		logger:                      logger,
-		baseURL:                     baseURL,
-		expectedAuthorizationHeader: expectedAuthorizationHeader,
-	}
+		httpServer:            httpServer,
+		mux:                   mux,
+		keyPair:               keyPair,
+		logger:                logger,
+		baseURL:               baseURL,
+		passwordVerifier:      verifier,
+		expectedAuthorization: fmt.Sprintf("Basic %s", encodedAuth),
+	}, nil
 }
 
 func (h *HTTPSDispatcher) Start() error {
@@ -86,12 +99,15 @@ func (h *HTTPSDispatcher) Stop() {
 	}
 }
 
+// requestNotAuthorized checks HTTP credentials; cryptographic verification lives
+// in agentpassword.Verifier and is safe for simultaneous requests.
 func (h *HTTPSDispatcher) requestNotAuthorized(request *http.Request) bool {
-	return h.constantTimeEquals(h.expectedAuthorizationHeader, request.Header.Get("Authorization"))
-}
-
-func (h *HTTPSDispatcher) constantTimeEquals(a, b string) bool {
-	return subtle.ConstantTimeCompare([]byte(a), []byte(b)) != 1
+	if h.passwordVerifier == nil {
+		return subtle.ConstantTimeCompare([]byte(h.expectedAuthorization), []byte(request.Header.Get("Authorization"))) != 1
+	}
+	username, password, ok := request.BasicAuth()
+	return !ok || subtle.ConstantTimeCompare([]byte(h.baseURL.User.Username()), []byte(username)) != 1 ||
+		len(password) == 0 || len(password) > maxHTTPPasswordLength || !h.passwordVerifier.Matches(password)
 }
 
 func (h *HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {
@@ -100,10 +116,9 @@ func (h *HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {
 
 		if h.requestNotAuthorized(r) {
 			w.Header().Add("WWW-Authenticate", `Basic realm=""`)
-			w.WriteHeader(401)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-
 		handler(w, r)
 	}
 
