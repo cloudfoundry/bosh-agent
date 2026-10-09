@@ -18,10 +18,7 @@ import (
 	tlsconfig "code.cloudfoundry.org/tlsconfig"
 )
 
-const (
-	httpsDispatcherLogTag = "HTTPS Dispatcher"
-	maxHTTPPasswordLength = 1024
-)
+const httpsDispatcherLogTag = "HTTPS Dispatcher"
 
 type HTTPSDispatcher struct {
 	httpServer            *http.Server
@@ -109,7 +106,7 @@ func (h *HTTPSDispatcher) requestNotAuthorized(request *http.Request) bool {
 	return !ok ||
 		subtle.ConstantTimeCompare([]byte(h.baseURL.User.Username()), []byte(username)) != 1 ||
 		len(password) == 0 ||
-		len(password) > maxHTTPPasswordLength ||
+		len(password) > agentpassword.MaxPasswordLength ||
 		!h.passwordVerifier.Matches(password)
 }
 

@@ -7,12 +7,16 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 )
 
 const (
 	Feature = "http-password-hmac-sha256"
+
+	// MaxPasswordLength is the maximum plaintext password length in bytes.
+	MaxPasswordLength = 1024
 
 	prefix     = "bosh-hmac-sha256$"
 	saltLength = 16
@@ -71,6 +75,9 @@ func HashURL(raw string) (string, error) {
 	password, hasPassword := u.User.Password()
 	if !hasPassword || password == "" {
 		return "", errors.New("URL missing password")
+	}
+	if len(password) > MaxPasswordLength {
+		return "", fmt.Errorf("URL password exceeds %d bytes", MaxPasswordLength)
 	}
 	if IsHashedPassword(password) {
 		return "", errors.New("URL password is already hashed; provide the original password")
