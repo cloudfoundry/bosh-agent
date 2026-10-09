@@ -66,7 +66,8 @@ var _ = Describe("HTTPSHandler", func() {
 
 			mbusURL, _ := url.Parse(serverURL) //nolint:errcheck
 			logger := boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
-			handler = mbus.NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
+			handler, err = mbus.NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, logger, fakes.NewFakeAuditLogger())
+			Expect(err).NotTo(HaveOccurred())
 
 			go handler.Start(func(req boshhandler.Request) (resp boshhandler.Response) { //nolint:errcheck
 				receivedRequest = req

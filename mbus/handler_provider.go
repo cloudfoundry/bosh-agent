@@ -53,7 +53,11 @@ func (p HandlerProvider) Get(
 		return NewNatsHandler(p.settingsService, f, p.logger, platform), nil
 	case "https":
 		mbusKeyPair := p.settingsService.GetSettings().GetMbusCerts()
-		return NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger), nil
+		handler, err := NewHTTPSHandler(mbusURL, mbusKeyPair, blobManager, p.logger, p.auditLogger)
+		if err != nil {
+			return nil, err
+		}
+		return handler, nil
 	default:
 		return nil, bosherr.Errorf("Message Bus Handler with scheme %s could not be found", mbusURL.Scheme)
 	}
