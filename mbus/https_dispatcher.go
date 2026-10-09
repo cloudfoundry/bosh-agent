@@ -30,7 +30,7 @@ type HTTPSDispatcher struct {
 	listener              net.Listener
 	logger                boshlog.Logger
 	baseURL               *url.URL
-	passwordVerifier      *agentpassword.Verifier
+	passwordVerifier      *agentpassword.HashedPassword
 	expectedAuthorization string
 }
 
@@ -38,10 +38,10 @@ type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
 func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) (*HTTPSDispatcher, error) {
 	password, _ := baseURL.User.Password()
-	var verifier *agentpassword.Verifier
+	var verifier *agentpassword.HashedPassword
 	var err error
-	if agentpassword.IsVerifier(password) {
-		verifier, err = agentpassword.ParseVerifier(password)
+	if agentpassword.IsHashedPassword(password) {
+		verifier, err = agentpassword.ParseHashedPassword(password)
 		if err != nil {
 			return nil, bosherr.WrapError(err, "Configuring HTTP authentication")
 		}
@@ -100,7 +100,7 @@ func (h *HTTPSDispatcher) Stop() {
 }
 
 // requestNotAuthorized checks HTTP credentials; cryptographic verification lives
-// in agentpassword.Verifier and is safe for simultaneous requests.
+// in agentpassword.HashedPassword and is safe for simultaneous requests.
 func (h *HTTPSDispatcher) requestNotAuthorized(request *http.Request) bool {
 	if h.passwordVerifier == nil {
 		return subtle.ConstantTimeCompare([]byte(h.expectedAuthorization), []byte(request.Header.Get("Authorization"))) != 1

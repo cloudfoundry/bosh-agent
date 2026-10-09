@@ -17,27 +17,27 @@ var _ = Describe("Agentpassword", func() {
 		})
 	})
 
-	Describe("IsVerifier", func() {
+	Describe("IsHashedPassword", func() {
 		It("returns true for verifiers and malformed verifiers with the prefix", func() {
-			Expect(agentpassword.IsVerifier("bosh-hmac-sha256$bad")).To(BeTrue())
-			Expect(agentpassword.IsVerifier("bosh-hmac-sha256$AAECAwQFBgcICQoLDA0ODw$EEqYVo55l7MGfPvwVPSRCq7RN6JXw-TBbKyW9De5Grw")).To(BeTrue())
+			Expect(agentpassword.IsHashedPassword("bosh-hmac-sha256$bad")).To(BeTrue())
+			Expect(agentpassword.IsHashedPassword("bosh-hmac-sha256$AAECAwQFBgcICQoLDA0ODw$EEqYVo55l7MGfPvwVPSRCq7RN6JXw-TBbKyW9De5Grw")).To(BeTrue())
 		})
 
 		It("returns false when the prefix is missing or incomplete", func() {
-			Expect(agentpassword.IsVerifier("plain-password")).To(BeFalse())
-			Expect(agentpassword.IsVerifier("")).To(BeFalse())
-			Expect(agentpassword.IsVerifier("bosh-hmac-sha256")).To(BeFalse())
-			Expect(agentpassword.IsVerifier("other-prefix$secret")).To(BeFalse())
+			Expect(agentpassword.IsHashedPassword("plain-password")).To(BeFalse())
+			Expect(agentpassword.IsHashedPassword("")).To(BeFalse())
+			Expect(agentpassword.IsHashedPassword("bosh-hmac-sha256")).To(BeFalse())
+			Expect(agentpassword.IsHashedPassword("other-prefix$secret")).To(BeFalse())
 		})
 	})
 
-	Describe("ParseVerifier and Matches", func() {
+	Describe("ParseHashedPassword and Matches", func() {
 		It("matches a fixed known-answer vector guarding the format", func() {
 			// salt: bytes 0..15 -> base64url "AAECAwQFBgcICQoLDA0ODw"
 			// password: "correct horse battery staple"
 			// HMAC-SHA256(key=salt, msg=password) -> base64url "EEqYVo55l7MGfPvwVPSRCq7RN6JXw-TBbKyW9De5Grw"
 			const knownVector = "bosh-hmac-sha256$AAECAwQFBgcICQoLDA0ODw$EEqYVo55l7MGfPvwVPSRCq7RN6JXw-TBbKyW9De5Grw"
-			v, err := agentpassword.ParseVerifier(knownVector)
+			v, err := agentpassword.ParseHashedPassword(knownVector)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v).NotTo(BeNil())
 			Expect(v.Matches("correct horse battery staple")).To(BeTrue())
@@ -54,7 +54,7 @@ var _ = Describe("Agentpassword", func() {
 				"invalid-prefix$" + validSalt + "$" + validKey,
 				"bosh-hmac-sha256",
 			} {
-				v, err := agentpassword.ParseVerifier(missingPrefix)
+				v, err := agentpassword.ParseHashedPassword(missingPrefix)
 				Expect(err).To(HaveOccurred(), "expected error for missing prefix: %s", missingPrefix)
 				Expect(v).To(BeNil())
 			}
@@ -66,7 +66,7 @@ var _ = Describe("Agentpassword", func() {
 				"bosh-hmac-sha256$" + validSalt + "$" + validKey + "$extra",
 				"bosh-hmac-sha256$" + validSalt + "$" + validKey + "$extra$more",
 			} {
-				v, err := agentpassword.ParseVerifier(badParts)
+				v, err := agentpassword.ParseHashedPassword(badParts)
 				Expect(err).To(HaveOccurred(), "expected error for bad part count: %s", badParts)
 				Expect(v).To(BeNil())
 			}
@@ -76,7 +76,7 @@ var _ = Describe("Agentpassword", func() {
 				"bosh-hmac-sha256$invalid!salt$" + validKey,
 				"bosh-hmac-sha256$" + validSalt + "$invalid!key",
 			} {
-				v, err := agentpassword.ParseVerifier(badB64)
+				v, err := agentpassword.ParseHashedPassword(badB64)
 				Expect(err).To(HaveOccurred(), "expected error for bad base64: %s", badB64)
 				Expect(v).To(BeNil())
 			}
@@ -88,7 +88,7 @@ var _ = Describe("Agentpassword", func() {
 				// Salt containing '/'
 				"bosh-hmac-sha256$AAECAwQFBgcICQoLDA0OD/$EEqYVo55l7MGfPvwVPSRCq7RN6JXw-TBbKyW9De5Grw",
 			} {
-				v, err := agentpassword.ParseVerifier(stdAlphabet)
+				v, err := agentpassword.ParseHashedPassword(stdAlphabet)
 				Expect(err).To(HaveOccurred(), "expected error for std base64 alphabet: %s", stdAlphabet)
 				Expect(v).To(BeNil())
 			}
@@ -100,7 +100,7 @@ var _ = Describe("Agentpassword", func() {
 				"bosh-hmac-sha256$" + shortSalt + "$" + validKey,
 				"bosh-hmac-sha256$" + longSalt + "$" + validKey,
 			} {
-				v, err := agentpassword.ParseVerifier(badSalt)
+				v, err := agentpassword.ParseHashedPassword(badSalt)
 				Expect(err).To(HaveOccurred(), "expected error for wrong salt length: %s", badSalt)
 				Expect(v).To(BeNil())
 			}
@@ -112,7 +112,7 @@ var _ = Describe("Agentpassword", func() {
 				"bosh-hmac-sha256$" + validSalt + "$" + shortKey,
 				"bosh-hmac-sha256$" + validSalt + "$" + longKey,
 			} {
-				v, err := agentpassword.ParseVerifier(badKey)
+				v, err := agentpassword.ParseHashedPassword(badKey)
 				Expect(err).To(HaveOccurred(), "expected error for wrong key length: %s", badKey)
 				Expect(v).To(BeNil())
 			}
@@ -120,7 +120,7 @@ var _ = Describe("Agentpassword", func() {
 	})
 
 	Describe("HashURL", func() {
-		It("performs a complete HashURL -> ParseVerifier -> Matches round trip", func() {
+		It("performs a complete HashURL -> ParseHashedPassword -> Matches round trip", func() {
 			raw := "https://vcap:mypassword@127.0.0.1:6868/path?foo=bar#frag"
 			hashed, err := agentpassword.HashURL(raw)
 			Expect(err).NotTo(HaveOccurred())
@@ -135,7 +135,7 @@ var _ = Describe("Agentpassword", func() {
 			pw, ok := parsedURL.User.Password()
 			Expect(ok).To(BeTrue())
 
-			v, err := agentpassword.ParseVerifier(pw)
+			v, err := agentpassword.ParseHashedPassword(pw)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(v.Matches("mypassword")).To(BeTrue())
 			Expect(v.Matches("wrong-password")).To(BeFalse())
