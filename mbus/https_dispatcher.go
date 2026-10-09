@@ -106,8 +106,11 @@ func (h *HTTPSDispatcher) requestNotAuthorized(request *http.Request) bool {
 		return subtle.ConstantTimeCompare([]byte(h.expectedAuthorization), []byte(request.Header.Get("Authorization"))) != 1
 	}
 	username, password, ok := request.BasicAuth()
-	return !ok || subtle.ConstantTimeCompare([]byte(h.baseURL.User.Username()), []byte(username)) != 1 ||
-		len(password) == 0 || len(password) > maxHTTPPasswordLength || !h.passwordVerifier.Matches(password)
+	return !ok ||
+		subtle.ConstantTimeCompare([]byte(h.baseURL.User.Username()), []byte(username)) != 1 ||
+		len(password) == 0 ||
+		len(password) > maxHTTPPasswordLength ||
+		!h.passwordVerifier.Matches(password)
 }
 
 func (h *HTTPSDispatcher) AddRoute(route string, handler HTTPHandlerFunc) {
