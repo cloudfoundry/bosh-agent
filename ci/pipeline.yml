@@ -79,10 +79,17 @@ resources:
     type: github-release
     source:
       access_token: ((github_public_repo_token))
-      # jqlang/jq is the maintained jq repo (stedolan/jq is archived at 1.6 and
-      # ships no arm64 asset). jqlang publishes per-arch linux binaries
-      # (jq-linux-amd64 / jq-linux-arm64) that the CI image consumes.
-      # RFC: cloudfoundry/community#1530.
+      owner: stedolan
+      repository: jq
+
+  # arm64 jq source. stedolan/jq is archived at 1.6 and ships no arm64 asset, so
+  # the arm64 CI image uses the maintained jqlang/jq, which publishes
+  # jq-linux-arm64. Kept separate from jq-github-release so the amd64 image build
+  # is unchanged. RFC: cloudfoundry/community#1530.
+  - name: jq-github-release-arm64
+    type: github-release
+    source:
+      access_token: ((github_public_repo_token))
       owner: jqlang
       repository: jq
 
@@ -402,6 +409,7 @@ jobs:
                 - "no-files-needed"
             tags: [ arm64 ]
           - get: jq-github-release
+            resource: jq-github-release-arm64
             trigger: true
             params:
               globs:
