@@ -75,7 +75,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 }
 
 // Compile expects the compiler returned by NewCompiler and may not work with compilers constructed differently.
-func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string) (string, error) {
+func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string, stripBuildDependencies bool) (string, error) {
 	log.Printf("Reading BOSH Release Manifest from tarball %s", boshReleaseTarballPath)
 
 	m, err := Manifest(boshReleaseTarballPath)
@@ -84,15 +84,36 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	}
 	log.Printf("Release %s/%s has %d packages", m.Name, m.Version, len(m.Packages))
 
+	jobPackages, err := jobPackageNames(boshReleaseTarballPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read job specs: %w", err)
+	}
+
+	compileSet, shipSet, err := selectPackages(m, jobPackages, stripBuildDependencies)
+	if err != nil {
+		return "", err
+	}
+
+	for _, p := range m.Packages {
+		switch {
+		case !compileSet[p.Name]:
+			log.Printf("Skipping orphaned package %s", p.Name)
+		case !shipSet[p.Name]:
+			log.Printf("Package %s is only a build dependency and will be excluded from the compiled release", p.Name)
+		}
+	}
+
 	log.Printf("Extracting packages")
-	blobstoreIDs, err := extractPackages(m, blobsDirectory, boshReleaseTarballPath)
+	blobstoreIDs, err := extractPackages(m, compileSet, blobsDirectory, boshReleaseTarballPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract packages from tarball: %w", err)
 	}
 
 	log.Printf("Starting packages compilation")
 	start := time.Now()
-	packages := slices.Clone(m.Packages)
+	packages := slices.DeleteFunc(slices.Clone(m.Packages), func(p manifest.PackageRef) bool {
+		return !compileSet[p.Name]
+	})
 	if err := topologicalSort(packages, func(p manifest.PackageRef) string { return p.Name }, func(p manifest.PackageRef) []string { return slices.Clone(p.Dependencies) }); err != nil {
 		return "", err
 	}
@@ -106,7 +127,7 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	log.Printf("Finished packages compilation after %s", time.Since(start))
 
 	log.Printf("Archiving compiled BOSH Release %s/%s with stemcell %s", m.Name, m.Version, stemcellSlug)
-	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, m.Packages, compiledPackages)
+	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, m.Packages, compiledPackages, shipSet)
 }
 
 func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef, blobstoreIDs map[string]string, compiler boshcomp.Compiler) ([]boshmodels.Package, error) {
@@ -126,6 +147,9 @@ func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef
 		index := slices.IndexFunc(compiledPackages, func(b boshmodels.Package) bool {
 			return b.Name == dep
 		})
+		if index < 0 {
+			return nil, fmt.Errorf("dependency %s was not compiled", dep)
+		}
 		modelsDeps = append(modelsDeps, compiledPackages[index])
 	}
 	compiledBlobID, compiledDigest, err := compiler.Compile(pkg, modelsDeps)
@@ -143,7 +167,7 @@ func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef
 	}), nil
 }
 
-func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath string) (map[string]string, error) {
+func extractPackages(m manifest.Manifest, compileSet map[string]bool, blobsDirectory, releaseTarballPath string) (map[string]string, error) {
 	sha1ToFilepath := make(map[string]string, len(m.Packages))
 	if err := walkTarballFiles(releaseTarballPath, func(name string, h *tar.Header, src io.Reader) (bool, error) {
 		if match, err := path.Match("packages/*.tgz", name); err != nil || !match {
@@ -156,6 +180,9 @@ func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath str
 			return true, fmt.Errorf("package not found in release manifest")
 		}
 		p := m.Packages[pkgIndex]
+		if !compileSet[p.Name] {
+			return true, nil
+		}
 		dstFilepath := filepath.Join(blobsDirectory, p.Name+".tgz")
 		digest, err := boshcrypto.ParseMultipleDigest(p.SHA1)
 		if err != nil {
@@ -186,25 +213,29 @@ func extractPackages(m manifest.Manifest, blobsDirectory, releaseTarballPath str
 	return sha1ToFilepath, nil
 }
 
-func newCompiledPackageRef(pkg boshmodels.Package, src manifest.PackageRef, stemcellSlug string) manifest.CompiledPackageRef {
+func newCompiledPackageRef(pkg boshmodels.Package, src manifest.PackageRef, stemcellSlug string, ship map[string]bool) manifest.CompiledPackageRef {
 	compiled := manifest.CompiledPackageRef{
 		Name:          pkg.Name,
 		Version:       pkg.Version,
 		Fingerprint:   src.Fingerprint,
 		SHA1:          pkg.Source.Sha1.String(),
 		OSVersionSlug: stemcellSlug,
-		Dependencies:  slices.Clone(src.Dependencies),
+		Dependencies:  shippedDependencies(src.Dependencies, ship),
 	}
 	return compiled
 }
 
-func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package) (string, error) {
-	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(compiledPackages))
-	for _, p := range compiledPackages {
+func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package, ship map[string]bool) (string, error) {
+	shippedPackages := slices.DeleteFunc(slices.Clone(compiledPackages), func(p boshmodels.Package) bool {
+		return !ship[p.Name]
+	})
+
+	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(shippedPackages))
+	for _, p := range shippedPackages {
 		srcIndex := slices.IndexFunc(sourcePackages, func(ref manifest.PackageRef) bool {
 			return ref.Name == p.Name && ref.Version == p.Version
 		})
-		m.CompiledPkgs = append(m.CompiledPkgs, newCompiledPackageRef(p, sourcePackages[srcIndex], stemcellFilenameSuffix))
+		m.CompiledPkgs = append(m.CompiledPkgs, newCompiledPackageRef(p, sourcePackages[srcIndex], stemcellFilenameSuffix, ship))
 	}
 	empty := [0]manifest.PackageRef{}
 	m.Packages = empty[:]
@@ -232,7 +263,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 	}
 	defer closeAndIgnoreErr(tw)
 
-	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, compiledPackages, releaseManifestBuffer, blobsDirectory))
+	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, shippedPackages, releaseManifestBuffer, blobsDirectory))
 	if err != nil {
 		return "", errors.Join(err, os.RemoveAll(filePath))
 	}
