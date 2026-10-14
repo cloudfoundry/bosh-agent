@@ -58,7 +58,8 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Mbus = "https://foo:bar@lol"
 			handler, err := provider.Get(platform, blobManager)
 			Expect(err).ToNot(HaveOccurred())
-			expectedHandler := mbus.NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
+			expectedHandler, constructorErr := mbus.NewHTTPSHandler(mbusURL, settings.CertKeyPair{}, blobManager, logger, auditLogger)
+			Expect(constructorErr).NotTo(HaveOccurred())
 			httpsHandler, ok := handler.(mbus.HTTPSHandler)
 			Expect(ok).To(BeTrue())
 			Expect(httpsHandler).To(Equal(expectedHandler))
@@ -73,13 +74,14 @@ var _ = Describe("HandlerProvider", func() {
 			settingsService.Settings.Env.Bosh.Mbus.Cert.PrivateKey = "private-key-pem-block"
 
 			handler, err := provider.Get(platform, blobManager)
-			expectedHandler := mbus.NewHTTPSHandler(
+			expectedHandler, constructorErr := mbus.NewHTTPSHandler(
 				mbusURL,
 				settingsService.Settings.Env.Bosh.Mbus.Cert,
 				blobManager,
 				logger,
 				auditLogger,
 			)
+			Expect(constructorErr).NotTo(HaveOccurred())
 			Expect(err).NotTo(HaveOccurred())
 			httpsHandler, ok := handler.(mbus.HTTPSHandler)
 			Expect(ok).To(BeTrue())
