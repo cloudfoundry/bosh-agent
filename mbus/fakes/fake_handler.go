@@ -48,7 +48,7 @@ func (h *FakeHandler) Run(handlerFunc boshhandler.Func) error {
 
 func (h *FakeHandler) KeepOnRunning() {
 	block := make(chan error)
-	h.RunCallBack = func() { <-block }
+	h.RunCallBack = func() { <-block } //nolint:errcheck
 }
 
 func (h *FakeHandler) Start(handlerFunc boshhandler.Func) error {
