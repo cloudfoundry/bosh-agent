@@ -53,9 +53,9 @@ type FakeFileSystem struct {
 	OpenFileErr      error
 
 	ReadFileError             error
-	ReadFileWithOptsCallCount  int
-	ReadFileWithOptsInputs     []ReadFileWithOptsInput
-	readFileErrorByPath        map[string]error
+	ReadFileWithOptsCallCount int
+	ReadFileWithOptsInputs    []ReadFileWithOptsInput
+	readFileErrorByPath       map[string]error
 
 	WriteFileError            error
 	WriteFileErrors           map[string]error
