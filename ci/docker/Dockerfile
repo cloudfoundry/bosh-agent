@@ -52,7 +52,9 @@ ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
 # amd64 is the unchanged original: download the linux-amd64 credhub CLI release
 # tarball. credhub-cli publishes amd64 release binaries only, so arm64 builds the
-# CLI from source at the pinned tag with the Go toolchain copied in above. Fail
+# CLI from source at the pinned tag with the Go toolchain copied in above. The
+# source build passes the same version linker flag the project's Makefile uses,
+# so `credhub --version` reports the release version (not an empty string). Fail
 # on any other arch rather than silently installing the wrong CLI.
 # RFC: cloudfoundry/community#1530.
 RUN case "${TARGETARCH}" in \
@@ -60,7 +62,9 @@ RUN case "${TARGETARCH}" in \
                tar -zx --directory=/usr/local/bin ;; \
       arm64) git clone --depth 1 --branch "${CREDHUB_CLI_VERSION}" \
                https://github.com/cloudfoundry/credhub-cli.git /tmp/credhub-cli \
-             && ( cd /tmp/credhub-cli && go build -o /usr/local/bin/credhub . ) \
+             && ( cd /tmp/credhub-cli && go build \
+                    -ldflags "-X code.cloudfoundry.org/credhub-cli/version.Version=${CREDHUB_CLI_VERSION}" \
+                    -o /usr/local/bin/credhub . ) \
              && rm -rf /tmp/credhub-cli ;; \
       *)     echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac
