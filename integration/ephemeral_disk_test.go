@@ -108,9 +108,9 @@ var _ = Describe("EphemeralDisk", func() {
 				It("agent fails with error", func() {
 					Eventually(func() bool {
 						if testEnvironment.GetServiceManager() == integration.SERVICE_MANAGER_SYSTEMD {
-							return testEnvironment.JournalContains("ERROR .* App setup .* No ephemeral disk found")
+							return testEnvironment.JournalContains("ERROR .* App setup .* Resolving ephemeral disk")
 						} else {
-							return testEnvironment.LogFileContains("ERROR .* App setup .* No ephemeral disk found")
+							return testEnvironment.LogFileContains("ERROR .* App setup .* Resolving ephemeral disk")
 						}
 					}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 				})
@@ -118,6 +118,11 @@ var _ = Describe("EphemeralDisk", func() {
 		})
 
 		Context("when ephemeral disk is not provided in settings", func() {
+			BeforeEach(func() {
+				err := testEnvironment.CreateSettingsFile(fileSettings)
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			Context("when root disk can be used as ephemeral", func() {
 				var (
 					oldRootDevice string

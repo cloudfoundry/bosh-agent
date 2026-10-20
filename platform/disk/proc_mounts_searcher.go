@@ -16,12 +16,15 @@ func NewProcMountsSearcher(fs boshsys.FileSystem) MountsSearcher {
 }
 
 func (s procMountsSearcher) SearchMounts() ([]Mount, error) {
-	mountInfo, err := s.fs.ReadFileString("/proc/mounts")
+	// QuietContent: /proc/mounts is read on every heartbeat; dumping its full
+	// content at DEBUG floods logs (hundreds of container overlay mounts per
+	// cell). Keep the "Reading file" trace, drop the content dump.
+	mountInfo, err := s.fs.ReadFileWithOpts("/proc/mounts", boshsys.ReadOpts{QuietContent: true})
 	if err != nil {
 		return []Mount{}, bosherr.WrapError(err, "Reading /proc/mounts")
 	}
 
-	mountEntries := strings.Split(mountInfo, "\n")
+	mountEntries := strings.Split(string(mountInfo), "\n")
 	mounts := make([]Mount, 0, len(mountEntries))
 	for _, mountEntry := range mountEntries {
 		if mountEntry == "" {

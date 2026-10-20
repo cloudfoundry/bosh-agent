@@ -31,7 +31,7 @@ var _ = Describe("FetchLogsWithSignedURLAction", func() {
 	})
 
 	AssertActionIsAsynchronous(action)
-	AssertActionIsLoggable(action)
+	AssertActionIsNotLoggable(action)
 
 	AssertActionIsNotPersistent(action)
 	AssertActionIsNotResumable(action)

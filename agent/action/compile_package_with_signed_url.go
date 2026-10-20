@@ -5,6 +5,7 @@ import (
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+	"github.com/cloudfoundry/bosh-utils/redact"
 
 	boshmodels "github.com/cloudfoundry/bosh-agent/v2/agent/applier/models"
 	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
@@ -50,7 +51,7 @@ func (a CompilePackageWithSignedURL) Run(request CompilePackageWithSignedURLRequ
 			Source: boshmodels.Source{
 				Sha1:             dep.Sha1,
 				BlobstoreID:      dep.BlobstoreID,
-				SignedURL:        dep.PackageGetSignedURL,
+				SignedURL:        redact.Secret(dep.PackageGetSignedURL),
 				BlobstoreHeaders: dep.BlobstoreHeaders,
 			},
 		})
@@ -87,5 +88,7 @@ func (a CompilePackageWithSignedURL) IsPersistent() bool {
 }
 
 func (a CompilePackageWithSignedURL) IsLoggable() bool {
-	return true
+	// The request payload carries signed blobstore URLs (bearer credentials);
+	// keep them out of the action dispatcher's payload debug log.
+	return false
 }

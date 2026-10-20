@@ -26,7 +26,10 @@ func (s concreteV1Service) Get() (V1ApplySpec, error) {
 		return spec, nil
 	}
 
-	contents, err := s.fs.ReadFile(s.specFilePath)
+	// QuietContent: spec.json is read on every heartbeat; dumping its full
+	// content at DEBUG floods logs and leaks the signed blobstore URLs it
+	// contains. Keep the "Reading file" trace, drop the content dump.
+	contents, err := s.fs.ReadFileWithOpts(s.specFilePath, boshsys.ReadOpts{QuietContent: true})
 	if err != nil {
 		return spec, bosherr.WrapError(err, "Reading json spec file")
 	}

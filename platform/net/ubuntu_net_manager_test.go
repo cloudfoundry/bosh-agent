@@ -365,6 +365,7 @@ Address=1.2.3.4/24
 
 [Network]
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 `))
 			networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_eth1.network")
@@ -380,6 +381,7 @@ Broadcast=5.6.7.255
 [Network]
 Gateway=6.7.8.9
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 `))
 		})
@@ -474,6 +476,7 @@ Broadcast=5.6.7.255
 [Network]
 Gateway=6.7.8.9
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 `))
 			})
@@ -542,6 +545,7 @@ Address=1.2.3.4/24
 
 [Network]
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [Route]
 Destination=10.0.0.0/8
@@ -565,6 +569,7 @@ Broadcast=5.6.7.255
 [Network]
 Gateway=6.7.8.9
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 `))
 		})
@@ -619,6 +624,7 @@ Name=eth0
 [Network]
 DHCP=yes
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [DHCP]
 UseDomains=yes
@@ -685,6 +691,34 @@ Broadcast=1.2.3.255
 Gateway=3.4.5.6
 
 `))
+		})
+
+		It("does not write DNSDefaultRoute for a DHCP NIC when no DNS servers are configured", func() {
+			dhcpNetworkWithoutDNS := boshsettings.Network{
+				Type:    "dynamic",
+				Default: []string{"gateway"},
+				Mac:     "fake-dhcp-mac-address",
+			}
+
+			stubInterfaces(map[string]boshsettings.Network{
+				"ethdhcp": dhcpNetworkWithoutDNS,
+			})
+
+			err := netManager.SetupNetworking(boshsettings.Networks{"dhcp-network": dhcpNetworkWithoutDNS}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			matches, err := fs.Ls("/etc/systemd/network/")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(matches).To(ConsistOf("/etc/systemd/network/10_ethdhcp.network"))
+
+			networkConfig := fs.GetFileTestStat("/etc/systemd/network/10_ethdhcp.network")
+			Expect(networkConfig).ToNot(BeNil())
+			// With no cloud-config dns the global scope is empty, so the DHCP-provided
+			// DNS on this link is the only external path and must stay the DNS default
+			// route. Setting DNSDefaultRoute=no here would break external resolution.
+			Expect(networkConfig.StringContents()).To(ContainSubstring("DHCP=yes"))
+			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("DNSDefaultRoute"))
+			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("DNS="))
 		})
 
 		It("returns errors from writing the network configuration", func() {
@@ -1004,6 +1038,7 @@ Name=ethdhcp
 DHCP=yes
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 [DHCP]
 UseDomains=yes
@@ -1026,6 +1061,7 @@ Broadcast=1.2.3.255
 Gateway=3.4.5.6
 DNS=8.8.8.8
 DNS=9.9.9.9
+DNSDefaultRoute=no
 
 `))
 		})
@@ -1062,6 +1098,7 @@ Name=ethprimary
 [Network]
 DHCP=yes
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [DHCP]
 UseDomains=yes
@@ -1078,6 +1115,7 @@ Name=ethsecondary
 [Network]
 DHCP=yes
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [DHCP]
 UseDomains=yes
@@ -1119,6 +1157,7 @@ Name=ethshared
 [Network]
 DHCP=yes
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [DHCP]
 UseDomains=yes
@@ -1182,6 +1221,7 @@ Address=fd7a:eeee:e2e4:1::4/64
 Gateway=3.4.5.6
 IPv6AcceptRA=true
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 `))
 		})
@@ -1245,6 +1285,7 @@ Address=10.20.0.4/24
 [Network]
 Gateway=10.10.0.1
 DNS=8.8.8.8
+DNSDefaultRoute=no
 
 [Route]
 Destination=10.30.0.0/24
@@ -1415,6 +1456,7 @@ Address=10.112.166.136/26
 DNS=8.8.8.8
 DNS=10.0.80.11
 DNS=10.0.80.12
+DNSDefaultRoute=no
 
 `))
 				networkConfig = fs.GetFileTestStat("/etc/systemd/network/10_eth1.network")
@@ -1432,6 +1474,7 @@ Gateway=169.50.68.65
 DNS=8.8.8.8
 DNS=10.0.80.11
 DNS=10.0.80.12
+DNSDefaultRoute=no
 
 `))
 			})
