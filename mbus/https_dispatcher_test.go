@@ -89,11 +89,12 @@ var _ = Describe("HTTPSDispatcher", func() {
 		logger = &fakelogger.FakeLogger{}
 		serverURL, err := url.Parse(targetURL)
 		Expect(err).ToNot(HaveOccurred())
-		dispatcher = mbus.NewHTTPSDispatcher(serverURL, settings.CertKeyPair{
+		dispatcher, err = mbus.NewHTTPSDispatcher(serverURL, settings.CertKeyPair{
 			Certificate: agentCert,
 			PrivateKey:  agentKey,
 			CA:          "",
 		}, logger)
+		Expect(err).ToNot(HaveOccurred())
 
 		go func() {
 			defer GinkgoRecover()
