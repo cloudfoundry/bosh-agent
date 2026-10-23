@@ -258,7 +258,7 @@ func (h *natsHandler) Stop() {
 }
 
 func (h *natsHandler) VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-	natsBoshInternalsRegexp := regexp.MustCompile(`^[a-zA-Z0-9*\-]*.nats.bosh-internal$`)
+	natsBoshInternalsRegexp := regexp.MustCompile(`^[a-zA-Z0-9*\-]+\.nats\.bosh-internal$`)
 	for _, chain := range verifiedChains {
 		if len(chain) == 0 {
 			continue
