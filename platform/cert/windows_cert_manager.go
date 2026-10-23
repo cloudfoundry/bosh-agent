@@ -1,11 +1,12 @@
 package cert
 
 import (
+	_ "embed"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"fmt"
-	"log"
-	"os"
-	"path"
-	"strconv"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-utils/logger"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
@@ -14,95 +15,49 @@ import (
 )
 
 type windowsCertManager struct {
-	fs          boshsys.FileSystem
-	runner      boshsys.CmdRunner
-	dirProvider boshdir.Provider
-	logger      logger.Logger
-	backupPath  string
+	runner          boshsys.CmdRunner
+	backupDirectory string
+	legacyPath      string
 }
 
-const rootCertStore string = `Cert:\LocalMachine\Root`
+//go:embed windows_cert_store.ps1
+var windowsCertStoreScript string
 
-func NewWindowsCertManager(fs boshsys.FileSystem, runner boshsys.CmdRunner, dirProvider boshdir.Provider, logger logger.Logger) Manager {
+const windowsCertStoreEntry = `
+try {
+    $ErrorActionPreference = 'Stop'
+    Invoke-RootCertificateUpdate (ConvertFrom-Json ([Console]::In.ReadToEnd()))
+} catch {
+    [Console]::Error.WriteLine($_.Exception.Message)
+    exit 1
+}
+`
+
+func NewWindowsCertManager(_ boshsys.FileSystem, runner boshsys.CmdRunner, dirProvider boshdir.Provider, _ logger.Logger) Manager {
 	return &windowsCertManager{
-		fs:          fs,
-		runner:      runner,
-		dirProvider: dirProvider,
-		logger:      logger,
-		backupPath:  path.Join(dirProvider.TmpDir(), "rootCertBackup.sst"),
+		runner:          runner,
+		backupDirectory: filepath.Join(dirProvider.BoshDir(), "root-cert-backup"),
+		legacyPath:      filepath.Join(dirProvider.TmpDir(), "rootCertBackup.sst"),
 	}
-}
-
-func (c *windowsCertManager) createBackup() error {
-	if _, err := os.Stat(c.backupPath); os.IsNotExist(err) {
-		err = c.fs.MkdirAll(c.dirProvider.TmpDir(), os.FileMode(0777))
-		if err != nil {
-			return err
-		}
-		_, _, _, err := c.runner.RunCommand(
-			"powershell",
-			"-Command",
-			fmt.Sprintf("Get-ChildItem %s | Sort-Object -Property Thumbprint | Get-Unique | Export-Certificate -Type SST -FilePath %s", rootCertStore, c.backupPath),
-		)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *windowsCertManager) resetCerts() error {
-	_, _, _, err := c.runner.RunCommand(
-		"powershell",
-		"-Command",
-		fmt.Sprintf(`Remove-Item %s\*`, rootCertStore),
-	)
-	if err != nil {
-		return err
-	}
-
-	importCertsCmd := fmt.Sprintf("Import-Certificate -FilePath %s -CertStoreLocation %s", c.backupPath, rootCertStore)
-	_, _, _, err = c.runner.RunCommand("powershell", "-Command", importCertsCmd)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (c *windowsCertManager) UpdateCertificates(rawCerts string) error {
-	err := c.createBackup()
+	certificates := []string{}
+	for _, certificate := range splitCerts(rawCerts) {
+		block, _ := pem.Decode([]byte(certificate))
+		if block == nil || block.Type != "CERTIFICATE" {
+			return fmt.Errorf("invalid trusted certificate")
+		}
+		certificates = append(certificates, base64.StdEncoding.EncodeToString(block.Bytes))
+	}
+	input, err := json.Marshal(struct {
+		BackupDirectory string
+		LegacyPath      string
+		Certificates    []string
+	}{c.backupDirectory, c.legacyPath, certificates})
 	if err != nil {
 		return err
 	}
-
-	err = c.resetCerts()
-	if err != nil {
-		return err
-	}
-
-	certs := splitCerts(rawCerts)
-	tempCertDir, err := c.fs.TempDir("")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = c.fs.RemoveAll(tempCertDir)
-		if err != nil {
-			log.Printf("Unable to remove %s directory: %s", tempCertDir, err)
-		}
-	}()
-
-	for i, cert := range certs {
-		filename := path.Join(tempCertDir, strconv.Itoa(i))
-		err = c.fs.WriteFileString(filename, cert)
-		if err != nil {
-			return err
-		}
-		_, _, _, err = c.runner.RunCommand("powershell", "-Command",
-			fmt.Sprintf("Import-Certificate -FilePath %s -CertStoreLocation %s", filename, rootCertStore))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	_, _, _, err = c.runner.RunCommandWithInput(string(input), "powershell", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", windowsCertStoreScript+windowsCertStoreEntry)
+	return err
 }

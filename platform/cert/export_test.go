@@ -25,3 +25,5 @@ func SplitCerts(certs string) []string {
 func DeleteFiles(fs boshsys.FileSystem, path string, filenamePrefix string) (int, error) {
 	return deleteFiles(fs, path, filenamePrefix)
 }
+
+func WindowsCertificateStoreScript() string { return windowsCertStoreScript }

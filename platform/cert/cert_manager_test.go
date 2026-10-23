@@ -1,10 +1,12 @@
 package cert_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -402,11 +404,35 @@ if (Test-Path %[1]s) {
 					Skip("`cert.UpdateCertificates()` does not appear to be supported on Github Action windows workers")
 				}
 
+				account, err := user.Current()
+				Expect(err).NotTo(HaveOccurred())
+				if account.Uid != "S-1-5-18" {
+					Skip("Live Windows root-store integration requires the agent's SYSTEM identity")
+				}
 				fs = boshsys.NewOsFileSystem(log)
-				var err error
 				tempDir, err = fs.TempDir("")
 				Expect(err).To(BeNil())
 				dirProvider = boshdir.NewProvider(tempDir)
+				// Test-only snapshot of this dedicated Windows worker, before
+				// updates. Production provisioning requires an independently
+				// approved baseline; the agent never captures the current store.
+				input, err := json.Marshal(map[string]string{"BaseDir": tempDir, "BoshDir": dirProvider.BoshDir()})
+				Expect(err).NotTo(HaveOccurred())
+				fixtureScript := cert.WindowsCertificateStoreScript() + `
+try {
+    $ErrorActionPreference = 'Stop'
+    $config = ConvertFrom-Json ([Console]::In.ReadToEnd())
+    Set-Acl -LiteralPath $config.BaseDir -AclObject (New-CertificateBackupAcl $true)
+    [IO.DirectoryInfo]::new($config.BoshDir).Create((New-CertificateBackupAcl $true))
+    $backupDirectory = Join-Path $config.BoshDir 'root-cert-backup'
+    Initialize-CertificateBackupDirectory $backupDirectory
+    $baseline = Join-Path $backupDirectory 'rootCertBackup.sst'
+    Get-ChildItem Cert:\LocalMachine\Root | Sort-Object -Property Thumbprint -Unique | Export-Certificate -Type SST -FilePath $baseline | Out-Null
+    Set-Acl -LiteralPath $baseline -AclObject (New-CertificateBackupAcl $false)
+} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }
+`
+				_, stderr, _, err := boshsys.NewExecCmdRunner(log).RunCommandWithInput(string(input), "powershell", "-NoProfile", "-NonInteractive", "-Command", fixtureScript)
+				Expect(err).NotTo(HaveOccurred(), stderr)
 				certManager = cert.NewWindowsCertManager(fs, boshsys.NewExecCmdRunner(log), dirProvider, log)
 			})
 
@@ -420,14 +446,16 @@ if (Test-Path %[1]s) {
 				os.RemoveAll(tempDir) //nolint:errcheck
 			})
 
-			It("should create the tmpDir if doesn't exist", func() {
+			It("uses the protected baseline without a temporary backup directory", func() {
 				_, err := os.Stat(dirProvider.TmpDir())
 				missing := os.IsNotExist(err)
 				Expect(missing).To(BeTrue())
 				err = certManager.UpdateCertificates(validCerts)
 				Expect(err).To(BeNil())
 				_, err = os.Stat(dirProvider.TmpDir())
-				Expect(err).To(BeNil())
+				Expect(os.IsNotExist(err)).To(BeTrue())
+				_, err = os.Stat(filepath.Join(dirProvider.BoshDir(), "root-cert-backup", "rootCertBackup.sst"))
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			Context("When TempDir exists", func() {
