@@ -229,7 +229,7 @@ func (s *settingsService) SaveUpdateSettings(updateSettings UpdateSettings) erro
 		return bosherr.WrapError(err, "Marshalling Update Settings json")
 	}
 
-	err = s.fs.WriteFile(updateSettingsPath, updateSettingsJSON)
+	err = s.fs.WriteFileQuietly(updateSettingsPath, updateSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing Update Settings json")
 	}
@@ -310,7 +310,7 @@ func (s *settingsService) savePersistentDiskSettingsWithoutLocking(persistentDis
 		return bosherr.WrapError(err, "Marshalling persistent disk settings json")
 	}
 
-	err = s.fs.WriteFile(s.getPersistentDiskSettingsPath(), newPersistentDiskSettingsJSON)
+	err = s.fs.WriteFileQuietly(s.getPersistentDiskSettingsPath(), newPersistentDiskSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing persistent disk settings settings json")
 	}
@@ -340,7 +340,7 @@ func (s *settingsService) getUpdateSettings(useTmpFS bool) (UpdateSettings, erro
 	updateSettings := UpdateSettings{}
 	updateSettingsPath := s.platform.GetUpdateSettingsPath(useTmpFS)
 	if s.fs.FileExists(updateSettingsPath) {
-		existingSettingsContents, err := s.fs.ReadFile(updateSettingsPath)
+		existingSettingsContents, err := s.fs.ReadFileWithOpts(updateSettingsPath, boshsys.ReadOpts{Quiet: true})
 		if err != nil {
 			return updateSettings, bosherr.WrapError(err, "Reading Update Settings json")
 		}
