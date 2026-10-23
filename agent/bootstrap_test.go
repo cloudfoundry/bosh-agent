@@ -570,6 +570,15 @@ var _ = Describe("bootstrap", func() {
 			})
 
 			Context("when dev_tools_file_list does not exist", func() {
+				It("continues with static library removal", func() {
+					settingsService.Settings.Env.Bosh.RemoveStaticLibraries = true
+					err := platform.GetFs().WriteFileString(path.Join(dirProvider.EtcDir(), "static_libraries_list"), "/usr/lib/libsupp.a")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(bootstrap()).To(Succeed())
+					Expect(platform.RemoveDevToolsCallCount()).To(Equal(0))
+					Expect(platform.RemoveStaticLibrariesCallCount()).To(Equal(1))
+				})
+
 				It("does nothing", func() {
 					err := bootstrap()
 					Expect(err).NotTo(HaveOccurred())

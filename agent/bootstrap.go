@@ -198,24 +198,20 @@ func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 	if settings.Env.GetRemoveDevTools() {
 		packageFileListPath := path.Join(boot.dirProvider.EtcDir(), "dev_tools_file_list")
 
-		if !boot.fs.FileExists(packageFileListPath) {
-			return nil
-		}
-
-		if err = boot.platform.RemoveDevTools(packageFileListPath); err != nil {
-			return bosherr.WrapError(err, "Removing Development Tools Packages")
+		if boot.fs.FileExists(packageFileListPath) {
+			if err = boot.platform.RemoveDevTools(packageFileListPath); err != nil {
+				return bosherr.WrapError(err, "Removing Development Tools Packages")
+			}
 		}
 	}
 
 	if settings.Env.GetRemoveStaticLibraries() {
 		staticLibrariesListPath := path.Join(boot.dirProvider.EtcDir(), "static_libraries_list")
 
-		if !boot.fs.FileExists(staticLibrariesListPath) {
-			return nil
-		}
-
-		if err = boot.platform.RemoveStaticLibraries(staticLibrariesListPath); err != nil {
-			return bosherr.WrapError(err, "Removing static libraries")
+		if boot.fs.FileExists(staticLibrariesListPath) {
+			if err = boot.platform.RemoveStaticLibraries(staticLibrariesListPath); err != nil {
+				return bosherr.WrapError(err, "Removing static libraries")
+			}
 		}
 	}
 
