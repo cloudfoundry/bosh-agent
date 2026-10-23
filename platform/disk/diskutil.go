@@ -63,7 +63,7 @@ func (util diskUtil) GetFilesContents(diskPath string, fileNames []string) ([][]
 
 		util.logger.Debug(util.logTag, "Reading contents of '%s'", diskFilePath)
 
-		content, err := util.fs.ReadFile(diskFilePath)
+		content, err := util.fs.ReadFileWithOpts(diskFilePath, boshsys.ReadOpts{Quiet: true})
 		if err != nil {
 			// todo unmount before removing
 			if uErr := util.unmount(tempDir); uErr != nil {
@@ -72,7 +72,7 @@ func (util diskUtil) GetFilesContents(diskPath string, fileNames []string) ([][]
 			return [][]byte{}, bosherr.WrapErrorf(err, "Reading from disk file '%s'", diskFilePath)
 		}
 
-		util.logger.Debug(util.logTag, "Got contents of %s: %s", diskFilePath, string(content))
+		util.logger.Debug(util.logTag, "Read disk file %s", diskFilePath)
 
 		contents = append(contents, content)
 	}
