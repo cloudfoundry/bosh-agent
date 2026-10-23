@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	boshcrypto "github.com/cloudfoundry/bosh-utils/crypto"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -26,6 +27,9 @@ func NewBlobManager(workdir string) (*BlobManager, error) {
 }
 
 func (m BlobManager) Fetch(blobID string) (boshsys.File, int, error) {
+	if !validBlobID(blobID) {
+		return nil, 400, bosherr.Error("Invalid blob identifier")
+	}
 	file, err := os.Open(m.blobPath(blobID))
 	if err != nil {
 		return nil, statusForErr(err), bosherr.WrapError(err, "Reading blob")
@@ -35,6 +39,9 @@ func (m BlobManager) Fetch(blobID string) (boshsys.File, int, error) {
 }
 
 func (m BlobManager) Write(blobID string, r io.Reader) error {
+	if !validBlobID(blobID) {
+		return bosherr.Error("Invalid blob identifier")
+	}
 	blobPath := m.blobPath(blobID)
 	file, err := os.OpenFile(blobPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0640)
 	if err != nil {
@@ -73,10 +80,16 @@ func (m BlobManager) GetPath(blobID string, digest boshcrypto.Digest) (string, e
 }
 
 func (m BlobManager) Delete(blobID string) error {
+	if !validBlobID(blobID) {
+		return bosherr.Error("Invalid blob identifier")
+	}
 	return os.RemoveAll(m.blobPath(blobID))
 }
 
 func (m BlobManager) BlobExists(blobID string) bool {
+	if !validBlobID(blobID) {
+		return false
+	}
 	_, err := os.Stat(m.blobPath(blobID))
 	return !os.IsNotExist(err)
 }
@@ -148,4 +161,8 @@ func mkdir(path string) error {
 	}
 
 	return nil
+}
+
+func validBlobID(id string) bool {
+	return id != "" && id != "." && id != ".." && !strings.ContainsAny(id, "/\\:\x00")
 }
