@@ -47,15 +47,6 @@ func SetupNatsFirewall(mbusURLs []string) error {
 	if err != nil {
 		return bosherr.WrapError(err, "Adding windows firewall session sublayer")
 	}
-	// These layers are the Input / Output stages of the Windows Firewall.
-	// https://docs.microsoft.com/en-us/windows/win32/fwp/application-layer-enforcement--ale-
-	layers := []wf.LayerID{
-		wf.LayerALEAuthRecvAcceptV4,
-		// wf.LayerALEAuthRecvAcceptV6,  //#TODO: Do we need v6?
-		wf.LayerALEAuthConnectV4,
-		// wf.LayerALEAuthConnectV6,	//#TODO: Do we need v6?
-	}
-
 	// The Windows app id will be used to create a conditional exception for the block outgoing nats rule.
 	appID, err := wf.AppID("C:\\bosh\\bosh-agent.exe") // Could this ever be somewhere else?
 	if err != nil {
@@ -83,12 +74,13 @@ func SetupNatsFirewall(mbusURLs []string) error {
 			if err != nil {
 				return bosherr.WrapError(err, "Parsing mbus ip")
 			}
-			// Only IPv4 ALE layers are currently active; skip IPv6 addresses.
-			if natsIP.Is6() && !natsIP.Is4In6() {
-				continue
+			natsIP = natsIP.Unmap()
+			layers := []wf.LayerID{wf.LayerALEAuthRecvAcceptV4, wf.LayerALEAuthConnectV4}
+			if natsIP.Is6() {
+				layers = []wf.LayerID{wf.LayerALEAuthRecvAcceptV6, wf.LayerALEAuthConnectV6}
 			}
-			// The Firewall rule will check if the Target IP is within natsIp/32 Range, thus matching exactly the NatsIP
-			natsIPCidr, err := natsIP.Prefix(32)
+			// A full-length prefix matches only this resolved endpoint.
+			natsIPCidr, err := natsIP.Prefix(natsIP.BitLen())
 			if err != nil {
 				return bosherr.WrapError(err, "Converting ip address to cidr annotation")
 			}
