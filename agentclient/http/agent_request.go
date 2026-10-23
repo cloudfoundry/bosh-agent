@@ -9,6 +9,8 @@ import (
 	"github.com/cloudfoundry/bosh-utils/httpclient"
 )
 
+const maxAgentResponseBytes = 16 << 20
+
 type AgentRequestMessage struct {
 	Method    string        `json:"method"`
 	Arguments []interface{} `json:"arguments"`
@@ -48,9 +50,13 @@ func (r agentRequest) Send(method string, arguments []interface{}, response Resp
 		return bosherr.Errorf("Agent responded with non-successful status code: %d", httpResponse.StatusCode)
 	}
 
-	responseBody, err := io.ReadAll(httpResponse.Body)
+	responseBody, err := io.ReadAll(io.LimitReader(httpResponse.Body, maxAgentResponseBytes+1))
 	if err != nil {
 		return bosherr.WrapError(err, "Reading agent response")
+	}
+
+	if len(responseBody) > maxAgentResponseBytes {
+		return bosherr.Error("Agent response exceeds size limit")
 	}
 
 	err = response.Unmarshal(responseBody)

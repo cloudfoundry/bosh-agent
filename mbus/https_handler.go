@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/cloudfoundry/bosh-agent/v2/platform"
 	"github.com/cloudfoundry/bosh-agent/v2/settings"
@@ -133,6 +134,13 @@ func (h HTTPSHandler) blobsHandler() func(http.ResponseWriter, *http.Request) {
 
 func (h HTTPSHandler) putBlob(w http.ResponseWriter, r *http.Request) {
 	_, blobID := path.Split(r.URL.Path)
+
+	// The request is already authenticated. Large blob uploads (create-env
+	// packages) can take longer than the server's ReadTimeout, so lift the
+	// read deadline for the body of this request only.
+	if err := http.NewResponseController(w).SetReadDeadline(time.Time{}); err != nil {
+		h.logger.Warn(httpsHandlerLogTag, "Failed to clear read deadline for blob upload: %s", err.Error())
+	}
 
 	err := h.blobManager.Write(blobID, r.Body)
 	if err != nil {

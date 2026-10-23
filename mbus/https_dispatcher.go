@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -34,7 +35,13 @@ type HTTPSDispatcher struct {
 type HTTPHandlerFunc func(writer http.ResponseWriter, request *http.Request)
 
 func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger boshlog.Logger) (*HTTPSDispatcher, error) {
+	if baseURL == nil || baseURL.User == nil || baseURL.User.Username() == "" {
+		return nil, bosherr.Error("HTTPS mbus requires a username and password")
+	}
 	password, _ := baseURL.User.Password()
+	if password == "" {
+		return nil, bosherr.Error("HTTPS mbus requires a username and password")
+	}
 	var verifier *agentpassword.HashedPassword
 	var err error
 	if agentpassword.IsHashedPassword(password) {
@@ -47,7 +54,10 @@ func NewHTTPSDispatcher(baseURL *url.URL, keyPair settings.CertKeyPair, logger b
 	tlsConfig, _ := tlsconfig.Build(tlsconfig.WithInternalServiceDefaults()).Server() //nolint:errcheck
 
 	httpServer := &http.Server{
-		TLSConfig: tlsConfig,
+		TLSConfig:         tlsConfig,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       5 * time.Minute,
+		IdleTimeout:       60 * time.Second,
 	}
 	mux := http.NewServeMux()
 	httpServer.Handler = mux
