@@ -22,6 +22,10 @@ func FixPermissions(fs boshsys.FileSystem, path string, user string, group strin
 			return err
 		}
 
+		if info.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+
 		if err := fs.Chown(path, ug); err != nil {
 			return bosherr.WrapError(err, "Failed to chown dir")
 		}
