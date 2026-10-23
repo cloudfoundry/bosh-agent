@@ -2050,9 +2050,7 @@ func prepareDiskLabelPrefix(labelPrefix string) string {
 func (p *linux) SetupFirewall() error {
 	mgr, err := firewall.NewNftablesFirewall(p.logger)
 	if err != nil {
-		p.logger.Warn(logTag, "Failed to create firewall manager: %s", err)
-		// Not a fatal error - continue without firewall protection
-		return nil
+		return bosherr.WrapError(err, "Creating firewall manager")
 	}
 	p.firewallManager = mgr
 
@@ -2063,8 +2061,7 @@ func (p *linux) SetupFirewall() error {
 
 	// Set up monit firewall rules
 	if err := mgr.SetupMonitFirewall(); err != nil {
-		p.logger.Warn(logTag, "Failed to set up monit firewall: %s", err)
-		// Not a fatal error - continue without monit firewall protection
+		return bosherr.WrapError(err, "Setting up monit firewall")
 	}
 
 	return nil

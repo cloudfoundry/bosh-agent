@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -163,6 +164,13 @@ var _ = Describe("LinuxPlatform", func() {
 			fakeLogsTarProvider,
 			serviceManager,
 		)
+	})
+
+	It("fails setup when a firewall backend cannot be created", func() {
+		if runtime.GOOS == "linux" {
+			Skip("requires the unsupported-platform backend to inject creation failure")
+		}
+		Expect(platform.SetupFirewall()).To(MatchError(ContainSubstring("Creating firewall manager")))
 	})
 
 	Describe("SetupRuntimeConfiguration", func() {

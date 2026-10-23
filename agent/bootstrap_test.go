@@ -55,6 +55,11 @@ import (
 	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
 )
 
+// Network bootstrap exercises network setup without touching the host firewall.
+type networkTestPlatform struct{ boshplatform.Platform }
+
+func (networkTestPlatform) SetupFirewall() error { return nil }
+
 var _ = Describe("bootstrap", func() {
 	Describe("Run", func() {
 		var (
@@ -98,6 +103,12 @@ var _ = Describe("bootstrap", func() {
 		bootstrap := func() error {
 			return agent.NewBootstrap(platform, dirProvider, settingsService, specService, logger).Run()
 		}
+
+		It("stops before configuring monit when firewall setup fails", func() {
+			platform.SetupFirewallReturns(errors.New("firewall unavailable"))
+			Expect(bootstrap()).To(MatchError(ContainSubstring("Setting up firewall: firewall unavailable")))
+			Expect(platform.SetupMonitUserCallCount()).To(BeZero())
+		})
 
 		It("sets up runtime configuration", func() {
 			err := bootstrap()
@@ -1165,6 +1176,7 @@ var _ = Describe("bootstrap", func() {
 					logsTarProvider,
 					&serviceManager,
 				)
+				platform = networkTestPlatform{platform}
 			})
 
 			JustBeforeEach(func() {
