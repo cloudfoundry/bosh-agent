@@ -264,7 +264,7 @@ func (ms HTTPMetadataService) getUserData() (UserDataContentsType, error) {
 
 		err = json.Unmarshal(decodedUserData, &userData)
 		if err != nil {
-			return userData, bosherr.WrapErrorf(err, "Unmarshalling url decoded user data '%s'", decodedUserData)
+			return userData, bosherr.WrapError(err, "Unmarshalling url decoded user data")
 		}
 	}
 

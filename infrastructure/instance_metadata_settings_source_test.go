@@ -78,5 +78,21 @@ func describeInstanceMetadataSettingsSource() {
 			_, err := metadataSource.Settings()
 			Expect(err).To(HaveOccurred())
 		})
+
+		It("does not include the response body in the error when the settings cannot be parsed", func() {
+			malformedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				defer GinkgoRecover()
+
+				_, err := w.Write([]byte(`{"mbus":"nats://user:private-password@host",`))
+				Expect(err).NotTo(HaveOccurred())
+			}))
+			defer malformedServer.Close()
+
+			metadataSource = infrastructure.NewInstanceMetadataSettingsSource(malformedServer.URL, metadataHeaders, settingsPath, platform, logger)
+			_, err := metadataSource.Settings()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("Parsing instance metadata settings"))
+			Expect(err.Error()).NotTo(ContainSubstring("private-password"))
+		})
 	})
 }

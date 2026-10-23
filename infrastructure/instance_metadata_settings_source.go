@@ -83,8 +83,7 @@ func (s *InstanceMetadataSettingsSource) Settings() (boshsettings.Settings, erro
 
 	err = json.Unmarshal([]byte(contents), &settings)
 	if err != nil {
-		return settings, bosherr.WrapErrorf(
-			err, "Parsing instance metadata settings from %q", contents)
+		return settings, bosherr.WrapError(err, "Parsing instance metadata settings")
 	}
 
 	return settings, nil

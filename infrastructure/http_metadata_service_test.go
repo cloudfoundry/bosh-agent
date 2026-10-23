@@ -660,7 +660,8 @@ func describeHTTPMetadataService() { //nolint:funlen
 			It("returns an error", func() {
 				_, err := metadataService.GetServerName()
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Unmarshalling url decoded user data '{\"server bad json]'"))
+				Expect(err.Error()).To(ContainSubstring("Unmarshalling url decoded user data"))
+				Expect(err.Error()).NotTo(ContainSubstring("server bad json"))
 			})
 		})
 
