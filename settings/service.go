@@ -2,6 +2,9 @@ package settings
 
 import (
 	"encoding/json"
+	"io"
+	"os"
+	"path/filepath"
 	"sync"
 
 	boship "github.com/cloudfoundry/bosh-agent/v2/platform/net/ip"
@@ -140,7 +143,7 @@ func (s *settingsService) LoadSettings() error {
 		return bosherr.WrapError(err, "Marshalling settings json")
 	}
 
-	err = s.fs.WriteFileQuietly(s.getSettingsPath(), newSettingsJSON)
+	err = s.writeSettingsFile(s.getSettingsPath(), newSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing setting json")
 	}
@@ -229,7 +232,7 @@ func (s *settingsService) SaveUpdateSettings(updateSettings UpdateSettings) erro
 		return bosherr.WrapError(err, "Marshalling Update Settings json")
 	}
 
-	err = s.fs.WriteFileQuietly(updateSettingsPath, updateSettingsJSON)
+	err = s.writeSettingsFile(updateSettingsPath, updateSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing Update Settings json")
 	}
@@ -310,7 +313,7 @@ func (s *settingsService) savePersistentDiskSettingsWithoutLocking(persistentDis
 		return bosherr.WrapError(err, "Marshalling persistent disk settings json")
 	}
 
-	err = s.fs.WriteFileQuietly(s.getPersistentDiskSettingsPath(), newPersistentDiskSettingsJSON)
+	err = s.writeSettingsFile(s.getPersistentDiskSettingsPath(), newPersistentDiskSettingsJSON)
 	if err != nil {
 		return bosherr.WrapError(err, "Writing persistent disk settings settings json")
 	}
@@ -364,4 +367,24 @@ func (s *settingsService) getPersistentDiskSettingsPath() string {
 	defer s.settingsMutex.Unlock()
 
 	return s.platform.GetPersistentDiskSettingsPath(s.settings.Env.Bosh.Agent.Settings.TmpFS)
+}
+
+// writeSettingsFile creates private files before any settings are written.
+func (s *settingsService) writeSettingsFile(filename string, contents []byte) error {
+	if err := s.fs.MkdirAll(filepath.Dir(filename), 0700); err != nil {
+		return err
+	}
+	file, err := s.fs.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer file.Close() //nolint:errcheck
+	if err := s.fs.Chmod(filename, 0600); err != nil {
+		return err
+	}
+	n, err := file.Write(contents)
+	if err == nil && n != len(contents) {
+		return io.ErrShortWrite
+	}
+	return err
 }

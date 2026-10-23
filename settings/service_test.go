@@ -3,6 +3,7 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
+	"os"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -100,7 +101,7 @@ var _ = Describe("settingsService", func() {
 					err := service.LoadSettings()
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(fs.WriteFileQuietlyCallCount).To(Equal(1))
+					Expect(fs.GetFileTestStat("/setting/path.json").FileMode.Perm()).To(Equal(os.FileMode(0600)))
 					Expect(fs.WriteFileCallCount).To(Equal(0))
 				})
 			})
@@ -125,7 +126,7 @@ var _ = Describe("settingsService", func() {
 				})
 
 				It("returns any error from writing to the setting file", func() {
-					fs.WriteFileError = errors.New("fs-write-file-error")
+					fs.OpenFileErr = errors.New("fs-write-file-error")
 
 					err := service.LoadSettings()
 					Expect(err).To(HaveOccurred())
