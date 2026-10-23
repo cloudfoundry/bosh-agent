@@ -108,6 +108,8 @@ type NftablesFirewall struct {
 	monitJobsChain *nftables.Chain
 	natsChain      *nftables.Chain
 	userLookup     UserLookup
+	currentCgroup  func() (string, error)
+	cgroupInode    func(string) (uint64, error)
 }
 
 // NewNftablesFirewall creates a new nftables-based firewall manager
@@ -128,11 +130,13 @@ func NewNftablesFirewall(logger boshlog.Logger) (Manager, error) {
 // NewNftablesFirewallWithDeps creates a firewall manager with injected dependencies (for testing)
 func NewNftablesFirewallWithDeps(conn NftablesConn, resolver DNSResolver, userLookup UserLookup, logger boshlog.Logger) Manager {
 	return &NftablesFirewall{
-		conn:       conn,
-		resolver:   resolver,
-		logger:     logger,
-		logTag:     "NftablesFirewall",
-		userLookup: userLookup,
+		conn:          conn,
+		resolver:      resolver,
+		logger:        logger,
+		logTag:        "NftablesFirewall",
+		userLookup:    userLookup,
+		currentCgroup: func() (string, error) { return getCurrentCgroupPath(logger) },
+		cgroupInode:   getCgroupInodeID,
 	}
 }
 
@@ -178,6 +182,12 @@ func (f *NftablesFirewall) SetupMonitFirewall() error {
 		return bosherr.WrapError(err, "Flushing nftables rules")
 	}
 
+	// The jobs chain must exist in the kernel before listing its rules. On
+	// first boot it was created in the transaction just flushed above.
+	if err := f.removeLegacyMonitUIDRules(); err != nil {
+		return err
+	}
+
 	f.logger.Info(f.logTag, "Successfully set up monit firewall rules")
 	return nil
 }
@@ -190,38 +200,18 @@ func (f *NftablesFirewall) EnableMonitAccess() error {
 		return bosherr.WrapError(err, "Failed to check if jobs chain exists")
 	}
 
-	// 2. Try cgroup-based rule first (better isolation)
-	cgroupPath, err := getCurrentCgroupPath(f.logger)
-	if err == nil {
-		inodeID, err := getCgroupInodeID(cgroupPath)
-		if err == nil {
-			f.logger.Info(f.logTag, "Using cgroup rule for: %s (inode: %d)", cgroupPath, inodeID)
-
-			if err := f.addCgroupRule(inodeID, cgroupPath); err == nil {
-				f.logger.Info(f.logTag, "Successfully added cgroup-based rule")
-				return nil
-			} else {
-				f.logger.Error(f.logTag, "Failed to add cgroup rule: %v", err)
-			}
-		} else {
-			f.logger.Error(f.logTag, "Failed to get cgroup inode ID: %v", err)
-		}
-	} else {
-		f.logger.Error(f.logTag, "Could not detect cgroup: %v", err)
+	if err := f.removeLegacyMonitUIDRules(); err != nil {
+		return err
 	}
-
-	// 3. Fallback to UID-based rule
-	f.logger.Info(f.logTag, "Falling back to UID rule for vcap")
-	u, err := f.userLookup(settings.VCAPUsername)
+	cgroupPath, err := f.currentCgroup()
 	if err != nil {
-		return fmt.Errorf("could not find vcap user: %w", err)
+		return bosherr.WrapError(err, "Determining job cgroup; broad UID access is unavailable")
 	}
-	uid, err := strconv.ParseUint(u.Uid, 10, 32)
+	inodeID, err := f.cgroupInode(cgroupPath)
 	if err != nil {
-		return fmt.Errorf("could not parse vcap UID %q: %w", u.Uid, err)
+		return bosherr.WrapError(err, "Identifying job cgroup")
 	}
-
-	return f.addUIDRule(uint32(uid))
+	return f.addCgroupRule(inodeID, cgroupPath)
 }
 
 // SetupNATSFirewall creates firewall rules to protect NATS.
@@ -474,38 +464,32 @@ func (f *NftablesFirewall) addNATSBlockRule(addr net.IP, port int) {
 	})
 }
 
-// addUIDRule adds a UID-based firewall rule to the monit_access_jobs chain.
-// This is the fallback when cgroup matching is not available.
-func (f *NftablesFirewall) addUIDRule(uid uint32) error {
-	// Check if rule already exists (idempotency)
+// Remove broad grants left by previous versions while preserving job cgroups.
+func (f *NftablesFirewall) removeLegacyMonitUIDRules() error {
+	account, err := f.userLookup(settings.VCAPUsername)
+	if err != nil {
+		return bosherr.WrapError(err, "Looking up monit service account")
+	}
+	uid, err := strconv.ParseUint(account.Uid, 10, 32)
+	if err != nil {
+		return err
+	}
 	rules, err := f.conn.GetRules(f.table, f.monitJobsChain)
-	if err == nil {
-		for _, rule := range rules {
-			if ruleMatchesUID(rule, uid) {
-				f.logger.Info(f.logTag, "UID rule already exists for UID %d, skipping", uid)
-				return nil
+	if err != nil {
+		return bosherr.WrapError(err, "Inspecting legacy monit grants")
+	}
+	changed := false
+	for _, rule := range rules {
+		if ruleMatchesUID(rule, uint32(uid)) {
+			if err := f.conn.DelRule(rule); err != nil {
+				return bosherr.WrapError(err, "Removing legacy monit grant")
 			}
+			changed = true
 		}
 	}
-
-	// Build rule expressions:
-	// meta skuid <uid> ip daddr 127.0.0.1 tcp dport 2822 log prefix "..." accept
-	exprs := buildUIDMatchExprs(uid)
-	exprs = append(exprs, buildLoopbackDestExprs()...)
-	exprs = append(exprs, buildTCPDestPortExprs(MonitPort)...)
-	exprs = append(exprs, buildLogExpr(fmt.Sprintf(MonitAccessLogPrefix+"UID %d match: ", uid))...)
-	exprs = append(exprs, &expr.Verdict{Kind: expr.VerdictAccept})
-
-	f.conn.AddRule(&nftables.Rule{
-		Table: f.table,
-		Chain: f.monitJobsChain,
-		Exprs: exprs,
-	})
-
-	if err := f.conn.Flush(); err != nil {
-		return fmt.Errorf("flushing nftables rules: %w", err)
+	if changed {
+		return f.conn.Flush()
 	}
-
 	return nil
 }
 

@@ -39,7 +39,7 @@ type Manager interface {
 	SetupMonitFirewall() error
 
 	// EnableMonitAccess enables monit access by adding firewall rules.
-	// It first tries to use cgroup-based matching, then falls back to UID-based matching.
+	// It requires a supported job cgroup; failures never grant all service users access.
 	EnableMonitAccess() error
 
 	// SetupNATSFirewall creates firewall rules to protect NATS.

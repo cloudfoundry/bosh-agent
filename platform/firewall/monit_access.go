@@ -3,7 +3,7 @@
 //
 // Usage:
 //
-//	bosh-agent enable-monit-access # Add firewall rule (cgroup preferred, UID fallback)
+//	bosh-agent enable-monit-access # Add firewall rule for the caller's job cgroup
 //
 // This binary serves as a replacement for the complex bash firewall setup logic
 // that was previously in job service scripts.

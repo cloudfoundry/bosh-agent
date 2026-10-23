@@ -45,9 +45,34 @@ var _ = Describe("NftablesFirewall", func() {
 		}
 		logger = boshlog.NewWriterLogger(boshlog.LevelDebug, GinkgoWriter)
 		manager = firewall.NewNftablesFirewallWithDeps(fakeConn, fakeResolver, fakeUserLookup, logger)
+		firewall.InjectCgroupResolvers(manager, func() (string, error) { return "system.slice/runc-bpm-test-job.scope", nil }, func(string) (uint64, error) { return 123, nil })
 	})
 
 	Describe("SetupMonitFirewall", func() {
+		It("commits a newly created jobs chain before inspecting legacy grants", func() {
+			committed := false
+			fakeConn.FlushStub = func() error { committed = true; return nil }
+			fakeConn.GetRulesStub = func(*nftables.Table, *nftables.Chain) ([]*nftables.Rule, error) {
+				if !committed {
+					return nil, errors.New("chain not committed")
+				}
+				return nil, nil
+			}
+			Expect(manager.SetupMonitFirewall()).To(Succeed())
+		})
+		It("revokes a legacy service-user grant while preserving job chains", func() {
+			data := make([]byte, 4)
+			binary.NativeEndian.PutUint32(data, 1000)
+			legacy := &nftables.Rule{Exprs: []expr.Any{&expr.Meta{Key: expr.MetaKeySKUID, Register: 1}, &expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: data}}}
+			fakeConn.GetRulesReturns([]*nftables.Rule{legacy}, nil)
+			Expect(manager.SetupMonitFirewall()).To(Succeed())
+			Expect(fakeConn.DelRuleCallCount()).To(Equal(1))
+			Expect(fakeConn.DelRuleArgsForCall(0)).To(BeIdenticalTo(legacy))
+			Expect(fakeConn.FlushCallCount()).To(Equal(2))
+			Expect(fakeConn.FlushChainCallCount()).To(Equal(1))
+			Expect(fakeConn.FlushChainArgsForCall(0).Name).To(Equal("monit_access"))
+		})
+
 		It("creates table, chains, and rules successfully", func() {
 			err := manager.SetupMonitFirewall()
 			Expect(err).NotTo(HaveOccurred())
@@ -213,6 +238,23 @@ var _ = Describe("NftablesFirewall", func() {
 				}, nil)
 			})
 
+			It("does not grant UID access if cgroup detection fails", func() {
+				firewall.InjectCgroupResolvers(manager, func() (string, error) { return "", errors.New("no cgroup") }, func(string) (uint64, error) { return 0, nil })
+				Expect(manager.EnableMonitAccess()).To(MatchError(ContainSubstring("no cgroup")))
+				Expect(fakeConn.AddRuleCallCount()).To(BeZero())
+			})
+			It("removes legacy UID grants even if the current cgroup is unavailable", func() {
+				data := make([]byte, 4)
+				binary.NativeEndian.PutUint32(data, 1000)
+				legacy := &nftables.Rule{Exprs: []expr.Any{&expr.Meta{Key: expr.MetaKeySKUID, Register: 1}, &expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: data}}}
+				fakeConn.GetRulesReturns([]*nftables.Rule{legacy}, nil)
+				firewall.InjectCgroupResolvers(manager, func() (string, error) { return "", errors.New("no cgroup") }, func(string) (uint64, error) { return 0, nil })
+				Expect(manager.EnableMonitAccess()).NotTo(Succeed())
+				Expect(fakeConn.DelRuleCallCount()).To(Equal(1))
+				Expect(fakeConn.FlushCallCount()).To(Equal(1))
+				Expect(fakeConn.AddRuleCallCount()).To(BeZero())
+			})
+
 			It("adds a rule and flushes", func() {
 				err := manager.EnableMonitAccess()
 				Expect(err).NotTo(HaveOccurred())
@@ -247,23 +289,20 @@ var _ = Describe("NftablesFirewall", func() {
 			})
 
 			Context("when the rule already exists (idempotency)", func() {
-				It("does not add a duplicate UID rule", func() {
-					// Simulate an existing UID rule matching the current UID
-					const vcapUid = 1000
-					uid := uint32(vcapUid)
-					uidBytes := make([]byte, 4)
-					binary.NativeEndian.PutUint32(uidBytes, uid)
+				It("does not add a duplicate cgroup rule", func() {
+					// Simulate a previously installed rule for this exact cgroup.
+					uidBytes := make([]byte, 8)
+					binary.NativeEndian.PutUint64(uidBytes, 123)
 
 					existingRule := &nftables.Rule{
 						Exprs: []expr.Any{
-							&expr.Meta{Key: expr.MetaKeySKUID, Register: 1},
+							&expr.Socket{Key: expr.SocketKeyCgroupv2, Register: 1, Level: 2},
 							&expr.Cmp{Op: expr.CmpOpEq, Register: 1, Data: uidBytes},
 						},
 					}
 
-					// First call to GetRules is from cleanupStaleJobRules (cgroup path),
-					// subsequent calls check for existing rules.
-					// The UID fallback path calls GetRules to check for duplicates.
+					// Legacy cleanup preserves this cgroup grant; the subsequent
+					// scope check recognises the existing inode rule.
 					fakeConn.GetRulesReturns([]*nftables.Rule{existingRule}, nil)
 
 					err := manager.EnableMonitAccess()
