@@ -14,6 +14,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 const fileBundleCollectionLogTag = "FileBundleCollection"
@@ -81,6 +82,10 @@ func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) 
 		return nil, bosherr.Error("Missing bundle name")
 	}
 
+	if !utils.IsPathComponent(definition.BundleName()) {
+		return nil, bosherr.Error("Invalid bundle name")
+	}
+
 	if len(definition.BundleVersion()) == 0 {
 		return nil, bosherr.Error("Missing bundle version")
 	}
@@ -99,6 +104,10 @@ func (bc FileBundleCollection) Get(definition BundleDefinition) (Bundle, error) 
 func (bc FileBundleCollection) getDigested(definition BundleDefinition) (Bundle, error) {
 	if len(definition.BundleName()) == 0 {
 		return nil, bosherr.Error("Missing bundle name")
+	}
+
+	if !utils.IsPathComponent(definition.BundleName()) {
+		return nil, bosherr.Error("Invalid bundle name")
 	}
 
 	if len(definition.BundleVersion()) == 0 {

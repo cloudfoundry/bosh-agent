@@ -45,6 +45,7 @@ import (
 	boshcomp "github.com/cloudfoundry/bosh-agent/v2/agent/compiler"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 	"github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
 
@@ -215,6 +216,9 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 	}
 
 	fileName := fmt.Sprintf("%s-%s-%s.tgz", m.Name, m.Version, strings.Replace(stemcellFilenameSuffix, "/", "-", 1))
+	if !utils.IsPathComponent(fileName) {
+		return "", fmt.Errorf("invalid compiled release filename")
+	}
 	filePath := filepath.Join(outputDirectory, fileName)
 	outputFile, err := os.Create(filePath)
 	if err != nil {

@@ -16,6 +16,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	boshalert "github.com/cloudfoundry/bosh-agent/v2/agent/alert"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 	boshmonit "github.com/cloudfoundry/bosh-agent/v2/jobsupervisor/monit"
 	boshdir "github.com/cloudfoundry/bosh-agent/v2/settings/directories"
 )
@@ -339,6 +340,9 @@ func (m monitJobSupervisor) getIncarnation() (int, error) {
 }
 
 func (m monitJobSupervisor) AddJob(jobName string, jobIndex int, configPath string) error {
+	if !utils.IsPathComponent(jobName) {
+		return bosherr.Error("Invalid job name")
+	}
 	targetFilename := fmt.Sprintf("%04d_%s.monitrc", jobIndex, jobName)
 	targetConfigPath := path.Join(m.dirProvider.MonitJobsDir(), targetFilename)
 

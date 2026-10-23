@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"code.cloudfoundry.org/clock"
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -12,6 +13,7 @@ import (
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
 
 	"github.com/cloudfoundry/bosh-agent/v2/agent/tarpath"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 const (
@@ -69,6 +71,9 @@ func (b FileBundle) InstallWithoutContents() (string, error) {
 }
 
 func (b FileBundle) Install(sourcePath, pathInBundle string) (string, error) {
+	if pathInBundle != "" && (!utils.IsPathComponent(pathInBundle) || strings.HasPrefix(pathInBundle, "-")) {
+		return "", bosherr.Error("Invalid bundle member name")
+	}
 	b.logger.Debug(fileBundleLogTag, "Installing %v", b)
 
 	if _, err := b.InstallWithoutContents(); err != nil {

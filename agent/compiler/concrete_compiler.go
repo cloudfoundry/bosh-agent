@@ -17,6 +17,7 @@ import (
 	"github.com/cloudfoundry/bosh-agent/v2/agent/applier/packages"
 	boshcmdrunner "github.com/cloudfoundry/bosh-agent/v2/agent/cmdrunner"
 	"github.com/cloudfoundry/bosh-agent/v2/agent/httpblobprovider/blobstore_delegator"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 const PackagingScriptName = "packaging"
@@ -59,6 +60,9 @@ func NewConcreteCompiler(
 }
 
 func (c concreteCompiler) Compile(pkg Package, deps []boshmodels.Package) (blobID string, digest boshcrypto.Digest, err error) {
+	if !utils.IsPathComponent(pkg.Name) {
+		return "", nil, bosherr.Error("Invalid package name")
+	}
 	err = c.packageApplier.KeepOnly([]boshmodels.Package{})
 	if err != nil {
 		return "", nil, bosherr.WrapError(err, "Removing packages")

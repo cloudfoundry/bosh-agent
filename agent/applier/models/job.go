@@ -4,6 +4,8 @@ import (
 	"os"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
+
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 type Job struct {
@@ -47,6 +49,10 @@ type JobDirectoryProvider interface {
 func (s Job) CreateDirectories(jobDirectoryCreator JobDirectoryCreator, jobDirProvider JobDirectoryProvider) error {
 	if len(s.Name) < 1 {
 		return bosherr.Error("Job name cannot be empty")
+	}
+
+	if !utils.IsPathComponent(s.Name) {
+		return bosherr.Error("Invalid job name")
 	}
 
 	dirs := []string{
