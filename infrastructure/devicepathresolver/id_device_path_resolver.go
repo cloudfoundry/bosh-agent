@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"strings"
 	"time"
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
@@ -48,7 +49,7 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 		return "", false, bosherr.Errorf("Disk ID is not set")
 	}
 
-	if len(diskSettings.ID) < 20 {
+	if len(diskSettings.ID) < 20 || strings.ContainsAny(diskSettings.ID, "/\\:*?[]\x00") {
 		return "", false, bosherr.Errorf("Disk ID is not the correct format")
 	}
 
@@ -73,6 +74,9 @@ func (idpr *idDevicePathResolver) GetRealDevicePath(diskSettings boshsettings.Di
 		return "", false, err
 	}
 
+	if TransformedDiskID == "" || TransformedDiskID == "." || TransformedDiskID == ".." || strings.ContainsAny(TransformedDiskID, "/\\:*?[]\x00") {
+		return "", false, bosherr.Errorf("Transformed disk ID is not the correct format")
+	}
 	deviceGlobPattern := TransformedDiskID
 	if idpr.DiskIDTransformPattern == "" {
 		deviceGlobPattern = fmt.Sprintf("*%s", TransformedDiskID)

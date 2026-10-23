@@ -41,6 +41,14 @@ var _ = Describe("IDDevicePathResolver", func() {
 	})
 
 	Describe("GetRealDevicePath", func() {
+		It("rejects traversal and glob syntax before touching device state", func() {
+			for _, id := range []string{"aaaaaaaaaaaaaaaaaaaa/../../sda", "aaaaaaaaaaaaaaaaaaaa*", "aaaaaaaaaaaaaaaaaaaa?", "aaaaaaaaaaaaaaaaaaaa[ab]", `aaaaaaaaaaaaaaaaaaaa\..\sda`} {
+				diskSettings.ID = id
+				_, _, err := pathResolver.GetRealDevicePath(diskSettings)
+				Expect(err).To(HaveOccurred())
+				Expect(udev.Triggered).To(BeFalse())
+			}
+		})
 		It("refreshes udev", func() {
 			pathResolver.GetRealDevicePath(diskSettings) //nolint:errcheck
 			Expect(udev.Triggered).To(Equal(true))
