@@ -67,7 +67,11 @@ func (c *AgentClient) Drain(drainType string) (int64, error) {
 		return 0, err
 	}
 
-	responseValue := int64(responseRaw.(float64))
+	value, ok := responseRaw.(float64)
+	if !ok {
+		return 0, bosherr.Errorf("Unexpected drain response type %T", responseRaw)
+	}
+	responseValue := int64(value)
 
 	return responseValue, err
 }

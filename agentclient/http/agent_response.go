@@ -137,7 +137,11 @@ func (r *TaskResponse) TaskID() (string, error) {
 		return "", bosherr.Errorf("Failed to parse task id from agent response %#v", r.Value)
 	}
 
-	return agentTaskID.(string), nil
+	taskID, ok := agentTaskID.(string)
+	if !ok {
+		return "", bosherr.Errorf("Unexpected agent task ID type %T", agentTaskID)
+	}
+	return taskID, nil
 }
 
 // TaskState returns the state of the task reported by agent.
@@ -153,7 +157,11 @@ func (r *TaskResponse) TaskState() (string, error) {
 		if ok {
 			taskState, ok := complexResponse["state"]
 			if ok {
-				return taskState.(string), nil
+				state, ok := taskState.(string)
+				if !ok {
+					return "", bosherr.Errorf("Unexpected agent task state type %T", taskState)
+				}
+				return state, nil
 			}
 
 			return "", bosherr.Errorf("Failed to parse task state from agent response %#v", r.Value)

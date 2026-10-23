@@ -251,6 +251,19 @@ var _ = Describe("AgentClient", func() {
 	})
 
 	Describe("Drain", func() {
+		Context("when completed drain value is not a number", func() {
+			BeforeEach(func() {
+				server.AppendHandlers(
+					ghttp.RespondWith(200, `{"value":{"agent_task_id":"task","state":"running"}}`),
+					ghttp.RespondWith(200, `{"value":null}`),
+				)
+			})
+			It("returns an error", func() {
+				_, err := agentClient.Drain("shutdown")
+				Expect(err).To(MatchError(ContainSubstring("Unexpected drain response type")))
+			})
+		})
+
 		Context("when agent responds with a value", func() {
 			BeforeEach(func() {
 				server.AppendHandlers(
