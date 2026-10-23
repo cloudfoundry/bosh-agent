@@ -104,5 +104,14 @@ func (f concreteFactory) Create(method string) (Action, error) {
 		return nil, bosherr.Errorf("Could not create action with method %s", method)
 	}
 
+	// Cancellation belongs to the task created by this call.
+	switch taskAction := action.(type) {
+	case DrainAction:
+		taskAction.cancelCh = make(chan struct{}, 1)
+		return taskAction, nil
+	case RunErrandAction:
+		taskAction.cancelCh = make(chan struct{}, 1)
+		return taskAction, nil
+	}
 	return action, nil
 }
