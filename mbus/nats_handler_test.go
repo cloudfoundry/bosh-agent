@@ -425,6 +425,20 @@ func init() { //nolint:funlen,gochecknoinits
 					Expect(platform.GetNatsFirewallHookCallCount()).To(BeNumerically(">=", 1))
 				})
 
+				It("gates every socket connection and reconnection through the firewall dialer", func() {
+					Expect(handler.Start(func(req boshhandler.Request) boshhandler.Response { return nil })).To(Succeed())
+					defer handler.Stop()
+					options := nats.Options{}
+					for _, option := range connectorOptionsArg {
+						Expect(option(&options)).To(Succeed())
+					}
+					Expect(options.SkipHostLookup).To(BeTrue())
+					Expect(options.CustomDialer).NotTo(BeNil())
+					fakeFirewallHook.BeforeConnectReturns(errors.New("firewall unavailable"))
+					_, err := options.CustomDialer.Dial("tcp", "127.0.0.1:1234")
+					Expect(err).To(MatchError(ContainSubstring("protecting NATS endpoint: firewall unavailable")))
+				})
+
 				It("calls BeforeConnect with the mbus URLs before initial connection", func() {
 					err := handler.Start(func(req boshhandler.Request) (res boshhandler.Response) { return })
 					Expect(err).NotTo(HaveOccurred())

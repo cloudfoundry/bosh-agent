@@ -439,11 +439,11 @@ var _ = Describe("NftablesFirewall", func() {
 				Expect(fakeConn.AddRuleCallCount()).To(Equal(5))
 			})
 
-			It("handles DNS resolution failure gracefully", func() {
+			It("returns an error without flushing protection when DNS resolution fails", func() {
 				fakeResolver.LookupIPReturns(nil, errors.New("dns lookup failed"))
 
 				err := manager.SetupNATSFirewall([]string{"nats://user:pass@nats.example.com:4222"})
-				Expect(err).NotTo(HaveOccurred()) // Should not return error, just log warning
+				Expect(err).To(MatchError(ContainSubstring("No NATS firewall targets resolved")))
 
 				Expect(fakeResolver.LookupIPCallCount()).To(Equal(1))
 				// Chain is not flushed and no rules are added when all DNS lookups fail.

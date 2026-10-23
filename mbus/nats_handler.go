@@ -194,6 +194,13 @@ func (h *natsHandler) Start(handlerFunc boshhandler.Func) error {
 		nats.Secure(connectionInfo.TLSConfig),
 	}
 
+	if hook := h.platform.GetNatsFirewallHook(); hook != nil {
+		natsOptions = append(natsOptions,
+			nats.SkipHostLookup(),
+			nats.SetCustomDialer(newFirewallDialer(hook, h.settingsService.GetSettings().GetMbusURLs())),
+		)
+	}
+
 	connection, err := h.connector(connectionInfo.Addr, natsOptions...)
 	// just log this error. even if currently cannot connect to nats, we can eventually
 	if err != nil {

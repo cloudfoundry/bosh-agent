@@ -272,8 +272,7 @@ func (f *NftablesFirewall) SetupNATSFirewall(mbusURLs []string) error {
 	}
 
 	if len(resolved) == 0 {
-		f.logger.Warn(f.logTag, "Skipping NATS firewall update: no targets resolved")
-		return nil
+		return bosherr.Error("No NATS firewall targets resolved")
 	}
 
 	// At least one address resolved — safe to flush stale rules and replace them.
