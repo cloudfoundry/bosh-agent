@@ -35,8 +35,10 @@ import (
 )
 
 const (
-	ephemeralDiskPermissions  = os.FileMode(0750)
-	persistentDiskPermissions = os.FileMode(0700)
+	sshDirPermissions          = os.FileMode(0700)
+	sshAuthKeysFilePermissions = os.FileMode(0600)
+	ephemeralDiskPermissions   = os.FileMode(0750)
+	persistentDiskPermissions  = os.FileMode(0700)
 
 	logDirPermissions         = os.FileMode(0750)
 	runDirPermissions         = os.FileMode(0750)
@@ -48,9 +50,6 @@ const (
 	userRootOptDirPermissions = os.FileMode(0755)
 	tmpDirPermissions         = os.FileMode(0755) // 0755 to make sure that vcap user can use new temp dir
 	blobsDirPermissions       = os.FileMode(0700)
-
-	sshDirPermissions          = os.FileMode(0700)
-	sshAuthKeysFilePermissions = os.FileMode(0600)
 
 	minRootEphemeralSpaceInBytes = uint64(1024 * 1024 * 1024)
 )
@@ -474,33 +473,7 @@ func (p linux) SetupSSH(publicKeys []string, username string) error {
 		return bosherr.WrapError(err, "Finding home dir for user")
 	}
 
-	sshPath := path.Join(homeDir, ".ssh")
-	err = p.fs.MkdirAll(sshPath, sshDirPermissions)
-	if err != nil {
-		return bosherr.WrapError(err, "Making ssh directory")
-	}
-	err = p.fs.Chown(sshPath, username)
-	if err != nil {
-		return bosherr.WrapError(err, "Chowning ssh directory")
-	}
-
-	authKeysPath := path.Join(sshPath, "authorized_keys")
-	publicKeyString := strings.Join(publicKeys, "\n")
-	err = p.fs.WriteFileString(authKeysPath, publicKeyString)
-	if err != nil {
-		return bosherr.WrapError(err, "Creating authorized_keys file")
-	}
-
-	err = p.fs.Chown(authKeysPath, username)
-	if err != nil {
-		return bosherr.WrapError(err, "Chowning key path")
-	}
-	err = p.fs.Chmod(authKeysPath, sshAuthKeysFilePermissions)
-	if err != nil {
-		return bosherr.WrapError(err, "Chmoding key path")
-	}
-
-	return nil
+	return setupSSHFiles(homeDir, username, publicKeys)
 }
 
 func (p linux) SetUserPassword(user, encryptedPwd string) (err error) {

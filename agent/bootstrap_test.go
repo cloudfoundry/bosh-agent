@@ -55,6 +55,11 @@ import (
 	boshsigar "github.com/cloudfoundry/bosh-agent/v2/sigar"
 )
 
+// Network bootstrap exercises network setup without touching host accounts.
+type networkTestPlatform struct{ boshplatform.Platform }
+
+func (networkTestPlatform) SetupSSH([]string, string) error { return nil }
+
 var _ = Describe("bootstrap", func() {
 	Describe("Run", func() {
 		var (
@@ -1165,6 +1170,7 @@ var _ = Describe("bootstrap", func() {
 					logsTarProvider,
 					&serviceManager,
 				)
+				platform = networkTestPlatform{platform}
 			})
 
 			JustBeforeEach(func() {

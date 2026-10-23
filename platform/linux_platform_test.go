@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -758,56 +759,58 @@ bosh_foobar:...`
 	})
 
 	Describe("SetupSSH", func() {
-		It("setup ssh with a single key", func() {
-			fs.HomeDirHomePath = "/some/home/dir"
-
-			err := platform.SetupSSH([]string{"some public key"}, "vcap")
+		var home string
+		var account *user.User
+		BeforeEach(func() {
+			var err error
+			home, err = os.MkdirTemp("", "bosh-ssh-home")
 			Expect(err).NotTo(HaveOccurred())
-
-			sshDirPath := "/some/home/dir/.ssh"
-			sshDirStat := fs.GetFileTestStat(sshDirPath)
-
-			Expect("vcap").To(Equal(fs.HomeDirUsername))
-
-			Expect(sshDirStat).NotTo(BeNil())
-			Expect(sshDirStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(os.FileMode(0700)).To(Equal(sshDirStat.FileMode))
-			Expect("vcap").To(Equal(sshDirStat.Username))
-
-			authKeysStat := fs.GetFileTestStat(path.Join(sshDirPath, "authorized_keys"))
-
-			Expect(authKeysStat).NotTo(BeNil())
-			Expect(fakesys.FakeFileTypeFile).To(Equal(authKeysStat.FileType))
-			Expect(os.FileMode(0600)).To(Equal(authKeysStat.FileMode))
-			Expect("vcap").To(Equal(authKeysStat.Username))
-			Expect("some public key").To(Equal(authKeysStat.StringContents()))
-		})
-
-		It("setup ssh with multiple keys", func() {
-			fs.HomeDirHomePath = "/some/home/dir"
-
-			err := platform.SetupSSH([]string{"some public key", "some other public key"}, "vcap")
+			account, err = user.Current()
 			Expect(err).NotTo(HaveOccurred())
-
-			sshDirPath := "/some/home/dir/.ssh"
-			sshDirStat := fs.GetFileTestStat(sshDirPath)
-
-			Expect("vcap").To(Equal(fs.HomeDirUsername))
-
-			Expect(sshDirStat).NotTo(BeNil())
-			Expect(sshDirStat.FileType).To(Equal(fakesys.FakeFileTypeDir))
-			Expect(os.FileMode(0700)).To(Equal(sshDirStat.FileMode))
-			Expect("vcap").To(Equal(sshDirStat.Username))
-
-			authKeysStat := fs.GetFileTestStat(path.Join(sshDirPath, "authorized_keys"))
-
-			Expect(authKeysStat).NotTo(BeNil())
-			Expect(fakesys.FakeFileTypeFile).To(Equal(authKeysStat.FileType))
-			Expect(os.FileMode(0600)).To(Equal(authKeysStat.FileMode))
-			Expect("vcap").To(Equal(authKeysStat.Username))
-			Expect("some public key\nsome other public key").To(Equal(authKeysStat.StringContents()))
+			fs.HomeDirHomePath = home
 		})
-
+		AfterEach(func() { Expect(os.RemoveAll(home)).To(Succeed()) })
+		It("writes private keys files for the requested user", func() {
+			Expect(platform.SetupSSH([]string{"first key", "second key"}, account.Username)).To(Succeed())
+			keys, err := os.ReadFile(filepath.Join(home, ".ssh", "authorized_keys"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(keys)).To(Equal("first key\nsecond key"))
+			for name, mode := range map[string]os.FileMode{".ssh": 0700, ".ssh/authorized_keys": 0600} {
+				info, err := os.Stat(filepath.Join(home, name))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(info.Mode().Perm()).To(Equal(mode))
+			}
+		})
+		It("refuses a symlinked SSH directory without touching its target", func() {
+			target := filepath.Join(home, "outside")
+			Expect(os.Mkdir(target, 0700)).To(Succeed())
+			Expect(os.Symlink(target, filepath.Join(home, ".ssh"))).To(Succeed())
+			Expect(platform.SetupSSH([]string{"key"}, account.Username)).NotTo(Succeed())
+			files, err := os.ReadDir(target)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(files).To(BeEmpty())
+		})
+		It("replaces symlink and hardlink key entries without modifying their targets", func() {
+			Expect(os.Mkdir(filepath.Join(home, ".ssh"), 0700)).To(Succeed())
+			target := filepath.Join(home, "outside")
+			Expect(os.WriteFile(target, []byte("unchanged"), 0644)).To(Succeed())
+			keys := filepath.Join(home, ".ssh", "authorized_keys")
+			for _, hardlink := range []bool{false, true} {
+				if hardlink {
+					Expect(os.Link(target, keys)).To(Succeed())
+				} else {
+					Expect(os.Symlink(target, keys)).To(Succeed())
+				}
+				Expect(platform.SetupSSH([]string{"key"}, account.Username)).To(Succeed())
+				content, err := os.ReadFile(target)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(Equal("unchanged"))
+				info, err := os.Stat(target)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(info.Mode().Perm()).To(Equal(os.FileMode(0644)))
+				Expect(os.Remove(keys)).To(Succeed())
+			}
+		})
 	})
 
 	Describe("SetUserPassword", func() {
