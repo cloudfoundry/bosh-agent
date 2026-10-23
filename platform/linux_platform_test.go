@@ -926,12 +926,12 @@ fake-base-path/data/sys/log/*.log fake-base-path/data/sys/log/.*.log fake-base-p
   rotate 7
   compress
   copytruncate
-  size=fake-size
+  size=50M
 }
 `
 
 		It("sets up logrotate", func() {
-			err := platform.SetupLogrotate("fake-group-name", "fake-base-path", "fake-size")
+			err := platform.SetupLogrotate("fake-group-name", "fake-base-path", "50M")
 			Expect(err).NotTo(HaveOccurred())
 
 			logrotateFileContent, err := fs.ReadFileString("/etc/logrotate.d/fake-group-name")

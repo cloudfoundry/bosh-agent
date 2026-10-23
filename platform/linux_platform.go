@@ -604,6 +604,9 @@ func (p linux) SetupHostname(hostname string) error {
 }
 
 func (p linux) SetupLogrotate(groupName, basePath, size string) (err error) {
+	if !regexp.MustCompile(`^[0-9]+[kMG]?$`).MatchString(size) {
+		return bosherr.Error("Invalid logrotate size: expected bytes or a k, M, or G suffix")
+	}
 	buffer := bytes.NewBuffer([]byte{})
 	t := template.Must(template.New("logrotate-d-config").Parse(etcLogrotateDTemplate))
 
