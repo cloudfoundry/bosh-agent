@@ -93,6 +93,15 @@ type ISCSISettings struct {
 	Password      string
 }
 
+// String formats disk connection metadata without the authentication value.
+func (s ISCSISettings) String() string {
+	return fmt.Sprintf("{InitiatorName:%s Username:%s Target:%s Password:[redacted]}", s.InitiatorName, s.Username, s.Target)
+}
+
+func (s ISCSISettings) GoString() string {
+	return s.String()
+}
+
 type VM struct {
 	Name string `json:"name"`
 }
