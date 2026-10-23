@@ -21,6 +21,9 @@ import (
 
 const localDNSStateFilename = "records.json"
 
+// Both DNS actions update the same local records and platform state.
+var dnsStateLock sync.Mutex
+
 type SyncDNS struct {
 	blobstore       blobstore_delegator.BlobstoreDelegator
 	settingsService boshsettings.Service
@@ -36,7 +39,7 @@ func NewSyncDNS(blobstore blobstore_delegator.BlobstoreDelegator, settingsServic
 		settingsService: settingsService,
 		platform:        platform,
 		logger:          logger,
-		lock:            &sync.Mutex{},
+		lock:            &dnsStateLock,
 		logTag:          "Sync DNS action",
 	}
 }

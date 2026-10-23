@@ -42,7 +42,7 @@ func NewSyncDNSWithSignedURL(
 	action.settingsService = settingsService
 	action.platform = platform
 	action.logger = logger
-	action.lock = &sync.Mutex{}
+	action.lock = &dnsStateLock
 	action.logTag = "SyncDNSWithSignedURL"
 	action.blobDelegator = bd
 	return
