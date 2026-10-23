@@ -1,6 +1,9 @@
 package http_test
 
 import (
+	stdhttp "net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"time"
 
 	boshlog "github.com/cloudfoundry/bosh-utils/logger"
@@ -69,7 +72,22 @@ fvue6FeCS62q1lOmwKsNHi26szI5qY8b6Xj3cNjhDS5pIfg=
 				caCert = ""
 			})
 
-			It("returns an insecure client", func() {
+			It("verifies the peer using system trust when no custom CA is supplied", func() {
+				var requests atomic.Int32
+				server := httptest.NewTLSServer(stdhttp.HandlerFunc(func(w stdhttp.ResponseWriter, r *stdhttp.Request) {
+					defer GinkgoRecover()
+					requests.Add(1)
+					_, err := w.Write([]byte(`{"value":"pong"}`))
+					Expect(err).NotTo(HaveOccurred())
+				}))
+				defer server.Close()
+				client, err := agentClientFactory.NewAgentClient("director-id", server.URL, "")
+				Expect(err).NotTo(HaveOccurred())
+				_, err = client.Ping()
+				Expect(err).To(HaveOccurred())
+				Expect(requests.Load()).To(BeZero())
+			})
+			It("returns a client using system trust", func() {
 				agentClient, err := agentClientFactory.NewAgentClient("director-id", "mbus-url", caCert)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(agentClient).NotTo(BeNil()) // no accessible fields to check for insecure/secure

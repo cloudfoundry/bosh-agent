@@ -32,7 +32,7 @@ func NewAgentClientFactory(
 }
 
 func (f *agentClientFactory) NewAgentClient(directorID, mbusURL, caCert string) (agentclient.AgentClient, error) {
-	client := httpclient.DefaultClient
+	client := httpclient.CreateDefaultClient(nil)
 
 	if caCert != "" {
 		caCertPool, err := crypto.CertPoolFromPEM([]byte(caCert))
