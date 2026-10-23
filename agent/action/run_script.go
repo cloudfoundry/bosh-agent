@@ -8,6 +8,7 @@ import (
 
 	boshas "github.com/cloudfoundry/bosh-agent/v2/agent/applier/applyspec"
 	boshscript "github.com/cloudfoundry/bosh-agent/v2/agent/script"
+	"github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 )
 
 type RunScriptOptions struct {
@@ -51,6 +52,9 @@ func (a RunScriptAction) IsLoggable() bool {
 func (a RunScriptAction) Run(scriptName string, options RunScriptOptions) (map[string]string, error) {
 	// May be used in future to return more information
 	emptyResults := map[string]string{}
+	if !utils.IsPathComponent(scriptName) {
+		return emptyResults, bosherr.Error("Invalid script name")
+	}
 
 	currentSpec, err := a.specService.Get()
 	if err != nil {
@@ -59,6 +63,9 @@ func (a RunScriptAction) Run(scriptName string, options RunScriptOptions) (map[s
 
 	scripts := make([]boshscript.Script, 0, len(currentSpec.Jobs()))
 	for _, job := range currentSpec.Jobs() {
+		if !utils.IsPathComponent(job.BundleName()) {
+			return emptyResults, bosherr.Error("Invalid job name")
+		}
 		script := a.scriptProvider.NewScript(job.BundleName(), scriptName, options.Env)
 		scripts = append(scripts, script)
 	}

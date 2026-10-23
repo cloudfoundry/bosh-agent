@@ -20,6 +20,7 @@ import (
 	boshuuid "github.com/cloudfoundry/bosh-utils/uuid"
 
 	boshlogstarprovider "github.com/cloudfoundry/bosh-agent/v2/agent/logstarprovider"
+	agentutils "github.com/cloudfoundry/bosh-agent/v2/agent/utils"
 	boshdpresolv "github.com/cloudfoundry/bosh-agent/v2/infrastructure/devicepathresolver"
 	"github.com/cloudfoundry/bosh-agent/v2/platform/cdrom"
 	boshcert "github.com/cloudfoundry/bosh-agent/v2/platform/cert"
@@ -194,6 +195,9 @@ func NewLinuxPlatform(
 const logTag = "linuxPlatform"
 
 func (p linux) AssociateDisk(name string, settings boshsettings.DiskSettings) error {
+	if !agentutils.IsPathComponent(name) {
+		return bosherr.Error("Invalid disk name")
+	}
 	disksDir := p.dirProvider.DisksDir()
 	err := p.fs.MkdirAll(disksDir, disksDirPermissions)
 	if err != nil {
@@ -900,6 +904,9 @@ func (p linux) discoverIdentityInstanceStorage(devices []boshsettings.DiskSettin
 }
 
 func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
+	if !agentutils.IsPathComponent(diskSetting.ID) {
+		return bosherr.Error("Invalid disk name")
+	}
 	devicePath, timedOut, err := p.devicePathResolver.GetRealDevicePath(diskSetting)
 	if err != nil {
 		return bosherr.WrapError(err, "Getting dynamic disk real device path")
@@ -917,6 +924,9 @@ func (p linux) SetupDynamicDisk(diskSetting boshsettings.DiskSettings) error {
 }
 
 func (p linux) CleanupDynamicDisk(diskCID string) error {
+	if !agentutils.IsPathComponent(diskCID) {
+		return bosherr.Error("Invalid disk name")
+	}
 	symlinkDestination := filepath.Join(p.dirProvider.DataDynamicDisksDir(), diskCID)
 	if err := p.fs.RemoveAll(symlinkDestination); err != nil {
 		return bosherr.WrapError(err, "Removing dynamic disk symlink")

@@ -59,6 +59,21 @@ var _ = Describe("RunScript", func() {
 				specService.Spec.JobSpec.JobTemplateSpecs = append(specService.Spec.JobSpec.JobTemplateSpecs, spec)
 			}
 
+			It("rejects invalid script names before creating scripts", func() {
+				for _, name := range []string{"../outside", "/bin/sh", "..", ".", "", `..\outside`} {
+					_, err := runScriptAction.Run(name, options)
+					Expect(err).To(MatchError("Invalid script name"))
+				}
+				Expect(fakeJobScriptProvider.NewScriptCallCount()).To(Equal(0))
+			})
+
+			It("rejects invalid job names before creating scripts", func() {
+				createFakeJob("../outside")
+				_, err := act()
+				Expect(err).To(MatchError("Invalid job name"))
+				Expect(fakeJobScriptProvider.NewScriptCallCount()).To(Equal(0))
+			})
+
 			It("runs specified job scripts in parallel", func() {
 				createFakeJob("fake-job-1")
 				script1 := &scriptfakes.FakeScript{}
