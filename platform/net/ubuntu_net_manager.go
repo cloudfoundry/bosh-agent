@@ -350,7 +350,7 @@ func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, opts bos
 }
 
 func interfaceConfigurationFile(name string) string {
-	interfaceBasename := fmt.Sprintf("10_%s.network", name)
+	interfaceBasename := fmt.Sprintf("10-%s.network", name)
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
 }
 
