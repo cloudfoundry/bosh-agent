@@ -53,6 +53,10 @@ const (
 	defaultMode             = 0o0644
 )
 
+type CompileOptions struct {
+	ExcludeCompileTimePackages bool
+}
+
 // NewCompiler can be used for multiple compilations and should be passed to Compile
 // It expects to be used in a stemcell image and has not been tested on non-warden stemcells.
 func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
@@ -75,7 +79,7 @@ func NewCompiler(dirProvider directories.Provider) (boshcomp.Compiler, error) {
 }
 
 // Compile expects the compiler returned by NewCompiler and may not work with compilers constructed differently.
-func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string) (string, error) {
+func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory, outputDirectory, stemcellSlug string, options CompileOptions) (string, error) {
 	log.Printf("Reading BOSH Release Manifest from tarball %s", boshReleaseTarballPath)
 
 	m, err := Manifest(boshReleaseTarballPath)
@@ -96,6 +100,13 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	if err := topologicalSort(packages, func(p manifest.PackageRef) string { return p.Name }, func(p manifest.PackageRef) []string { return slices.Clone(p.Dependencies) }); err != nil {
 		return "", err
 	}
+	var shipped map[string]bool
+	if options.ExcludeCompileTimePackages {
+		shipped, err = shippedPackages(boshReleaseTarballPath, m)
+		if err != nil {
+			return "", fmt.Errorf("failed to identify shipped packages in release %q: %w", boshReleaseTarballPath, err)
+		}
+	}
 	var compiledPackages []boshmodels.Package
 	for _, p := range packages {
 		compiledPackages, err = compilePackage(compiledPackages, p, blobstoreIDs, compiler)
@@ -106,7 +117,7 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	log.Printf("Finished packages compilation after %s", time.Since(start))
 
 	log.Printf("Archiving compiled BOSH Release %s/%s with stemcell %s", m.Name, m.Version, stemcellSlug)
-	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, m.Packages, compiledPackages)
+	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, m.Packages, compiledPackages, options, shipped)
 }
 
 func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef, blobstoreIDs map[string]string, compiler boshcomp.Compiler) ([]boshmodels.Package, error) {
@@ -198,13 +209,51 @@ func newCompiledPackageRef(pkg boshmodels.Package, src manifest.PackageRef, stem
 	return compiled
 }
 
-func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package) (string, error) {
+func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package, options CompileOptions, shipped map[string]bool) (string, error) {
+	identities := map[string]rewrittenPkg{}
+	if options.ExcludeCompileTimePackages {
+		m.CompileTimePackages = nil
+		var err error
+		identities, err = rewriteIdentities(sourcePackages, shipped)
+		if err != nil {
+			return "", err
+		}
+		for _, p := range sourcePackages {
+			if shipped[p.Name] {
+				continue
+			}
+			m.CompileTimePackages = append(m.CompileTimePackages, manifest.CompileTimePackageRef{
+				Name: p.Name, Version: p.Version, Fingerprint: p.Fingerprint, Dependencies: slices.Clone(p.Dependencies),
+			})
+		}
+		slices.SortFunc(m.CompileTimePackages, func(a, b manifest.CompileTimePackageRef) int { return strings.Compare(a.Name, b.Name) })
+		if len(m.CompileTimePackages) > 0 {
+			if strings.Contains(m.Version, "+") {
+				m.Version += ".trimmed"
+			} else {
+				m.Version += "+trimmed"
+			}
+		}
+	}
+
+	keptCompiledPackages := make([]boshmodels.Package, 0, len(compiledPackages))
 	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(compiledPackages))
 	for _, p := range compiledPackages {
+		if options.ExcludeCompileTimePackages && !shipped[p.Name] {
+			continue
+		}
+		keptCompiledPackages = append(keptCompiledPackages, p)
 		srcIndex := slices.IndexFunc(sourcePackages, func(ref manifest.PackageRef) bool {
 			return ref.Name == p.Name && ref.Version == p.Version
 		})
-		m.CompiledPkgs = append(m.CompiledPkgs, newCompiledPackageRef(p, sourcePackages[srcIndex], stemcellFilenameSuffix))
+		compiledRef := newCompiledPackageRef(p, sourcePackages[srcIndex], stemcellFilenameSuffix)
+		if identity := identities[p.Name]; identity.Rewritten {
+			compiledRef.Version = identity.Fingerprint
+			compiledRef.Fingerprint = identity.Fingerprint
+			compiledRef.OriginalFingerprint = identity.OriginalFingerprint
+			compiledRef.Dependencies = slices.Clone(identity.Dependencies)
+		}
+		m.CompiledPkgs = append(m.CompiledPkgs, compiledRef)
 	}
 	empty := [0]manifest.PackageRef{}
 	m.Packages = empty[:]
@@ -232,7 +281,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 	}
 	defer closeAndIgnoreErr(tw)
 
-	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, compiledPackages, releaseManifestBuffer, blobsDirectory))
+	err = walkTarballFiles(initialTarball, writeCompiledTarballFiles(tw, keptCompiledPackages, releaseManifestBuffer, blobsDirectory))
 	if err != nil {
 		return "", errors.Join(err, os.RemoveAll(filePath))
 	}

@@ -7,7 +7,7 @@ require (
 	code.cloudfoundry.org/tlsconfig v0.69.0
 	github.com/Microsoft/hcsshim v0.15.0
 	github.com/charlievieth/fs v0.0.3
-	github.com/cloudfoundry/bosh-cli/v7 v7.11.2
+	github.com/cloudfoundry/bosh-cli/v7 v7.11.3-0.20261026181525-2cf7369ee21e
 	github.com/cloudfoundry/bosh-davcli v0.0.519
 	github.com/cloudfoundry/bosh-utils v0.0.666
 	github.com/cloudfoundry/gosigar v1.3.128
@@ -29,6 +29,7 @@ require (
 	golang.org/x/net v0.61.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/tools v0.52.0
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	inet.af/wf v0.0.0-20221017222439-36129f591884
 )
