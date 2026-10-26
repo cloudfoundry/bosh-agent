@@ -660,7 +660,7 @@ Gateway=3.4.5.6
 			stubInterfaces(map[string]boshsettings.Network{
 				"eth0": dhcpNetwork,
 			})
-			fs.WriteFileString("/run/systemd/network/10-netplan-eth0.network", "")
+			Expect(fs.WriteFileString("/run/systemd/network/10-netplan-eth0.network", "")).To(Succeed())
 
 			err := netManager.SetupNetworking(boshsettings.Networks{
 				"dhcp-1": dhcpNetwork,
