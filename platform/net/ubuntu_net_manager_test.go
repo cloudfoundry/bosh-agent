@@ -656,6 +656,23 @@ Gateway=3.4.5.6
 			Expect(networkConfig.StringContents()).ToNot(ContainSubstring("UseRoutes=no"))
 		})
 
+		It("generates a .network filename that sorts before the netplan file", func() {
+			stubInterfaces(map[string]boshsettings.Network{
+				"eth0": dhcpNetwork,
+			})
+			fs.WriteFileString("/run/systemd/network/10-netplan-eth0.network", "")
+
+			err := netManager.SetupNetworking(boshsettings.Networks{
+				"dhcp-1": dhcpNetwork,
+			}, nil, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			boshBase := strings.TrimPrefix(netFile("eth0"), "/etc/systemd/network/")
+			netplanBase := "10-netplan-eth0.network"
+			Expect(boshBase < netplanBase).To(BeTrue(),
+				"BOSH file %q must sort before netplan file %q", boshBase, netplanBase)
+		})
+
 		It("writes /etc/network/interfaces without dns-namservers if there are no dns servers", func() {
 			staticNetworkWithoutDNS := boshsettings.Network{
 				Type:    "manual",
