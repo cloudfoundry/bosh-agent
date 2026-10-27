@@ -79,8 +79,9 @@ github.com/cespare/xxhash/v2
 # github.com/charlievieth/fs v0.0.3
 ## explicit; go 1.18
 github.com/charlievieth/fs
-# github.com/cloudfoundry/bosh-cli/v7 v7.11.2
+# github.com/cloudfoundry/bosh-cli/v7 v7.11.3-0.20261026181525-2cf7369ee21e
 ## explicit; go 1.26.0
+github.com/cloudfoundry/bosh-cli/v7/release/job/manifest
 github.com/cloudfoundry/bosh-cli/v7/release/manifest
 # github.com/cloudfoundry/bosh-davcli v0.0.519
 ## explicit; go 1.26.0
@@ -519,6 +520,9 @@ google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
+# gopkg.in/yaml.v2 v2.4.0
+## explicit; go 1.15
+gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
