@@ -349,6 +349,8 @@ func (net UbuntuNetManager) writeDHCPConfiguration(dnsServers []string, opts bos
 	return changed, nil
 }
 
+// The bosh-agent expects this file to be used for the network configuration
+// Using 09- to make sure it takes priority over any other files
 func interfaceConfigurationFile(name string) string {
 	interfaceBasename := fmt.Sprintf("09-%s.network", name)
 	return filepath.Join(systemdNetworkFolder, interfaceBasename)
