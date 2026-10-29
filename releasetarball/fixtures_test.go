@@ -27,72 +27,57 @@ import (
 )
 
 var _ = Describe("Compile fixtures", func() {
-	fixtureDir := os.Getenv("FIXTURES")
-	if fixtureDir == "" {
-		It("requires FIXTURES", func() {
-			Fail("FIXTURES required")
-		})
-		return
-	}
+	DescribeTable("preserves compiled blobs and trims only build dependencies", func(name string) {
+		fixtureDir := os.Getenv("FIXTURES")
+		if fixtureDir == "" {
+			fixtureDir = "testdata"
+		}
+		fixture := filepath.Join(fixtureDir, name)
+		input := prepareFixture(GinkgoT(), fixture)
+		inputManifest := mustReleaseManifest(input)
+		shipped := jobPackageNames(GinkgoT(), input)
+		allPackages := packageNames(inputManifest.Packages)
+		kept := shipped
+		dropped := difference(allPackages, shipped)
 
-	fixtures, err := filepath.Glob(filepath.Join(fixtureDir, "*.tgz"))
-	if err != nil {
-		It("reads FIXTURES", func() { Fail(err.Error()) })
-		return
-	}
-	slices.Sort(fixtures)
-	if len(fixtures) == 0 {
-		It("requires fixture tarballs", func() { Fail("FIXTURES must contain at least one *.tgz file") })
-		return
-	}
+		workDir := GinkgoT().TempDir()
+		plainDir := filepath.Join(workDir, "plain")
+		flaggedDir := filepath.Join(workDir, "flagged")
+		blobs := directories.NewProvider(filepath.Join(workDir, "blobs"))
+		Expect(os.MkdirAll(blobs.BlobsDir(), 0o755)).To(Succeed())
+		Expect(os.MkdirAll(plainDir, 0o755)).To(Succeed())
+		Expect(os.MkdirAll(flaggedDir, 0o755)).To(Succeed())
+		pkgCompiler := new(fakes.Compiler)
+		pkgCompiler.CompileCalls(fakeCompilation(blobs))
 
-	for _, fixture := range fixtures {
-		fixture := fixture
-		It(filepath.Base(fixture), func() {
-			input := prepareFixture(GinkgoT(), fixture)
-			inputManifest := mustReleaseManifest(input)
-			shipped := jobPackageNames(GinkgoT(), input)
-			allPackages := packageNames(inputManifest.Packages)
-			kept := shipped
-			dropped := difference(allPackages, shipped)
+		plainPath, plain := compileFixture(pkgCompiler, input, blobs.BlobsDir(), plainDir, false)
+		flaggedPath, flagged := compileFixture(pkgCompiler, input, blobs.BlobsDir(), flaggedDir, true)
+		Expect(packageNamesCompiled(flagged.CompiledPkgs)).To(Equal(kept))
+		Expect(packageNamesCompileTime(flagged.CompileTimePackages)).To(Equal(dropped))
+		assertCompiledBlobs(flaggedPath, flagged.CompiledPkgs)
+		assertCompiledBlobs(plainPath, plain.CompiledPkgs)
+		assertKeptPackages(inputManifest, flagged, kept)
 
-			workDir := GinkgoT().TempDir()
-			plainDir := filepath.Join(workDir, "plain")
-			flaggedDir := filepath.Join(workDir, "flagged")
-			blobs := directories.NewProvider(filepath.Join(workDir, "blobs"))
-			Expect(os.MkdirAll(blobs.BlobsDir(), 0o755)).To(Succeed())
-			Expect(os.MkdirAll(plainDir, 0o755)).To(Succeed())
-			Expect(os.MkdirAll(flaggedDir, 0o755)).To(Succeed())
-			pkgCompiler := new(fakes.Compiler)
-			pkgCompiler.CompileCalls(fakeCompilation(blobs))
-
-			plainPath, plain := compileFixture(pkgCompiler, input, blobs.BlobsDir(), plainDir, false)
-			flaggedPath, flagged := compileFixture(pkgCompiler, input, blobs.BlobsDir(), flaggedDir, true)
-			Expect(packageNamesCompiled(flagged.CompiledPkgs)).To(Equal(kept))
-			Expect(packageNamesCompileTime(flagged.CompileTimePackages)).To(Equal(dropped))
-			assertCompiledBlobs(GinkgoT(), flaggedPath, flagged.CompiledPkgs)
-			assertCompiledBlobs(GinkgoT(), plainPath, plain.CompiledPkgs)
-			assertNoDroppedBlobs(GinkgoT(), flaggedPath, dropped)
-			assertKeptPackages(inputManifest, flagged, kept)
-
-			if len(dropped) == 0 {
-				plainBytes, err := os.ReadFile(plainPath)
-				Expect(err).NotTo(HaveOccurred())
-				flaggedBytes, err := os.ReadFile(flaggedPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(sha256.Sum256(flaggedBytes)).To(Equal(sha256.Sum256(plainBytes)))
-			} else {
-				wantVersion := inputManifest.Version + "+trimmed"
-				if strings.Contains(inputManifest.Version, "+") {
-					wantVersion = inputManifest.Version + ".trimmed"
-				}
-				Expect(flagged.Version).To(Equal(wantVersion))
+		if len(dropped) == 0 {
+			plainBytes, err := os.ReadFile(plainPath)
+			Expect(err).NotTo(HaveOccurred())
+			flaggedBytes, err := os.ReadFile(flaggedPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(sha256.Sum256(flaggedBytes)).To(Equal(sha256.Sum256(plainBytes)))
+		} else {
+			wantVersion := inputManifest.Version + "+trimmed"
+			if strings.Contains(inputManifest.Version, "+") {
+				wantVersion = inputManifest.Version + ".trimmed"
 			}
+			Expect(flagged.Version).To(Equal(wantVersion))
+		}
 
-			copyFixtureOutputs(fixture, flaggedPath, plainPath)
-			GinkgoWriter.Printf("fixture %s: flagged=%s plain=%s kept=%d dropped=%v\n", filepath.Base(fixture), flaggedPath, plainPath, len(kept), dropped)
-		})
-	}
+		copyFixtureOutputs(fixture, flaggedPath, plainPath)
+		GinkgoWriter.Printf("fixture %s: flagged=%s plain=%s kept=%d dropped=%v\n", filepath.Base(fixture), flaggedPath, plainPath, len(kept), dropped)
+	},
+		Entry("source release", "log-cache-release-3.0.9.tgz"),
+		Entry("compiled release", "log-cache-3.0.9-banana-slug-1.23.tgz"),
+	)
 })
 
 func prepareFixture(t GinkgoTInterface, fixture string) string {
@@ -210,7 +195,7 @@ func createTarballFromDir(t GinkgoTInterface, dir string) string {
 	return output
 }
 
-func assertCompiledBlobs(t GinkgoTInterface, tarball string, packages []manifest.CompiledPackageRef) {
+func assertCompiledBlobs(tarball string, packages []manifest.CompiledPackageRef) {
 	GinkgoHelper()
 	f, err := os.Open(tarball)
 	Expect(err).NotTo(HaveOccurred())
@@ -231,6 +216,17 @@ func assertCompiledBlobs(t GinkgoTInterface, tarball string, packages []manifest
 		name := strings.TrimPrefix(h.Name, "./")
 		entries[name] = append(entries[name], contents)
 	}
+	var names []string
+	for name := range entries {
+		if strings.HasPrefix(name, "compiled_packages/") && strings.HasSuffix(name, ".tgz") {
+			names = append(names, name)
+		}
+	}
+	expected := make([]string, 0, len(packages))
+	for _, pkg := range packages {
+		expected = append(expected, "compiled_packages/"+pkg.Name+".tgz")
+	}
+	Expect(names).To(ConsistOf(expected), "archive must contain exactly the manifest's compiled blobs")
 	for _, pkg := range packages {
 		name := "compiled_packages/" + pkg.Name + ".tgz"
 		contents := entries[name]
@@ -340,29 +336,6 @@ func dependencyClosureContainsDropped(name string, packages map[string]manifest.
 		}
 	}
 	return false
-}
-
-func assertNoDroppedBlobs(t GinkgoTInterface, tarball string, dropped []string) {
-	GinkgoHelper()
-	f, err := os.Open(tarball)
-	Expect(err).NotTo(HaveOccurred())
-	defer closeAndIgnoreError(f)
-	gz, err := gzip.NewReader(f)
-	Expect(err).NotTo(HaveOccurred())
-	defer closeAndIgnoreError(gz)
-	tr := tar.NewReader(gz)
-	entries := map[string]bool{}
-	for {
-		h, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		Expect(err).NotTo(HaveOccurred())
-		entries[h.Name] = true
-	}
-	for _, name := range dropped {
-		Expect(entries["compiled_packages/"+name+".tgz"]).To(BeFalse(), name)
-	}
 }
 
 func copyFixtureOutputs(fixture, flagged, plain string) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -20,61 +19,32 @@ type rewrittenPkg struct {
 	Rewritten           bool
 }
 
-func dependencyKey(name string, all []manifest.PackageRef) (string, error) {
-	packages := make(map[string]manifest.PackageRef, len(all))
-	for _, p := range all {
-		packages[p.Name] = p
-	}
-	root, ok := packages[name]
-	if !ok {
-		return "", fmt.Errorf("unknown package %q", name)
-	}
-
-	var arrayify func(manifest.PackageRef) ([]any, error)
-	arrayify = func(p manifest.PackageRef) ([]any, error) {
-		result := []any{p.Name, p.Version}
-		if len(p.Dependencies) > 0 {
-			dependencies := slices.Clone(p.Dependencies)
-			slices.Sort(dependencies)
-			children := make([]any, 0, len(dependencies))
-			for _, dependency := range dependencies {
-				child, ok := packages[dependency]
-				if !ok {
-					return nil, fmt.Errorf("unknown dependency %q of package %q", dependency, p.Name)
-				}
-				childKey, err := arrayify(child)
-				if err != nil {
-					return nil, err
-				}
-				children = append(children, childKey)
-			}
-			result = append(result, children)
-		}
-		return result, nil
-	}
-
-	dependencies := slices.Clone(root.Dependencies)
+// dependencyTree follows the director's KeyGenerator#arrayify, including sorted
+// children and omitted empty child arrays. Keep the director vectors in sync:
+// https://github.com/cloudfoundry/bosh/blob/0410768ff620384100a277ff0683274970bc2c56/src/bosh-director/lib/bosh/director/key_generator.rb
+// Compile checks for cycles before traversing this graph.
+func dependencyTree(p manifest.PackageRef, packages map[string]manifest.PackageRef, shipped map[string]bool) ([]any, bool, error) {
+	dependencies := slices.Clone(p.Dependencies)
 	slices.Sort(dependencies)
-	key := make([]any, 0, len(dependencies))
-	for _, dependency := range dependencies {
-		p, ok := packages[dependency]
+	tree := make([]any, 0, len(dependencies))
+	trimmed := false
+	for _, name := range dependencies {
+		child, ok := packages[name]
 		if !ok {
-			return "", fmt.Errorf("unknown dependency %q of package %q", dependency, name)
+			return nil, false, fmt.Errorf("unknown dependency %q of package %q", name, p.Name)
 		}
-		dependencyKey, err := arrayify(p)
+		children, childTrimmed, err := dependencyTree(child, packages, shipped)
 		if err != nil {
-			return "", err
+			return nil, false, err
 		}
-		key = append(key, dependencyKey)
+		entry := []any{child.Name, child.Version}
+		if len(children) > 0 {
+			entry = append(entry, children)
+		}
+		tree = append(tree, entry)
+		trimmed = trimmed || !shipped[name] || childTrimmed
 	}
-
-	var output bytes.Buffer
-	encoder := json.NewEncoder(&output)
-	encoder.SetEscapeHTML(false)
-	if err := encoder.Encode(key); err != nil {
-		return "", err
-	}
-	return strings.TrimSuffix(output.String(), "\n"), nil
+	return tree, trimmed, nil
 }
 
 func rewriteIdentities(all []manifest.PackageRef, shipped map[string]bool) (map[string]rewrittenPkg, error) {
@@ -82,70 +52,48 @@ func rewriteIdentities(all []manifest.PackageRef, shipped map[string]bool) (map[
 	for _, p := range all {
 		packages[p.Name] = p
 	}
-
 	result := make(map[string]rewrittenPkg)
 	for _, p := range all {
 		if !shipped[p.Name] {
 			continue
 		}
-		key, err := dependencyKey(p.Name, all)
+		tree, trimmed, err := dependencyTree(p, packages, shipped)
 		if err != nil {
 			return nil, err
 		}
-
-		rewritten := false
-		var checkClosure func(manifest.PackageRef) error
-		checkClosure = func(current manifest.PackageRef) error {
-			for _, dependency := range current.Dependencies {
-				child, ok := packages[dependency]
-				if !ok {
-					return fmt.Errorf("unknown dependency %q of package %q", dependency, current.Name)
-				}
-				if !shipped[dependency] {
-					rewritten = true
-				}
-				if err := checkClosure(child); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-		if err := checkClosure(p); err != nil {
-			return nil, err
-		}
-
 		identity := rewrittenPkg{
 			Fingerprint:         p.Fingerprint,
 			OriginalFingerprint: p.Fingerprint,
 			Dependencies:        p.Dependencies,
-			Rewritten:           rewritten,
+			Rewritten:           trimmed,
 		}
-		if rewritten {
-			var payload strings.Builder
-			payload.WriteString(p.Fingerprint)
-			payload.WriteByte('\n')
-			payload.WriteString(key)
-			payload.WriteByte('\n')
-			keptDependencies := make([]string, 0, len(p.Dependencies))
-			for _, dependency := range p.Dependencies {
-				if shipped[dependency] {
-					keptDependencies = append(keptDependencies, dependency)
+		if trimmed {
+			identity.Dependencies = make([]string, 0, len(p.Dependencies))
+			for _, name := range p.Dependencies {
+				if shipped[name] {
+					identity.Dependencies = append(identity.Dependencies, name)
 				}
 			}
-			slices.Sort(keptDependencies)
-			payload.WriteString(strings.Join(keptDependencies, ","))
-
+			slices.Sort(identity.Dependencies)
+			var key bytes.Buffer
+			encoder := json.NewEncoder(&key)
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(tree); err != nil {
+				return nil, err
+			}
+			// Preserve the existing trimmed identity format: source fingerprint,
+			// director dependency JSON, then comma-separated kept dependencies.
+			payload := p.Fingerprint + "\n" + strings.TrimSuffix(key.String(), "\n") + "\n" + strings.Join(identity.Dependencies, ",")
 			switch len(p.Fingerprint) {
 			case 40:
-				digest := sha1.Sum([]byte(payload.String()))
-				identity.Fingerprint = hex.EncodeToString(digest[:])
+				digest := sha1.Sum([]byte(payload))
+				identity.Fingerprint = fmt.Sprintf("%x", digest)
 			case 64:
-				digest := sha256.Sum256([]byte(payload.String()))
-				identity.Fingerprint = hex.EncodeToString(digest[:])
+				digest := sha256.Sum256([]byte(payload))
+				identity.Fingerprint = fmt.Sprintf("%x", digest)
 			default:
 				return nil, fmt.Errorf("package %q has unsupported fingerprint length %d", p.Name, len(p.Fingerprint))
 			}
-			identity.Dependencies = keptDependencies
 		}
 		result[p.Name] = identity
 	}

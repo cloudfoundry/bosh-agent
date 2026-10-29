@@ -336,29 +336,33 @@ func caseNamed(name string) identityCase {
 }
 
 var _ = Describe("package identities", func() {
-	for _, c := range identityCases {
-		It("computes identities for "+c.name, func() {
-			shipped := shippedSet(c.shipped)
-			result, err := releasetarball.RewriteIdentitiesForTest(c.packages, shipped)
+	DescribeTable("computes director-compatible identities", func(c identityCase) {
+		shipped := shippedSet(c.shipped)
+		result, err := releasetarball.RewriteIdentitiesForTest(c.packages, shipped)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(result).To(HaveLen(len(c.expected)))
+		for name, expected := range c.expected {
+			actual, exists := result[name]
+			Expect(exists).To(BeTrue(), "package %q should be included", name)
+			key, err := releasetarball.DependencyKeyForTest(name, c.packages)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(HaveLen(len(c.expected)))
-			for name, expected := range c.expected {
-				actual, exists := result[name]
-				Expect(exists).To(BeTrue(), "package %q should be included", name)
-				key, err := releasetarball.DependencyKeyForTest(name, c.packages)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(key).To(Equal(expected.dependencyKey), name)
-				Expect(actual.Rewritten).To(Equal(expected.rewritten), name)
-				Expect(actual.Fingerprint).To(Equal(expected.fingerprint), name)
-				Expect(actual.Dependencies).To(Equal(expected.dependencies), name)
+			Expect(key).To(Equal(expected.dependencyKey), name)
+			Expect(actual.Rewritten).To(Equal(expected.rewritten), name)
+			Expect(actual.Fingerprint).To(Equal(expected.fingerprint), name)
+			Expect(actual.Dependencies).To(Equal(expected.dependencies), name)
+		}
+		for _, p := range c.packages {
+			if !shipped[p.Name] {
+				Expect(result).NotTo(HaveKey(p.Name), "dropped package %q should not be included", p.Name)
 			}
-			for _, p := range c.packages {
-				if !shipped[p.Name] {
-					Expect(result).NotTo(HaveKey(p.Name), "dropped package %q should not be included", p.Name)
-				}
-			}
-		})
-	}
+		}
+	}, func() []TableEntry {
+		entries := make([]TableEntry, 0, len(identityCases))
+		for _, c := range identityCases {
+			entries = append(entries, Entry(c.name, c))
+		}
+		return entries
+	}())
 
 	It("keeps the fingerprint of a package that loses no dependencies", func() {
 		c := caseNamed("leaf-nothing-dropped")

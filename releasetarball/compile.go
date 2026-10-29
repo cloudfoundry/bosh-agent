@@ -117,7 +117,7 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	log.Printf("Finished packages compilation after %s", time.Since(start))
 
 	log.Printf("Archiving compiled BOSH Release %s/%s with stemcell %s", m.Name, m.Version, stemcellSlug)
-	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, m.Packages, compiledPackages, options, shipped)
+	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, compiledPackages, shipped)
 }
 
 func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef, blobstoreIDs map[string]string, compiler boshcomp.Compiler) ([]boshmodels.Package, error) {
@@ -209,16 +209,16 @@ func newCompiledPackageRef(pkg boshmodels.Package, src manifest.PackageRef, stem
 	return compiled
 }
 
-func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package, options CompileOptions, shipped map[string]bool) (string, error) {
-	identities := map[string]rewrittenPkg{}
-	if options.ExcludeCompileTimePackages {
+func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, compiledPackages []boshmodels.Package, shipped map[string]bool) (string, error) {
+	var identities map[string]rewrittenPkg
+	if shipped != nil {
 		m.CompileTimePackages = nil
 		var err error
-		identities, err = rewriteIdentities(sourcePackages, shipped)
+		identities, err = rewriteIdentities(m.Packages, shipped)
 		if err != nil {
 			return "", err
 		}
-		for _, p := range sourcePackages {
+		for _, p := range m.Packages {
 			if shipped[p.Name] {
 				continue
 			}
@@ -239,14 +239,14 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 	keptCompiledPackages := make([]boshmodels.Package, 0, len(compiledPackages))
 	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(compiledPackages))
 	for _, p := range compiledPackages {
-		if options.ExcludeCompileTimePackages && !shipped[p.Name] {
+		if shipped != nil && !shipped[p.Name] {
 			continue
 		}
 		keptCompiledPackages = append(keptCompiledPackages, p)
-		srcIndex := slices.IndexFunc(sourcePackages, func(ref manifest.PackageRef) bool {
+		srcIndex := slices.IndexFunc(m.Packages, func(ref manifest.PackageRef) bool {
 			return ref.Name == p.Name && ref.Version == p.Version
 		})
-		compiledRef := newCompiledPackageRef(p, sourcePackages[srcIndex], stemcellFilenameSuffix)
+		compiledRef := newCompiledPackageRef(p, m.Packages[srcIndex], stemcellFilenameSuffix)
 		if identity := identities[p.Name]; identity.Rewritten {
 			compiledRef.Version = identity.Fingerprint
 			compiledRef.Fingerprint = identity.Fingerprint
