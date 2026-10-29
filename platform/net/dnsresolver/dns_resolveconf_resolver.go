@@ -9,6 +9,8 @@ import (
 
 	bosherr "github.com/cloudfoundry/bosh-utils/errors"
 	boshsys "github.com/cloudfoundry/bosh-utils/system"
+
+	boshsettings "github.com/cloudfoundry/bosh-agent/v2/settings"
 )
 
 const (
@@ -58,6 +60,8 @@ func (d *resolveConfResolver) Validate(dnsServers []string) error {
 
 	return bosherr.WrapError(err, "None of the DNS servers that were specified in the manifest were found in /etc/resolv.conf.")
 }
+
+func (d *resolveConfResolver) SetupSystemdResolved(_ boshsettings.SystemdResolvedSettings) {}
 
 func (d *resolveConfResolver) SetupDNS(dnsServers []string) error {
 	buffer := bytes.NewBuffer([]byte{})

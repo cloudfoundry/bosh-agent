@@ -294,20 +294,21 @@ func (e Env) GetParallel() *int {
 }
 
 type BoshEnv struct {
-	Agent                 AgentEnv    `json:"agent"`
-	Password              string      `json:"password"`
-	KeepRootPassword      bool        `json:"keep_root_password"`
-	RemoveDevTools        bool        `json:"remove_dev_tools"`
-	RemoveStaticLibraries bool        `json:"remove_static_libraries"`
-	AuthorizedKeys        []string    `json:"authorized_keys"`
-	SwapSizeInMB          *uint64     `json:"swap_size"`
-	Mbus                  MBus        `json:"mbus"`
-	IPv6                  IPv6        `json:"ipv6"`
-	JobDir                JobDir      `json:"job_dir"`
-	RunDir                RunDir      `json:"run_dir"`
-	Blobstores            []Blobstore `json:"blobstores"`
-	NTP                   []string    `json:"ntp,omitempty"`
-	Parallel              *int        `json:"parallel"`
+	Agent                 AgentEnv                `json:"agent"`
+	Password              string                  `json:"password"`
+	KeepRootPassword      bool                    `json:"keep_root_password"`
+	RemoveDevTools        bool                    `json:"remove_dev_tools"`
+	RemoveStaticLibraries bool                    `json:"remove_static_libraries"`
+	AuthorizedKeys        []string                `json:"authorized_keys"`
+	SwapSizeInMB          *uint64                 `json:"swap_size"`
+	Mbus                  MBus                    `json:"mbus"`
+	IPv6                  IPv6                    `json:"ipv6"`
+	JobDir                JobDir                  `json:"job_dir"`
+	RunDir                RunDir                  `json:"run_dir"`
+	Blobstores            []Blobstore             `json:"blobstores"`
+	NTP                   []string                `json:"ntp,omitempty"`
+	Parallel              *int                    `json:"parallel"`
+	SystemdResolved       SystemdResolvedSettings `json:"systemd_resolved"`
 }
 
 type AgentEnv struct {
@@ -343,6 +344,15 @@ type JobDir struct {
 type RunDir struct {
 	// Passed to mount directly
 	TmpFSSize string `json:"tmpfs_size"`
+}
+
+// SystemdResolvedSettings configures systemd-resolved directives the agent
+// renders into its resolved.conf.d drop-in. Honored only on stemcells where
+// systemd-resolved is the resolver; ignored elsewhere.
+type SystemdResolvedSettings struct {
+	// Cache maps to resolved.conf Cache=; one of "yes", "no", "no-negative".
+	// Empty means leave the agent default ("yes").
+	Cache string `json:"cache"`
 }
 
 type DNSRecords struct {

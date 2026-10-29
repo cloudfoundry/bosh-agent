@@ -108,6 +108,11 @@ func (net UbuntuNetManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan st
 	return nil
 }
 
+func (net UbuntuNetManager) SetupSystemdResolved(resolved boshsettings.SystemdResolvedSettings) error {
+	net.dnsResolver.SetupSystemdResolved(resolved)
+	return nil
+}
+
 func (net UbuntuNetManager) SetupNetworking(networks boshsettings.Networks, mbus []string, errCh chan error) error {
 	if networks.IsPreconfigured() {
 		// Note in this case IPs are not broadcast

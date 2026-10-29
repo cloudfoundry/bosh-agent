@@ -10,6 +10,9 @@ type FakeManager struct {
 	SetupNetworkingNetworks boshsettings.Networks
 	SetupNetworkingErr      error
 
+	SetupSystemdResolvedConfig boshsettings.SystemdResolvedSettings
+	SetupSystemdResolvedErr    error
+
 	SetupIPv6Config boshsettings.IPv6
 	SetupIPv6StopCh <-chan struct{}
 	SetupIPv6Err    error
@@ -25,6 +28,11 @@ func (net *FakeManager) SetupIPv6(config boshsettings.IPv6, stopCh <-chan struct
 	net.SetupIPv6Config = config
 	net.SetupIPv6StopCh = stopCh
 	return net.SetupIPv6Err
+}
+
+func (net *FakeManager) SetupSystemdResolved(resolved boshsettings.SystemdResolvedSettings) error {
+	net.SetupSystemdResolvedConfig = resolved
+	return net.SetupSystemdResolvedErr
 }
 
 func (net *FakeManager) SetupNetworking(networks boshsettings.Networks, mbus []string, errCh chan error) error {
