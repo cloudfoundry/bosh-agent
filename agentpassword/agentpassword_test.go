@@ -120,6 +120,13 @@ var _ = Describe("Agentpassword", func() {
 	})
 
 	Describe("HashURL", func() {
+		It("rejects a colon in the decoded username without exposing credentials", func() {
+			raw := "https://user%3Aextra:secret-password@127.0.0.1:6868"
+			hashed, err := agentpassword.HashURL(raw)
+			Expect(err).To(MatchError("URL username must not contain a colon"))
+			Expect(hashed).To(BeEmpty())
+		})
+
 		It("performs a complete HashURL -> ParseHashedPassword -> Matches round trip", func() {
 			raw := "https://vcap:mypassword@127.0.0.1:6868/path?foo=bar#frag"
 			hashed, err := agentpassword.HashURL(raw)
