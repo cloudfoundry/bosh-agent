@@ -83,7 +83,9 @@ func rewriteIdentities(all []manifest.PackageRef, shipped map[string]bool) (map[
 			}
 			// Preserve the existing trimmed identity format: source fingerprint,
 			// director dependency JSON, then comma-separated kept dependencies.
-			payload := p.Fingerprint + "\n" + strings.TrimSuffix(key.String(), "\n") + "\n" + strings.Join(identity.Dependencies, ",")
+			dependencyKey := strings.TrimSuffix(key.String(), "\n")
+			keptDependencies := strings.Join(identity.Dependencies, ",")
+			payload := p.Fingerprint + "\n" + dependencyKey + "\n" + keptDependencies
 			switch len(p.Fingerprint) {
 			case 40:
 				digest := sha1.Sum([]byte(payload))

@@ -117,7 +117,7 @@ func Compile(compiler boshcomp.Compiler, boshReleaseTarballPath, blobsDirectory,
 	log.Printf("Finished packages compilation after %s", time.Since(start))
 
 	log.Printf("Archiving compiled BOSH Release %s/%s with stemcell %s", m.Name, m.Version, stemcellSlug)
-	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, compiledPackages, shipped)
+	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, boshReleaseTarballPath, compiledPackages, options, shipped)
 }
 
 func compilePackage(compiledPackages []boshmodels.Package, p manifest.PackageRef, blobstoreIDs map[string]string, compiler boshcomp.Compiler) ([]boshmodels.Package, error) {
@@ -209,9 +209,9 @@ func newCompiledPackageRef(pkg boshmodels.Package, src manifest.PackageRef, stem
 	return compiled
 }
 
-func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, compiledPackages []boshmodels.Package, shipped map[string]bool) (string, error) {
+func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilenameSuffix, blobsDirectory, initialTarball string, compiledPackages []boshmodels.Package, options CompileOptions, shipped map[string]bool) (string, error) {
 	var identities map[string]rewrittenPkg
-	if shipped != nil {
+	if options.ExcludeCompileTimePackages {
 		m.CompileTimePackages = nil
 		var err error
 		identities, err = rewriteIdentities(m.Packages, shipped)
@@ -239,7 +239,7 @@ func writeCompiledRelease(m manifest.Manifest, outputDirectory, stemcellFilename
 	keptCompiledPackages := make([]boshmodels.Package, 0, len(compiledPackages))
 	m.CompiledPkgs = make([]manifest.CompiledPackageRef, 0, len(compiledPackages))
 	for _, p := range compiledPackages {
-		if shipped != nil && !shipped[p.Name] {
+		if options.ExcludeCompileTimePackages && !shipped[p.Name] {
 			continue
 		}
 		keptCompiledPackages = append(keptCompiledPackages, p)

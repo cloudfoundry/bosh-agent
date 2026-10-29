@@ -27,12 +27,24 @@ import (
 )
 
 var _ = Describe("Compile fixtures", func() {
-	DescribeTable("preserves compiled blobs and trims only build dependencies", func(name string) {
-		fixtureDir := os.Getenv("FIXTURES")
-		if fixtureDir == "" {
-			fixtureDir = "testdata"
+	entries := []TableEntry{
+		Entry("source release", filepath.Join("testdata", "log-cache-release-3.0.9.tgz")),
+		Entry("compiled release", filepath.Join("testdata", "log-cache-3.0.9-banana-slug-1.23.tgz")),
+	}
+	if fixtureDir := os.Getenv("FIXTURES"); fixtureDir != "" {
+		fixtures, err := filepath.Glob(filepath.Join(fixtureDir, "*.tgz"))
+		if err != nil || len(fixtures) == 0 {
+			It("requires readable fixture tarballs", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fixtures).NotTo(BeEmpty(), "FIXTURES must contain at least one *.tgz file")
+			})
+		} else {
+			for _, fixture := range fixtures {
+				entries = append(entries, Entry(filepath.Base(fixture), fixture))
+			}
 		}
-		fixture := filepath.Join(fixtureDir, name)
+	}
+	DescribeTable("preserves compiled blobs and trims only build dependencies", func(fixture string) {
 		input := prepareFixture(GinkgoT(), fixture)
 		inputManifest := mustReleaseManifest(input)
 		shipped := jobPackageNames(GinkgoT(), input)
@@ -74,10 +86,7 @@ var _ = Describe("Compile fixtures", func() {
 
 		copyFixtureOutputs(fixture, flaggedPath, plainPath)
 		GinkgoWriter.Printf("fixture %s: flagged=%s plain=%s kept=%d dropped=%v\n", filepath.Base(fixture), flaggedPath, plainPath, len(kept), dropped)
-	},
-		Entry("source release", "log-cache-release-3.0.9.tgz"),
-		Entry("compiled release", "log-cache-3.0.9-banana-slug-1.23.tgz"),
-	)
+	}, entries)
 })
 
 func prepareFixture(t GinkgoTInterface, fixture string) string {

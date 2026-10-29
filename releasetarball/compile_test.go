@@ -619,6 +619,43 @@ var _ = Describe("shippedPackages", func() {
 		}
 	})
 
+	DescribeTable("reports duplicate job.MF entries before validating their contents", func(kind byte, contents string) {
+		first := func(tw *tar.Writer) error {
+			if err := tw.WriteHeader(&tar.Header{Name: "job.MF", Typeflag: kind, Mode: 0o644, Size: int64(len(contents))}); err != nil {
+				return err
+			}
+			_, err := tw.Write([]byte(contents))
+			return err
+		}
+		inner := createTar(first, simpleFile("./job.MF", []byte("packages: [pkg]\n"), 0o644))
+		path := writeRawJobRelease(GinkgoT(), manifest.Manifest{
+			Packages: []manifest.PackageRef{{Name: "pkg"}}, Jobs: []manifest.JobRef{{Name: "job"}},
+		}, "job", inner)
+		_, err := releasetarball.ShippedPackagesForTest(path, mustReleaseManifest(path))
+		Expect(err).To(MatchError(ContainSubstring("duplicate job.MF entries")))
+	},
+		Entry("empty first manifest", byte(tar.TypeReg), ""),
+		Entry("symlink first manifest", byte(tar.TypeSymlink), ""),
+		Entry("malformed first manifest", byte(tar.TypeReg), "packages: [unterminated"),
+	)
+
+	It("accepts an empty job.MF for a release without packages", func() {
+		path := writeShippedRelease(GinkgoT(), manifest.Manifest{
+			Jobs: []manifest.JobRef{{Name: "job"}},
+		}, map[string]string{"job": ""}, false)
+		shipped, err := releasetarball.ShippedPackagesForTest(path, mustReleaseManifest(path))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(shipped).To(BeEmpty())
+	})
+
+	It("reports missing job archives before validating referenced package names", func() {
+		path := writeShippedRelease(GinkgoT(), manifest.Manifest{
+			Packages: []manifest.PackageRef{{Name: "pkg"}}, Jobs: []manifest.JobRef{{Name: "missing"}},
+		}, map[string]string{"extra": "packages: [unknown]\n"}, false)
+		_, err := releasetarball.ShippedPackagesForTest(path, mustReleaseManifest(path))
+		Expect(err).To(MatchError(ContainSubstring(`missing job archive for job "missing"`)))
+	})
+
 	It("rejects a non-regular job.MF entry", func() {
 		inner := createTar(func(tw *tar.Writer) error {
 			return tw.WriteHeader(&tar.Header{Name: "job.MF", Mode: 0o777, Typeflag: tar.TypeSymlink, Linkname: "target"})

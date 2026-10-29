@@ -48,5 +48,5 @@ func ShippedPackagesForTest(path string, m manifest.Manifest) (map[string]bool, 
 
 func WriteCompiledReleaseForTest(m manifest.Manifest, outputDirectory, stemcellSlug, blobsDirectory, initialTarball string, sourcePackages []manifest.PackageRef, compiledPackages []boshmodels.Package, shipped map[string]bool) (string, error) {
 	m.Packages = sourcePackages
-	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, initialTarball, compiledPackages, shipped)
+	return writeCompiledRelease(m, outputDirectory, stemcellSlug, blobsDirectory, initialTarball, compiledPackages, CompileOptions{ExcludeCompileTimePackages: true}, shipped)
 }
