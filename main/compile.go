@@ -41,7 +41,7 @@ func compileTarball(command string, args []string) {
 		log.Fatal(err)
 	}
 	for _, releaseTarballPath := range options.SourceReleases {
-		compiledReleaseTarballPath, err := releasetarball.Compile(compiler, releaseTarballPath, dirProvider.BlobsDir(), options.OutputDirectory, compiledReleaseFileSuffix, releasetarball.CompileOptions{ExcludeCompileTimePackages: options.ExcludeCompileTimePackages})
+		compiledReleaseTarballPath, err := releasetarball.Compile(compiler, releaseTarballPath, dirProvider.BlobsDir(), options.OutputDirectory, compiledReleaseFileSuffix, options.CompileOptions)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,9 +50,9 @@ func compileTarball(command string, args []string) {
 }
 
 type CompileTarballOptions struct {
-	OutputDirectory            string
-	SourceReleases             []string
-	ExcludeCompileTimePackages bool
+	OutputDirectory string
+	SourceReleases  []string
+	releasetarball.CompileOptions
 }
 
 func newCompileTarballOptions(command string, args []string) (CompileTarballOptions, error) {
