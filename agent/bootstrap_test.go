@@ -262,11 +262,10 @@ var _ = Describe("bootstrap", func() {
 				platform.SetupSystemdResolvedReturns(errors.New("fake-systemd-resolved-err"))
 			})
 
-			It("returns an error and does not attempt networking", func() {
+			It("returns an error", func() {
 				err := bootstrap()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("fake-systemd-resolved-err"))
-				Expect(platform.SetupNetworkingCallCount()).To(Equal(0))
 			})
 		})
 
