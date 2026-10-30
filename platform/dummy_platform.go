@@ -196,6 +196,10 @@ func (p dummyPlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
+func (p dummyPlatform) SetupSystemdResolved(_ boshsettings.SystemdResolvedSettings) error {
+	return nil
+}
+
 func (p dummyPlatform) SetupNetworking(networks boshsettings.Networks, mbus []string) (err error) {
 	return
 }

@@ -404,6 +404,10 @@ func (p WindowsPlatform) SetupHostname(hostname string) (err error) {
 	return
 }
 
+func (p WindowsPlatform) SetupSystemdResolved(_ boshsettings.SystemdResolvedSettings) error {
+	return nil
+}
+
 func (p WindowsPlatform) SetupNetworking(networks boshsettings.Networks, mbus []string) (err error) {
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }
