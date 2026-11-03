@@ -49,7 +49,7 @@ resources:
   - name: bosh-agent-index
     type: metalink-resource
     source:
-      uri: git+ssh://git@github.com:cloudfoundry/bosh-agent-index.git//#main
+      uri: git+ssh://git@github.com/cloudfoundry/bosh-agent-index.git//#main
       mirror_files:
         - destination: s3://s3-external-1.amazonaws.com/bosh-agent-binaries/{{.Name}}
       options:
