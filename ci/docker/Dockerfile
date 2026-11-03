@@ -1,4 +1,4 @@
-ARG GOLANG_RELEASE_IMAGE=ghcr.io/cloudfoundry/bosh/golang-release
+ARG GOLANG_RELEASE_IMAGE
 FROM ${GOLANG_RELEASE_IMAGE} AS golang-release
 
 FROM ubuntu

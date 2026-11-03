@@ -360,6 +360,7 @@ jobs:
           params:
             CONTEXT: bosh-agent-ci/ci/docker
             BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_GOLANG_RELEASE_IMAGE: ghcr.io/cloudfoundry/bosh/golang-release:latest
           run:
             path: build
       - put: bosh-agent-docker-image
