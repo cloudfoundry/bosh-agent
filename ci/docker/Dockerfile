@@ -1,7 +1,3 @@
-# Image providing the BOSH-packaged Go toolchain. Overridable so arm64 builds can
-# use the arm64 golang-release image (tag "latest-arm64"). The default is the
-# exact amd64 image used today, so the amd64 build is unchanged.
-# RFC: https://github.com/cloudfoundry/community/pull/1530
 ARG GOLANG_RELEASE_IMAGE=ghcr.io/cloudfoundry/bosh/golang-release
 FROM ${GOLANG_RELEASE_IMAGE} AS golang-release
 
@@ -10,11 +6,9 @@ ARG BOSH_CLI_VERSION
 ARG CREDHUB_CLI_VERSION
 ARG JQ_VERSION
 
-# TARGETARCH is provided automatically by BuildKit (e.g. "amd64", "arm64") and
-# lets this image build for arm64 (Graviton) in addition to amd64. It defaults
-# to amd64 so a plain `docker build` without BuildKit reproduces today's image.
-# RFC: cloudfoundry/community#1530.
-ARG TARGETARCH=amd64
+# No default: a default would override the value BuildKit sets from the target
+# platform. Without BuildKit this is empty and the arch checks below fail.
+ARG TARGETARCH
 
 RUN \
   apt-get update \
@@ -34,10 +28,7 @@ RUN \
 RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-${TARGETARCH} \
     -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
 
-# amd64 is the unchanged original (stedolan/jq, jq-linux64). stedolan/jq is
-# archived and ships no arm64 asset, so arm64 uses the maintained jqlang/jq,
-# which publishes jq-linux-arm64. Fail on any other arch rather than silently
-# installing the wrong jq. RFC: cloudfoundry/community#1530.
+# stedolan/jq is archived and ships no arm64 asset, so arm64 uses jqlang/jq.
 RUN case "${TARGETARCH}" in \
       amd64) wget -nv https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-linux64 \
                -O /usr/local/bin/jq ;; \
@@ -50,13 +41,8 @@ RUN case "${TARGETARCH}" in \
 COPY --from=golang-release /var/vcap/packages/golang-1-linux/ /usr/local/go
 ENV GOROOT=/usr/local/go PATH=/usr/local/go/bin:$PATH
 
-# amd64 is the unchanged original: download the linux-amd64 credhub CLI release
-# tarball. credhub-cli publishes amd64 release binaries only, so arm64 builds the
-# CLI from source at the pinned tag with the Go toolchain copied in above. The
-# source build passes the same version linker flag the project's Makefile uses,
-# so `credhub --version` reports the release version (not an empty string). Fail
-# on any other arch rather than silently installing the wrong CLI.
-# RFC: cloudfoundry/community#1530.
+# credhub-cli publishes amd64 release binaries only, so arm64 builds from source.
+# The version linker flag matches the upstream Makefile.
 RUN case "${TARGETARCH}" in \
       amd64) wget -nv https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/${CREDHUB_CLI_VERSION}/credhub-linux-amd64-${CREDHUB_CLI_VERSION}.tgz -O - | \
                tar -zx --directory=/usr/local/bin ;; \
@@ -65,7 +51,8 @@ RUN case "${TARGETARCH}" in \
              && ( cd /tmp/credhub-cli && go build \
                     -ldflags "-X code.cloudfoundry.org/credhub-cli/version.Version=${CREDHUB_CLI_VERSION}" \
                     -o /usr/local/bin/credhub . ) \
-             && rm -rf /tmp/credhub-cli ;; \
+             && rm -rf /tmp/credhub-cli \
+             && go clean -cache -modcache ;; \
       *)     echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac
 

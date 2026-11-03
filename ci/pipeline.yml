@@ -82,10 +82,6 @@ resources:
       owner: stedolan
       repository: jq
 
-  # arm64 jq source. stedolan/jq is archived at 1.6 and ships no arm64 asset, so
-  # the arm64 CI image uses the maintained jqlang/jq, which publishes
-  # jq-linux-arm64. Kept separate from jq-github-release so the amd64 image build
-  # is unchanged. RFC: cloudfoundry/community#1530.
   - name: jq-github-release-arm64
     type: github-release
     source:
@@ -116,9 +112,6 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  # arm64 (Graviton) CI image, published under "latest-arm64" by
-  # build-docker-image-arm64 so the amd64 "latest" image is never overwritten.
-  # RFC: cloudfoundry/community#1530.
   - name: bosh-agent-docker-image-arm64
     type: registry-image
     source:
@@ -135,7 +128,6 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
-  # Stock multi-arch base used to run build-docker-args on arm64 workers.
   - name: ubuntu-image
     type: registry-image
     source:
@@ -149,9 +141,6 @@ resources:
     source:
       repository: ghcr.io/cloudfoundry/bosh/golang-release
 
-  # arm64 golang-release image published by cloudfoundry/bosh-package-golang-release
-  # (build-docker-image-arm64). Triggers the arm64 agent CI image rebuild.
-  # RFC: cloudfoundry/community#1530.
   - name: golang-release-image-arm64
     type: registry-image
     source:
@@ -378,14 +367,6 @@ jobs:
         params:
           image: image/image.tar
 
-  # arm64 (Graviton) CI image. RFC: cloudfoundry/community#1530.
-  # Mirrors build-docker-image on an arm64 worker; the Dockerfile selects arm64
-  # CLI binaries via TARGETARCH. Pushed under a separate "latest-arm64" tag so the
-  # amd64 "latest" image is never overwritten. build-docker-args runs in a stock
-  # multi-arch ubuntu image because the arm64 agent image does not exist before
-  # its first build. Dormant until an `arm64`-tagged worker is registered (RFC D3
-  # / Open Question 2) and the golang-release image the Dockerfile copies Go from
-  # is published for arm64.
   - name: build-docker-image-arm64
     plan:
       - in_parallel:
@@ -460,12 +441,6 @@ jobs:
         image: bosh-agent-registry-image
         file: bosh-agent-ci/ci/tasks/test-unit.yml
 
-  # arm64 (Graviton) unit tests. RFC: cloudfoundry/community#1530.
-  # Mirrors the amd64 test-unit job but pins the task to an arm64 worker so the
-  # suite runs natively on aarch64. This job is dormant until the platform team
-  # registers a Concourse worker with the `arm64` tag (RFC D3 / Open Question 2:
-  # ARM64 CI worker ownership). Until then Concourse reports it as pending with
-  # "no workers"; it never blocks the amd64 jobs, which are unchanged.
   - name: test-unit-arm64
     plan:
       - get: bosh-agent
