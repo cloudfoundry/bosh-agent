@@ -33,14 +33,18 @@ func NewHTTPSHandler(
 	blobManager boshagentblobstore.BlobManagerInterface,
 	logger boshlog.Logger,
 	auditLogger platform.AuditLogger,
-) HTTPSHandler {
+) (HTTPSHandler, error) {
+	dispatcher, err := NewHTTPSDispatcher(parsedURL, keyPair, logger)
+	if err != nil {
+		return HTTPSHandler{}, bosherr.WrapError(err, "Creating HTTPS dispatcher")
+	}
 	return HTTPSHandler{
 		parsedURL:   parsedURL,
 		logger:      logger,
 		blobManager: blobManager,
-		dispatcher:  NewHTTPSDispatcher(parsedURL, keyPair, logger),
+		dispatcher:  dispatcher,
 		auditLogger: auditLogger,
-	}
+	}, nil
 }
 
 func (h HTTPSHandler) Run(handlerFunc boshhandler.Func) error {
