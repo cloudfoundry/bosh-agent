@@ -30,7 +30,7 @@ RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_
 
 # stedolan/jq is archived and ships no arm64 asset, so arm64 uses jqlang/jq.
 RUN case "${TARGETARCH}" in \
-      amd64) wget -nv https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-linux64 \
+      amd64) wget -nv https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/jq-linux64 \
                -O /usr/local/bin/jq ;; \
       arm64) wget -nv https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/jq-linux-arm64 \
                -O /usr/local/bin/jq ;; \
