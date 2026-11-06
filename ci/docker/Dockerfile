@@ -28,7 +28,7 @@ RUN \
 RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-${TARGETARCH} \
     -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
 
-# stedolan/jq is archived and ships no arm64 asset, so arm64 uses jqlang/jq.
+# jqlang/jq names its x86_64 binary jq-linux64 and its arm64 binary jq-linux-arm64.
 RUN case "${TARGETARCH}" in \
       amd64) wget -nv https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/jq-linux64 \
                -O /usr/local/bin/jq ;; \
