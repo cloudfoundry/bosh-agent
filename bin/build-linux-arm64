@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -eu -o pipefail
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+export GOARCH=arm64
+export GOOS=linux
+
+"${ROOT_DIR}/bin/build"

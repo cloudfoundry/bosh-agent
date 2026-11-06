@@ -105,10 +105,40 @@ resources:
       username: ((github_read_write_packages.username))
       password: ((github_read_write_packages.password))
 
+  - name: bosh-agent-docker-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh-agent
+      tag: latest-arm64
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: bosh-agent-registry-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh-agent
+      tag: latest-arm64
+      username: ((github_read_write_packages.username))
+      password: ((github_read_write_packages.password))
+
+  - name: ubuntu-image
+    type: registry-image
+    source:
+      repository: ubuntu
+      tag: noble
+      username: ((docker.username))
+      password: ((docker.password))
+
   - name: golang-release-image
     type: registry-image
     source:
       repository: ghcr.io/cloudfoundry/bosh/golang-release
+
+  - name: golang-release-image-arm64
+    type: registry-image
+    source:
+      repository: ghcr.io/cloudfoundry/bosh/golang-release
+      tag: latest-arm64
 
   - name: integration-postgres-15-image
     type: registry-image
@@ -323,10 +353,73 @@ jobs:
           params:
             CONTEXT: bosh-agent-ci/ci/docker
             BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_GOLANG_RELEASE_IMAGE: ghcr.io/cloudfoundry/bosh/golang-release:latest
           run:
             path: build
       - put: bosh-agent-docker-image
         no_get: true
+        params:
+          image: image/image.tar
+
+  - name: build-docker-image-arm64
+    plan:
+      - in_parallel:
+          - get: bosh-agent
+            tags: [ arm64 ]
+          - get: bosh-agent-ci
+            tags: [ arm64 ]
+          - get: ubuntu-image
+            tags: [ arm64 ]
+          - get: bosh-cli-github-release
+            resource: bosh-cli
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: credhub-cli-github-release
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: jq-github-release
+            trigger: true
+            params:
+              globs:
+                - "no-files-needed"
+            tags: [ arm64 ]
+          - get: golang-release-image
+            resource: golang-release-image-arm64
+            trigger: true
+            tags: [ arm64 ]
+      - task: build-docker-args
+        file: bosh-agent-ci/ci/docker/build-args.yml
+        image: ubuntu-image
+        tags: [ arm64 ]
+      - task: build-image
+        privileged: true
+        tags: [ arm64 ]
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: bosh-agent-ci
+            - name: docker-build-args
+          outputs:
+            - name: image
+          params:
+            CONTEXT: bosh-agent-ci/ci/docker
+            BUILD_ARGS_FILE: docker-build-args/docker-build-args.yml
+            BUILD_ARG_GOLANG_RELEASE_IMAGE: ghcr.io/cloudfoundry/bosh/golang-release:latest-arm64
+          run:
+            path: build
+      - put: bosh-agent-docker-image-arm64
+        no_get: true
+        tags: [ arm64 ]
         params:
           image: image/image.tar
 
@@ -340,6 +433,20 @@ jobs:
       - task: test-unit
         image: bosh-agent-registry-image
         file: bosh-agent-ci/ci/tasks/test-unit.yml
+
+  - name: test-unit-arm64
+    plan:
+      - get: bosh-agent
+        trigger: true
+      - get: bosh-agent-ci
+      - get: bosh-agent-registry-image
+        resource: bosh-agent-registry-image-arm64
+        trigger: true
+        tags: [ arm64 ]
+      - task: test-unit
+        image: bosh-agent-registry-image
+        file: bosh-agent-ci/ci/tasks/test-unit.yml
+        tags: [ arm64 ]
 
   - name: test-unit-windows
     serial: true
@@ -976,6 +1083,9 @@ jobs:
         - task: build-linux
           image: bosh-agent-registry-image
           file: bosh-agent-ci/ci/tasks/build-linux.yml
+        - task: build-linux-arm64
+          image: bosh-agent-registry-image
+          file: bosh-agent-ci/ci/tasks/build-linux-arm64.yml
         - task: build-windows
           image: bosh-agent-registry-image
           file: bosh-agent-ci/ci/tasks/build-windows.yml
@@ -983,5 +1093,6 @@ jobs:
         params:
           files:
             - compiled-linux-amd64/*
+            - compiled-linux-arm64/*
             - compiled-windows-amd64/*
           version: version-semver/number
