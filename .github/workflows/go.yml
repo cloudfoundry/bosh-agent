@@ -6,8 +6,16 @@ permissions:
 jobs:
   lint: # <- name
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
+        # "native" keeps the runner's own architecture; other entries are
+        # cross-compiled from Linux only.
+        goarch: [native, arm64]
+        exclude:
+          - { os: macos-latest, goarch: arm64 }
+          - { os: windows-latest, goarch: arm64 }
+    name: lint (${{ matrix.os }}${{ matrix.goarch != 'native' && format(', {0}', matrix.goarch) || '' }})
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -15,6 +23,14 @@ jobs:
         with:
           go-version-file: go.mod
       - uses: golangci/golangci-lint-action@v9
+        env:
+          GOARCH: ${{ matrix.goarch != 'native' && matrix.goarch || '' }}
+      - name: build
+        if: runner.os == 'Linux'
+        env:
+          GOARCH: ${{ matrix.goarch != 'native' && matrix.goarch || '' }}
+          CGO_ENABLED: "0"
+        run: go build ./...
 
   test-unit: # <- name
     strategy:
@@ -27,12 +43,3 @@ jobs:
       with:
         go-version-file: go.mod
     - run: go run github.com/onsi/ginkgo/v2/ginkgo run -r --keep-going --skip-package integration
-
-  cross-compile-linux-arm64: # <- name
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - uses: actions/setup-go@v7
-      with:
-        go-version-file: go.mod
-    - run: GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build ./...
