@@ -22,7 +22,7 @@ RUN \
 RUN wget -nv https://github.com/cloudfoundry/bosh-cli/releases/download/v${BOSH_CLI_VERSION}/bosh-cli-${BOSH_CLI_VERSION}-linux-amd64 \
     -O /usr/local/bin/bosh && chmod +x /usr/local/bin/bosh
 
-RUN wget -nv https://github.com/stedolan/jq/releases/download/${JQ_VERSION}/jq-linux64 \
+RUN wget -nv https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/jq-linux64 \
     -O /usr/local/bin/jq && chmod +x /usr/local/bin/jq
 
 RUN wget -nv https://github.com/cloudfoundry-incubator/credhub-cli/releases/download/${CREDHUB_CLI_VERSION}/credhub-linux-amd64-${CREDHUB_CLI_VERSION}.tgz -O - | \

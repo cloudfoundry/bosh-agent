@@ -79,7 +79,7 @@ resources:
     type: github-release
     source:
       access_token: ((github_public_repo_token))
-      owner: stedolan
+      owner: jqlang
       repository: jq
 
   - name: bosh-ecosystem-concourse
