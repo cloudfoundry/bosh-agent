@@ -974,6 +974,18 @@ var _ = Describe("Settings", func() {
 			Expect(env.Bosh.RunDir).To(Equal(RunDir{TmpFSSize: "37m"}))
 		})
 
+		It("can set the systemd-resolved cache mode", func() {
+			env := Env{}
+			err := json.Unmarshal([]byte(`{"bosh": {} }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.SystemdResolved).To(Equal(SystemdResolvedSettings{}))
+
+			env = Env{}
+			err = json.Unmarshal([]byte(`{"bosh": {"systemd_resolved": {"cache": "no-negative"} } }`), &env)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(env.Bosh.SystemdResolved).To(Equal(SystemdResolvedSettings{Cache: "no-negative"}))
+		})
+
 		Context("when swap_size is not specified in the json", func() {
 			It("unmarshalls correctly", func() {
 				var env Env

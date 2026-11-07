@@ -595,6 +595,17 @@ type FakePlatform struct {
 	setupIPv6ReturnsOnCall map[int]struct {
 		result1 error
 	}
+	SetupSystemdResolvedStub        func(settings.SystemdResolvedSettings) error
+	setupSystemdResolvedMutex       sync.RWMutex
+	setupSystemdResolvedArgsForCall []struct {
+		arg1 settings.SystemdResolvedSettings
+	}
+	setupSystemdResolvedReturns struct {
+		result1 error
+	}
+	setupSystemdResolvedReturnsOnCall map[int]struct {
+		result1 error
+	}
 	SetupLogDirStub        func() error
 	setupLogDirMutex       sync.RWMutex
 	setupLogDirArgsForCall []struct {
@@ -3774,6 +3785,67 @@ func (fake *FakePlatform) SetupIPv6ReturnsOnCall(i int, result1 error) {
 		})
 	}
 	fake.setupIPv6ReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSystemdResolved(arg1 settings.SystemdResolvedSettings) error {
+	fake.setupSystemdResolvedMutex.Lock()
+	ret, specificReturn := fake.setupSystemdResolvedReturnsOnCall[len(fake.setupSystemdResolvedArgsForCall)]
+	fake.setupSystemdResolvedArgsForCall = append(fake.setupSystemdResolvedArgsForCall, struct {
+		arg1 settings.SystemdResolvedSettings
+	}{arg1})
+	stub := fake.SetupSystemdResolvedStub
+	fakeReturns := fake.setupSystemdResolvedReturns
+	fake.recordInvocation("SetupSystemdResolved", []interface{}{arg1})
+	fake.setupSystemdResolvedMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakePlatform) SetupSystemdResolvedCallCount() int {
+	fake.setupSystemdResolvedMutex.RLock()
+	defer fake.setupSystemdResolvedMutex.RUnlock()
+	return len(fake.setupSystemdResolvedArgsForCall)
+}
+
+func (fake *FakePlatform) SetupSystemdResolvedCalls(stub func(settings.SystemdResolvedSettings) error) {
+	fake.setupSystemdResolvedMutex.Lock()
+	defer fake.setupSystemdResolvedMutex.Unlock()
+	fake.SetupSystemdResolvedStub = stub
+}
+
+func (fake *FakePlatform) SetupSystemdResolvedArgsForCall(i int) settings.SystemdResolvedSettings {
+	fake.setupSystemdResolvedMutex.RLock()
+	defer fake.setupSystemdResolvedMutex.RUnlock()
+	argsForCall := fake.setupSystemdResolvedArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakePlatform) SetupSystemdResolvedReturns(result1 error) {
+	fake.setupSystemdResolvedMutex.Lock()
+	defer fake.setupSystemdResolvedMutex.Unlock()
+	fake.SetupSystemdResolvedStub = nil
+	fake.setupSystemdResolvedReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePlatform) SetupSystemdResolvedReturnsOnCall(i int, result1 error) {
+	fake.setupSystemdResolvedMutex.Lock()
+	defer fake.setupSystemdResolvedMutex.Unlock()
+	fake.SetupSystemdResolvedStub = nil
+	if fake.setupSystemdResolvedReturnsOnCall == nil {
+		fake.setupSystemdResolvedReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setupSystemdResolvedReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
 }

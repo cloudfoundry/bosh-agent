@@ -263,6 +263,10 @@ func (p linux) GetAuditLogger() AuditLogger {
 	return p.auditLogger
 }
 
+func (p linux) SetupSystemdResolved(resolved boshsettings.SystemdResolvedSettings) error {
+	return p.netManager.SetupSystemdResolved(resolved)
+}
+
 func (p linux) SetupNetworking(networks boshsettings.Networks, mbus []string) (err error) {
 	return p.netManager.SetupNetworking(networks, mbus, nil)
 }

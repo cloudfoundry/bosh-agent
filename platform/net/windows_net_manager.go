@@ -106,6 +106,10 @@ func (net WindowsNetManager) setupNetworkInterfaces(networks boshsettings.Networ
 	return nil
 }
 
+func (net WindowsNetManager) SetupSystemdResolved(_ boshsettings.SystemdResolvedSettings) error {
+	return nil
+}
+
 func (net WindowsNetManager) SetupNetworking(networks boshsettings.Networks, mbus []string, errCh chan error) error {
 	if err := net.setupNetworkInterfaces(networks); err != nil {
 		return bosherr.WrapError(err, "setting up network interfaces")
