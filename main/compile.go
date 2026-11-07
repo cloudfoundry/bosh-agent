@@ -41,7 +41,7 @@ func compileTarball(command string, args []string) {
 		log.Fatal(err)
 	}
 	for _, releaseTarballPath := range options.SourceReleases {
-		compiledReleaseTarballPath, err := releasetarball.Compile(compiler, releaseTarballPath, dirProvider.BlobsDir(), options.OutputDirectory, compiledReleaseFileSuffix)
+		compiledReleaseTarballPath, err := releasetarball.Compile(compiler, releaseTarballPath, dirProvider.BlobsDir(), options.OutputDirectory, compiledReleaseFileSuffix, options.StripBuildDependencies)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,14 +50,16 @@ func compileTarball(command string, args []string) {
 }
 
 type CompileTarballOptions struct {
-	OutputDirectory string
-	SourceReleases  []string
+	OutputDirectory        string
+	SourceReleases         []string
+	StripBuildDependencies bool
 }
 
 func newCompileTarballOptions(command string, args []string) (CompileTarballOptions, error) {
 	var options CompileTarballOptions
 	flags := flag.NewFlagSet(command, flag.ExitOnError)
 	flags.StringVar(&options.OutputDirectory, "output-directory", "/tmp", "the directory to put the compiled release tarball")
+	flags.BoolVar(&options.StripBuildDependencies, "strip-build-dependencies", false, "omit packages that no job declares, such as build toolchains, from the compiled release")
 	flags.Usage = func() {
 		_, _ = fmt.Fprintf(flags.Output(), //nolint:errcheck
 			`The BOSH Agent %[1]s command creates BOSH Release tarballs with compiled packages from tarballs with source packages.

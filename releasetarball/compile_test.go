@@ -12,7 +12,10 @@ import (
 	"log"
 	"maps"
 	"os"
+	"path"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -92,7 +95,7 @@ var _ = Describe("Compile", func() {
 		})
 
 		It("does not compile any of the packages", func() {
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pkgCompiler.CompileCallCount()).To(BeZero())
 		})
@@ -119,7 +122,7 @@ var _ = Describe("Compile", func() {
 
 		It("does not compile any of the packages", func() {
 			const stemcellSlug = "banana-slug/1.23"
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).To(MatchError(ContainSubstring("cycle detected")))
 		})
 	})
@@ -139,7 +142,7 @@ var _ = Describe("Compile", func() {
 
 		It("does not compile any of the packages", func() {
 			const stemcellSlug = "banana-slug/1.23"
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).To(MatchError(ContainSubstring("failed to parse release manifest")))
 		})
 	})
@@ -152,7 +155,7 @@ var _ = Describe("Compile", func() {
 
 		It("does not compile any of the packages", func() {
 			const stemcellSlug = "banana-slug/1.23"
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).To(MatchError(ContainSubstring("banana")))
 		})
 	})
@@ -173,7 +176,7 @@ var _ = Describe("Compile", func() {
 
 		It("returns a helpful error", func() {
 			const stemcellSlug = "banana-slug/1.23"
-			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			_, err := releasetarball.Compile(pkgCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).To(MatchError(ContainSubstring("package not found in release manifest")))
 		})
 	})
@@ -197,8 +200,29 @@ var _ = Describe("Compile", func() {
 			}
 		})
 
+		It("ships every package by default", func() {
+			resultPath, err := releasetarball.Compile(multiplePackageCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, false)
+			Expect(err).To(Succeed())
+
+			m, err := releasetarball.Manifest(resultPath)
+			Expect(err).NotTo(HaveOccurred())
+
+			var names []string
+			for _, p := range m.CompiledPkgs {
+				names = append(names, p.Name)
+			}
+			Expect(names).To(ContainElement("golang-1.20-linux"))
+			Expect(m.CompiledPkgs).To(HaveLen(5))
+
+			for _, p := range m.CompiledPkgs {
+				if p.Name != "golang-1.20-linux" {
+					Expect(p.Dependencies).To(ConsistOf("golang-1.20-linux"))
+				}
+			}
+		})
+
 		It("writes a compiled release tarball", func() {
-			resultPath, err := releasetarball.Compile(multiplePackageCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug)
+			resultPath, err := releasetarball.Compile(multiplePackageCompiler, sourceTarballPath, d.BlobsDir(), releasesOutputDir, stemcellSlug, true)
 			Expect(err).To(Succeed())
 
 			Expect(multiplePackageCompiler.CompileCallCount()).To(Equal(5))
@@ -221,17 +245,26 @@ var _ = Describe("Compile", func() {
 				Expect(compiledManifest.Jobs).To(Equal(sourceManifest.Jobs), "it must not change the jobs")
 				Expect(compiledManifest.Packages).To(HaveLen(0), "it must not leave any source packages")
 
-				Expect(compiledManifest.CompiledPkgs).To(HaveLen(len(sourceManifest.Packages)), "it should convert all the source packages to compiled packages")
+				Expect(compiledManifest.CompiledPkgs).To(HaveLen(4), "it must not ship a package no job declares")
 
-				assertPackageFields(compiledManifest, sourceManifest, 0, stemcellSlug, "golang-1.20-linux-blob-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 1, stemcellSlug, "log-cache-blob-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 2, stemcellSlug, "log-cache-cf-auth-proxy-blob-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 3, stemcellSlug, "log-cache-gateway-blob-checksum")
-				assertPackageFields(compiledManifest, sourceManifest, 4, stemcellSlug, "log-cache-syslog-server-blob-checksum")
+				var names []string
+				for _, p := range compiledManifest.CompiledPkgs {
+					names = append(names, p.Name)
+				}
+				Expect(names).NotTo(ContainElement("golang-1.20-linux"))
+
+				assertPackageFields(compiledManifest, sourceManifest, "log-cache", stemcellSlug, "log-cache-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, "log-cache-cf-auth-proxy", stemcellSlug, "log-cache-cf-auth-proxy-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, "log-cache-gateway", stemcellSlug, "log-cache-gateway-blob-checksum")
+				assertPackageFields(compiledManifest, sourceManifest, "log-cache-syslog-server", stemcellSlug, "log-cache-syslog-server-blob-checksum")
+			})
+
+			By("leaving no dependency without a package", func() {
+				assertNoDanglingDependencies(resultPath)
 			})
 
 			infos := listFileNamesInTarball(GinkgoT(), resultPath)
-			const expectedFiles = 15
+			const expectedFiles = 14
 
 			Expect(infos).To(HaveLen(expectedFiles))
 			const (
@@ -249,7 +282,6 @@ var _ = Describe("Compile", func() {
 				{Name: "jobs/log-cache-syslog-server.tgz", Mode: 0o0644},
 				{Name: "jobs/log-cache-cf-auth-proxy.tgz", Mode: 0o0644},
 				{Name: "compiled_packages/", Mode: 0o0755},
-				{Name: "compiled_packages/golang-1.20-linux.tgz", Mode: 0o0644},
 				{Name: "compiled_packages/log-cache.tgz", Mode: 0o0644},
 				{Name: "compiled_packages/log-cache-cf-auth-proxy.tgz", Mode: 0o0644},
 				{Name: "compiled_packages/log-cache-gateway.tgz", Mode: 0o0644},
@@ -270,17 +302,58 @@ var _ = Describe("Compile", func() {
 	})
 })
 
-func assertPackageFields(compiledManifest, sourceManifest manifest.Manifest, index int, stemcellSlug, expectedSHA string) {
+// bosh-cli's AttachDependencies and the director's CycleHelper both reject a
+// dependency that has no package entry, so a tarball that fails this is
+// unreadable and unuploadable even though its contents look plausible.
+func assertNoDanglingDependencies(tarballPath string) {
 	GinkgoHelper()
 
-	Expect(compiledManifest.CompiledPkgs[index].Name).To(Equal(sourceManifest.Packages[index].Name))
-	Expect(compiledManifest.CompiledPkgs[index].Version).To(Equal(sourceManifest.Packages[index].Version))
-	Expect(compiledManifest.CompiledPkgs[index].Fingerprint).To(Equal(sourceManifest.Packages[index].Fingerprint))
-	Expect(compiledManifest.CompiledPkgs[index].OSVersionSlug).To(Equal(stemcellSlug))
-	Expect(compiledManifest.CompiledPkgs[index].SHA1).To(Equal(expectedSHA))
-	Expect(compiledManifest.CompiledPkgs[index].Dependencies).To(Equal(sourceManifest.Packages[index].Dependencies))
+	m, err := releasetarball.Manifest(tarballPath)
+	Expect(err).NotTo(HaveOccurred())
 
-	Expect(compiledManifest.CompiledPkgs[index].Version).To(Equal(compiledManifest.CompiledPkgs[index].Fingerprint), "this seems to be equal on releases exported from a director")
+	Expect(m.Packages).To(BeEmpty(), "a compiled release must not carry source package entries")
+
+	present := map[string]bool{}
+	for _, p := range m.CompiledPkgs {
+		present[p.Name] = true
+	}
+
+	entries := listFileNamesInTarball(GinkgoT(), tarballPath)
+	archived := map[string]bool{}
+	for _, h := range entries {
+		if path.Base(path.Dir(h.Name)) == "compiled_packages" {
+			archived[strings.TrimSuffix(path.Base(h.Name), ".tgz")] = true
+		}
+	}
+
+	for _, p := range m.CompiledPkgs {
+		Expect(archived).To(HaveKey(p.Name), "package %s is in release.MF but has no archive", p.Name)
+
+		for _, dep := range p.Dependencies {
+			Expect(present).To(HaveKey(dep), "package %s depends on %s, which is not in the release", p.Name, dep)
+			Expect(archived).To(HaveKey(dep), "package %s depends on %s, which has no archive", p.Name, dep)
+		}
+	}
+}
+
+func assertPackageFields(compiledManifest, sourceManifest manifest.Manifest, name, stemcellSlug, expectedSHA string) {
+	GinkgoHelper()
+
+	compiledIndex := slices.IndexFunc(compiledManifest.CompiledPkgs, func(p manifest.CompiledPackageRef) bool { return p.Name == name })
+	Expect(compiledIndex).NotTo(Equal(-1), "compiled package %s is missing", name)
+	compiled := compiledManifest.CompiledPkgs[compiledIndex]
+
+	sourceIndex := slices.IndexFunc(sourceManifest.Packages, func(p manifest.PackageRef) bool { return p.Name == name })
+	Expect(sourceIndex).NotTo(Equal(-1), "source package %s is missing", name)
+	source := sourceManifest.Packages[sourceIndex]
+
+	Expect(compiled.Version).To(Equal(source.Version))
+	Expect(compiled.Fingerprint).To(Equal(source.Fingerprint))
+	Expect(compiled.OSVersionSlug).To(Equal(stemcellSlug))
+	Expect(compiled.SHA1).To(Equal(expectedSHA))
+	Expect(compiled.Dependencies).To(BeEmpty(), "golang-1.20-linux is not shipped so it must not be referenced")
+
+	Expect(compiled.Version).To(Equal(compiled.Fingerprint), "this seems to be equal on releases exported from a director")
 }
 
 func closeAndIgnoreError(c io.Closer) {
