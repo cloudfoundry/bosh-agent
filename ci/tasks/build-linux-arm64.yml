@@ -1,0 +1,24 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: bosh/agent
+    tag: latest
+
+inputs:
+- name: bosh-agent
+- name: bosh-agent-ci
+- name: version-semver
+
+outputs:
+- name: compiled-linux-arm64
+
+params:
+  OUTPUT_DIR: compiled-linux-arm64
+  GOARCH: arm64
+  GOOS:   linux
+
+run:
+  path: bosh-agent-ci/ci/tasks/build.sh
