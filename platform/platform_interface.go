@@ -60,6 +60,7 @@ type Platform interface {
 	SetupBoshSettingsDisk() (err error)
 	SetupIPv6(boshsettings.IPv6) error
 	SetupHostname(hostname string) (err error)
+	SetupSystemdResolved(boshsettings.SystemdResolvedSettings) error
 	SetupNetworking(networks boshsettings.Networks, mbus []string) (err error)
 	SetupLogrotate(groupName, basePath, size string) (err error)
 	SetTimeWithNtpServers(servers []string) (err error)

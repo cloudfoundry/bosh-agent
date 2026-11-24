@@ -229,6 +229,46 @@ var _ = Describe("bootstrap", func() {
 			Expect(platform.SetupHostnameArgsForCall(0)).To(Equal("foo-bar-baz-123"))
 		})
 
+		It("forwards the systemd-resolved settings to the platform", func() {
+			settingsService.Settings.Env.Bosh.SystemdResolved = boshsettings.SystemdResolvedSettings{Cache: "no-negative"}
+
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(platform.SetupSystemdResolvedCallCount()).To(Equal(1))
+			Expect(platform.SetupSystemdResolvedArgsForCall(0)).To(Equal(boshsettings.SystemdResolvedSettings{Cache: "no-negative"}))
+		})
+
+		It("calls SetupSystemdResolved before SetupNetworking", func() {
+			var resolvedOrder, networkingOrder int
+			callIndex := 0
+			platform.SetupSystemdResolvedStub = func(_ boshsettings.SystemdResolvedSettings) error {
+				callIndex++
+				resolvedOrder = callIndex
+				return nil
+			}
+			platform.SetupNetworkingStub = func(_ boshsettings.Networks, _ []string) error {
+				callIndex++
+				networkingOrder = callIndex
+				return nil
+			}
+
+			err := bootstrap()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resolvedOrder).To(BeNumerically("<", networkingOrder))
+		})
+
+		Context("when setting up systemd-resolved fails", func() {
+			BeforeEach(func() {
+				platform.SetupSystemdResolvedReturns(errors.New("fake-systemd-resolved-err"))
+			})
+
+			It("returns an error", func() {
+				err := bootstrap()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("fake-systemd-resolved-err"))
+			})
+		})
+
 		It("fetches initial settings", func() {
 			err := bootstrap()
 			Expect(err).NotTo(HaveOccurred())

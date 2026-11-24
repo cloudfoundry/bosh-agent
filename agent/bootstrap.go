@@ -96,6 +96,10 @@ func (boot bootstrap) Run() (err error) { //nolint:gocyclo
 		return bosherr.WrapError(err, "Setting up hostname")
 	}
 
+	if err = boot.platform.SetupSystemdResolved(settings.Env.Bosh.SystemdResolved); err != nil {
+		return bosherr.WrapError(err, "Setting up systemd-resolved")
+	}
+
 	if err = boot.platform.SetupNetworking(settings.Networks, settings.GetMbusURLs()); err != nil {
 		return bosherr.WrapError(err, "Setting up networking")
 	}

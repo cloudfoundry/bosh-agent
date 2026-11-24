@@ -14,4 +14,5 @@ type Manager interface {
 	GetConfiguredNetworkInterfaces() ([]string, error)
 
 	SetupIPv6(boshsettings.IPv6, <-chan struct{}) error
+	SetupSystemdResolved(boshsettings.SystemdResolvedSettings) error
 }
