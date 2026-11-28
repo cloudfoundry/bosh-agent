@@ -3,13 +3,13 @@ module github.com/cloudfoundry/bosh-agent/v2
 go 1.26.11
 
 require (
-	code.cloudfoundry.org/clock v1.97.0
+	code.cloudfoundry.org/clock v1.98.0
 	code.cloudfoundry.org/tlsconfig v0.69.0
 	github.com/Microsoft/hcsshim v0.15.0
 	github.com/charlievieth/fs v0.0.3
 	github.com/cloudfoundry/bosh-cli/v7 v7.11.3
-	github.com/cloudfoundry/bosh-davcli v0.0.528
-	github.com/cloudfoundry/bosh-utils v0.0.676
+	github.com/cloudfoundry/bosh-davcli v0.0.530
+	github.com/cloudfoundry/bosh-utils v0.0.678
 	github.com/cloudfoundry/gosigar v1.3.133
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/mock v1.6.0
@@ -44,6 +44,7 @@ require (
 	github.com/cloudfoundry/go-socks5 v0.0.0-20250423223041-4ad5fea42851 // indirect
 	github.com/cloudfoundry/socks5-proxy v0.2.198 // indirect
 	github.com/containerd/cgroups/v3 v3.1.3 // indirect
+	github.com/gkampitakis/go-snaps v0.5.26 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
@@ -62,23 +63,25 @@ require (
 	github.com/masterzen/simplexml v0.0.0-20190410153822-31eea3082786 // indirect
 	github.com/mdlayher/netlink v1.11.2 // indirect
 	github.com/mdlayher/socket v0.8.0 // indirect
+	github.com/mfridman/tparse v0.20.0 // indirect
 	github.com/nats-io/nkeys v0.4.17 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/sirupsen/logrus v1.10.2 // indirect
+	github.com/tidwall/gjson v1.20.7 // indirect
+	github.com/tidwall/pretty v1.3.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.2 // indirect
 	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.opentelemetry.io/otel/log v1.47.0 // indirect
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.47.0 // indirect
 	go.opentelemetry.io/otel/trace v1.47.0 // indirect
-	go.step.sm/crypto v0.92.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb // indirect
-	golang.org/x/exp/typeparams v0.0.0-20261120182113-8801fbdfac81 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20261128033645-f63ec7c7eed0 // indirect
 	golang.org/x/mod v0.43.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
-	golang.org/x/telemetry v0.0.0-20261119160235-508b12de1089 // indirect
+	golang.org/x/telemetry v0.0.0-20261124234621-1402bdb29cb5 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	honnef.co/go/tools v0.8.2 // indirect
